@@ -2,8 +2,8 @@
  * @file bucket.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines bucket
- * @version 1.3
- * @date 2025-10-02
+ * @version 1.4
+ * @date 2025-10-11
  *
  * @copyright Copyright (c) 2023-2025
  *
@@ -36,11 +36,13 @@
 #include <memory>
 #include <filesystem>
 #include <numeric> // iota
+#include <concepts>
 
 #include <algorithm> // shuffle
 
 #include "archive.hpp"
 #include "utils.hpp"
+#include "progress_bar.hpp"
 
 namespace RACES
 {
@@ -158,14 +160,16 @@ class Bucket
      * @param[in] max_chunk_size is the maximum size of chunks
      * @param[in] prefix_name is the prefix name of the chunks
      * @param[in] tmp_dir is the directory of the chucks
+     * @param[in, out] progress_bar is a progress bar
      * @return the vector of the chunk paths
      */
     template<typename RANDOM_GENERATOR>
     std::vector<std::filesystem::path>
     split_in_random_chunks(RANDOM_GENERATOR& random_generator,
                            const size_t& max_chunk_size,
-                           const std::string& prefix_name = "tmp_chunk",
-                           const std::filesystem::path& tmp_dir = "./")
+                           const std::string& prefix_name,
+                           const std::filesystem::path& tmp_dir,
+                           UI::ProgressBar& progress_bar)
     {
         const auto num_of_chunks = (size()-1)/max_chunk_size+1;
         auto last_chunk = num_of_chunks-1;
@@ -189,6 +193,8 @@ class Bucket
                 value_in_caches = load_buffer(cache, read_pos);
 
                 cache_it = cache.begin();
+
+                progress_bar.update_elapsed_time();
             }
 
             const auto pos = chunk_dist(random_generator);
@@ -308,6 +314,88 @@ class Bucket
     }
 
     /**
+     * @brief Read the buffer file header
+     *
+     * This method reads the buffer file header and sets the
+     * position of the bucket size and that of the data in the
+     * file.
+     * @param archive is a reference to the input archive
+     * @return a reference to the input archive
+     */
+    Archive::Binary::In& read_header(Archive::Binary::In& archive)
+    {
+        if (!archive.is_open()) {
+            archive.open(filepath);
+        }
+
+        Archive::Binary::In::read_header(archive, "RACES Bucket", 0);
+
+        size_pos = archive.tellg();
+        archive & num_of_values;
+        data_pos = archive.tellg();
+
+        file_size = archive.size();
+
+        return archive;
+    }
+
+    /**
+     * @brief Read the buffer file header
+     *
+     * This method reads the buffer file header and sets the
+     * position of the bucket size and that of the data in the
+     * file.
+     */
+    inline void read_header()
+    {
+        Archive::Binary::In archive(filepath);
+
+        read_header(archive);
+    }
+
+    /**
+     * @brief Write the buffer file header
+     *
+     * This method writes the buffer file header and sets the
+     * position of the bucket size and that of the data in the
+     * file.
+     * @param archive is a reference to the output archive
+     * @return a reference to the output archive
+     */
+    Archive::Binary::Out& write_header(Archive::Binary::Out& archive)
+    {
+        if (!archive.is_open()) {
+            archive.open(filepath);
+        }
+
+        Archive::Binary::Out::write_header(archive, "RACES Bucket", 0);
+
+        size_pos = archive.tellg();
+        archive & num_of_values;
+        data_pos = archive.tellg();
+
+        archive.flush();
+
+        file_size = data_pos;
+
+        return archive;
+    }
+
+    /**
+     * @brief Write the buffer file header
+     *
+     * This method writes the buffer file header and sets the
+     * position of the bucket size and that of the data in the
+     * file.
+     */
+    inline void write_header()
+    {
+        Archive::Binary::Out archive(filepath);
+
+        write_header(archive);
+    }
+
+    /**
      * @brief The method that initializes Bucket objects
      *
      * This method is used to initialize Bucket objects during the construction
@@ -323,26 +411,9 @@ class Bucket
                 throw std::domain_error(oss.str());
             }
 
-            Archive::Binary::In archive(filepath);
-
-            Archive::Binary::In::read_header(archive, "RACES Bucket", 0);
-
-            size_pos = archive.tellg();
-            archive & num_of_values;
-            data_pos = archive.tellg();
-
-            file_size = archive.size();
+            read_header();
         } else {
-            Archive::Binary::Out archive(filepath);
-
-            Archive::Binary::Out::write_header(archive, "RACES Bucket", 0);
-
-            size_pos = archive.tellg();
-            archive & num_of_values;
-            data_pos = archive.tellg();
-
-            archive.flush();
-            file_size = data_pos;
+            write_header();
         }
     }
 protected:
@@ -624,14 +695,81 @@ public:
      * temporarily stored in a set of disk-based files.
      *
      * @tparam RANDOM_GENERATOR is a random number generator type
+     * @tparam ARGS are the types of the remaining parameters
+     * @param[in] seed is the seed of a random number generator
+     * @param[in, out] args are the remaining parameters
+     */
+    template<typename RANDOM_GENERATOR, typename... ARGS>
+    inline void shuffle(const int seed, ARGS... args)
+    {
+        RANDOM_GENERATOR random_generator(seed);
+
+        shuffle(random_generator, args...);
+    }
+
+    /**
+     * @brief Shuffle the values in the bucket
+     *
+     * This method shuffles the bucket’s values randomly, ensuring a
+     * uniform distribution. At any moment, the number of values held
+     * in memory does not exceed the bucket’s write cache size. To
+     * ensure this memory constraint, copies of the bucket values are
+     * temporarily stored in a set of disk-based files.
+     *
+     * @tparam ARGS are the types of the parameters
+     * @param[in, out] args are the parameters
+     */
+    template <typename... ARGS>
+    requires last_is_not<UI::ProgressBar, ARGS...>
+    inline void shuffle(ARGS... args)
+    {
+        UI::ProgressBar progress_bar;
+
+        shuffle(args..., progress_bar);
+    }
+
+    /**
+     * @brief Shuffle the values in the bucket
+     *
+     * This method shuffles the bucket’s values randomly, ensuring a
+     * uniform distribution. At any moment, the number of values held
+     * in memory does not exceed the bucket’s write cache size. To
+     * ensure this memory constraint, copies of the bucket values are
+     * temporarily stored in a set of disk-based files.
+     *
+     * @tparam RANDOM_GENERATOR is a random number generator type
      * @param[in, out] random_generator is a random number generator
      * @param[in] tmp_dir is the path of the temporary files
+     * @param[in, out] progress_bar is a progress bar
      */
     template<typename RANDOM_GENERATOR>
     inline void shuffle(RANDOM_GENERATOR& random_generator,
-                 const std::filesystem::path tmp_dir = std::filesystem::temp_directory_path())
+                        const std::filesystem::path tmp_dir,
+                        UI::ProgressBar& progress_bar)
     {
-        shuffle(random_generator, get_cache_size(), tmp_dir);
+        shuffle(random_generator, get_cache_size(), tmp_dir, progress_bar);
+    }
+
+    /**
+     * @brief Shuffle the values in the bucket
+     *
+     * This method shuffles the bucket’s values randomly, ensuring a
+     * uniform distribution. At any moment, the number of values held
+     * in memory does not exceed the bucket’s write cache size. To
+     * ensure this memory constraint, copies of the bucket values are
+     * temporarily stored in a set of disk-based files.
+     *
+     * @tparam RANDOM_GENERATOR is a random number generator type
+     * @param[in, out] random_generator is a random number generator
+     * @param[in, out] progress_bar is a progress bar
+     */
+    template<typename RANDOM_GENERATOR>
+    inline void shuffle(RANDOM_GENERATOR& random_generator,
+                        UI::ProgressBar& progress_bar)
+    {
+        shuffle(random_generator, get_cache_size(),
+                std::filesystem::temp_directory_path(),
+                progress_bar);
     }
 
     /**
@@ -647,11 +785,12 @@ public:
      * @param[in, out] random_generator is a random number generator
      * @param[in] buffer_size is the buffer size in bytes
      * @param[in] tmp_dir is the path of the temporary files
+     * @param[in, out] progress_bar is a progress bar
      */
     template<typename RANDOM_GENERATOR>
-    void shuffle(RANDOM_GENERATOR& random_generator,
-                 size_t buffer_size,
-                 const std::filesystem::path tmp_dir = std::filesystem::temp_directory_path())
+    void shuffle(RANDOM_GENERATOR& random_generator, size_t buffer_size,
+                 const std::filesystem::path tmp_dir,
+                 UI::ProgressBar& progress_bar)
     {
         flush();
 
@@ -661,21 +800,24 @@ public:
 
         size_t buff_values = buffer_size/sizeof(VALUE);
         if (buff_values >= size()) {
-            std::vector<VALUE> buffer(std::max(buff_values, size()));
+            std::vector<VALUE> buffer(size());
 
             load_buffer(buffer, data_pos);
 
-            const auto shuffled_path(get_a_temporary_path("RACES_shuffled_tmp", tmp_dir));
+            std::shuffle(buffer.begin(), buffer.end(), random_generator);
 
-            Binary::Out archive(shuffled_path);
-            Binary::Out::write_header(archive, "RACES Bucket", 0);
+            std::filesystem::remove(filepath);
 
-            archive & num_of_values;
+            Archive::Binary::Out archive;
+            write_header(archive);
             for (const auto& value: buffer) {
                 archive & value;
             }
+            file_size = archive.tellg();
 
-            std::filesystem::rename(shuffled_path, filepath);
+            flush();
+
+            progress_bar.update_elapsed_time();
 
             return;
         }
@@ -685,12 +827,15 @@ public:
         buff_values = buffer_size/sizeof(VALUE);
 
         const auto chunk_paths = split_in_random_chunks(random_generator, buff_values,
-                                                        "tmp_chunk", tmp_dir);
+                                                        "tmp_chunk", tmp_dir,
+                                                        progress_bar);
 
         std::vector<VALUE> buffer(buff_values);
 
-        const auto shuffled_path(get_a_temporary_path("RACES_shuffled_tmp", tmp_dir));
-        Bucket shuffled_bucket(shuffled_path, buffer_size);
+        std::filesystem::remove(filepath);
+
+        Archive::Binary::Out archive(filepath);
+        write_header(archive);
 
         for (const auto& chunk_path: chunk_paths) {
             const auto end_of_buffer = load_buffer(buffer, chunk_path);
@@ -700,13 +845,12 @@ public:
             std::shuffle(buffer.begin(), end_of_buffer, random_generator);
 
             for (auto buffer_it=buffer.begin(); buffer_it != end_of_buffer; ++buffer_it) {
-                shuffled_bucket.push_back(*buffer_it);
+                archive & *buffer_it;
             }
+            file_size = archive.tellg();
 
-            shuffled_bucket.flush();
+            progress_bar.update_elapsed_time();
         }
-
-        std::filesystem::rename(shuffled_path, filepath);
     }
 
     /**
