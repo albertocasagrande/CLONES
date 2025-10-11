@@ -83,11 +83,6 @@ target_include_directories(build_repetition_index PRIVATE ${Boost_INCLUDE_DIR})
 target_link_libraries(build_repetition_index ${TOOLS_LIBRARIES})
 install(TARGETS build_repetition_index)
 
-add_executable(sample_context_index ${SAMPLE_INDEX_SOURCES})
-target_include_directories(sample_context_index PRIVATE ${Boost_INCLUDE_DIR})
-target_link_libraries(sample_context_index ${TOOLS_LIBRARIES})
-install(TARGETS sample_context_index)
-
 add_executable(mutations_sim ${MUTATIONS_SIM_SOURCES})
 target_include_directories(mutations_sim PRIVATE ${Boost_INCLUDE_DIR})
 target_link_libraries(mutations_sim ${TOOLS_LIBRARIES} nlohmann_json::nlohmann_json)
