@@ -2,10 +2,10 @@
  * @file germline.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines the functions to generate and load germline mutations
- * @version 1.0
- * @date 2024-06-10
+ * @version 1.1
+ * @date 2025-10-11
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2025
  *
  * MIT License
  *
@@ -104,7 +104,6 @@ public:
     /**
      * @brief Generate germline mutations
      *
-     * @tparam GENOME_WIDE_POSITION is the
      * @param reference_fasta_filename is the name of the reference genome fasta file
      * @param chromosome_regions is the vector of chromosome regions
      * @param alleles_per_chromosome is the number of alleles in wild-type cells
