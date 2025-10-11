@@ -2,8 +2,8 @@
  * @file fasta_chr_reader.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements classes to read chromosomes from FASTA streams
- * @version 1.0
- * @date 2025-05-13
+ * @version 1.1
+ * @date 2025-10-11
  *
  * @copyright Copyright (c) 2023-2025
  *
@@ -74,20 +74,17 @@ bool Reader<ChromosomeData<Sequence>>::read(ChromosomeData<Sequence>& chr,
 template<>
 void Index<ChromosomeData<Sequence>>::save(std::ostream& output_stream) const
 {
-    bool first{true};
+    output_stream << "# chr_name\tseq_name\tlength"
+                     "\toffset\tbases per line\tbytes per line";
     for (const auto& map_it: _map) {
         const auto& entry = map_it.second;
-        if (first) {
-            first = false;
-        } else {
-            output_stream << std::endl;
-        }
-        output_stream << map_it.first
-                        << "\t" << entry.name
-                        << "\t" << entry.length
-                        << "\t" << entry.offset
-                        << "\t" << entry.linebases
-                        << "\t" << entry.linebytes;
+        output_stream << std::endl
+                      << map_it.first
+                      << "\t" << entry.name
+                      << "\t" << entry.length
+                      << "\t" << entry.offset
+                      << "\t" << entry.linebases
+                      << "\t" << entry.linebytes;
     }
 }
 
@@ -99,15 +96,19 @@ Index<ChromosomeData<Sequence>>::load(std::istream& input_stream)
 
     std::string line;
     while (std::getline(input_stream, line)) {
-        std::stringstream ss(line);
+        if (line.size()>0) {
+            if (line[0] != '#') {
+                std::stringstream ss(line);
 
-        IndexEntry entry;
-        std::string chr_name;
+                IndexEntry entry;
+                std::string chr_name;
 
-        ss >> chr_name >> entry.name >> entry.length >> entry.offset
-           >> entry.linebases >> entry.linebytes;
+                ss >> chr_name >> entry.name >> entry.length >> entry.offset
+                   >> entry.linebases >> entry.linebytes;
 
-        index._map.emplace(chr_name, entry);
+                index._map.emplace(chr_name, entry);
+            }
+        }
     }
 
     return index;
@@ -129,6 +130,18 @@ bool IndexedReader<ChromosomeData<Sequence>>::read(ChromosomeData<Sequence>& chr
     }
 
     return false;
+}
+
+std::list<Mutations::GenomicRegion>
+get_chromosome_regions(const Index<ChromosomeData<Sequence>>& chr_index)
+{
+    std::list<Mutations::GenomicRegion> output;
+
+    for (const auto& [chr_name, chr_data] : chr_index) {
+        output.emplace_back(Mutations::GenomicPosition::stochr(chr_name), chr_data.length);
+    }
+
+    return output;
 }
 
 }   // FASTA

@@ -2,8 +2,8 @@
  * @file fasta_chr_reader.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines classes to read chromosomes from FASTA streams
- * @version 1.1
- * @date 2025-05-13
+ * @version 1.2
+ * @date 2025-10-11
  *
  * @copyright Copyright (c) 2023-2025
  *
@@ -36,6 +36,7 @@
 #include <algorithm>
 
 #include "genomic_position.hpp"
+#include "genomic_region.hpp"
 
 #include "fasta_reader.hpp"
 #include "fasta_utils.hpp"
@@ -123,6 +124,30 @@ template<>
 bool IndexedReader<ChromosomeData<Sequence>>::read(ChromosomeData<Sequence>& chr,
                                                    const std::string& chr_name,
                                                    RACES::UI::ProgressBar& progress_bar);
+
+/**
+ * @brief Get the chromosome regions from a FASTA index
+ *
+ * @param chr_index is an index of a FASTA file containing chromosomes
+ * @return a list of the genomic regions of the chromosomes described by the
+ *      FASTA file index
+ */
+std::list<Mutations::GenomicRegion>
+get_chromosome_regions(const Index<ChromosomeData<Sequence>>& chr_index);
+
+/**
+ * @brief Get the chromosome regions from a FASTA index
+ *
+ * @param idx_reader is an indexed FASTA file reader for chromosomes
+ * @return a list of the genomic regions of the chromosomes FASTA file associated
+ *      to the index reader
+ */
+inline std::list<Mutations::GenomicRegion>
+get_chromosome_regions(const IndexedReader<ChromosomeData<Sequence>>& idx_reader)
+{
+    return get_chromosome_regions(idx_reader.get_index());
+}
+
 
 }   // FASTA
 
