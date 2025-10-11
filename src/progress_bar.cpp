@@ -2,10 +2,10 @@
  * @file progress_bar.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements a progress bar
- * @version 1.0
- * @date 2024-06-10
+ * @version 1.1
+ * @date 2025-10-11
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2025
  *
  * MIT License
  *
@@ -36,12 +36,44 @@ namespace RACES
 namespace UI
 {
 
+ProgressBar::ProgressBar():
+    ProgressBar(std::cout, true)
+{}
+
 ProgressBar::ProgressBar(std::ostream& out):
     ProgressBar(out, false)
 {}
 
+#if WITH_INDICATORS
+void ProgressBar::build_new_indicator()
+{
+    using namespace indicators;
+
+    if (indicator != nullptr) {
+        delete indicator;
+    }
+
+    indicator = new indicators::ProgressBar{
+        option::BarWidth{40},
+        option::Start{" ["},
+        option::Fill{"█"},
+        option::Lead{"█"},
+        option::Remainder{"-"},
+        option::End{"]"},
+        option::ForegroundColor{Color::yellow},
+        option::ShowElapsedTime{true},
+        option::ShowPercentage{true},
+        option::FontStyles{std::vector<FontStyle>{FontStyle::bold}},
+        option::Stream{output_stream}
+    };
+
+    hide_console_cursor();
+}
+#endif // WITH_INDICATORS
+
 ProgressBar::ProgressBar(std::ostream& out, const bool hide):
-    last_update(std::chrono::system_clock::now()), percentage(0), message(), updated(false)
+    output_stream(out), last_update(std::chrono::system_clock::now()), percentage(0),
+    message(), updated(false)
 #if WITH_INDICATORS
     , indicator(nullptr)
 #endif // WITH_INDICATORS
@@ -51,31 +83,14 @@ ProgressBar::ProgressBar(std::ostream& out, const bool hide):
     update_interval = 1s;
 
     if (!hide) {
-        hide_console_cursor();
-
 #if WITH_INDICATORS
-        using namespace indicators;
-
-        indicator = new indicators::ProgressBar{
-            option::BarWidth{40},
-            option::Start{" ["},
-            option::Fill{"█"},
-            option::Lead{"█"},
-            option::Remainder{"-"},
-            option::End{"]"},
-            option::ForegroundColor{Color::yellow},
-            option::ShowElapsedTime{true},
-            option::ShowPercentage{true},
-            option::FontStyles{std::vector<FontStyle>{FontStyle::bold}},
-            option::Stream{out}
-        };
+        build_new_indicator();
 #endif  // WITH_INDICATORS
     }
 }
 
 ProgressBar& ProgressBar::set_message(const std::string& message)
 {
-
     this->message = message;
 
 #if WITH_INDICATORS
@@ -163,7 +178,7 @@ void ProgressBar::hide_console_cursor()
 #endif  // WITH_INDICATORS
 }
 
-ProgressBar::~ProgressBar()
+void ProgressBar::close()
 {
     set_message(this->message);
 
@@ -174,10 +189,36 @@ ProgressBar::~ProgressBar()
         }
 
         delete indicator;
+
+        indicator = nullptr;
     }
 #endif  // WITH_INDICATORS
 
     show_console_cursor();
+}
+
+ProgressBar& ProgressBar::init_new()
+{
+
+#if WITH_INDICATORS
+    if (indicator != nullptr) {
+        close();
+
+        build_new_indicator();
+    }
+#endif  // WITH_INDICATORS
+
+    percentage = 0;
+    last_update = std::chrono::system_clock::now();
+    message = "";
+    updated = false;
+
+    return *this;
+}
+
+ProgressBar::~ProgressBar()
+{
+    close();
 }
 
 }  // UI

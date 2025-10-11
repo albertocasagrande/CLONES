@@ -2,10 +2,10 @@
  * @file progress_bar.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a progress bar
- * @version 1.0
- * @date 2024-06-10
+ * @version 1.1
+ * @date 2025-10-11
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2025
  *
  * MIT License
  *
@@ -66,6 +66,7 @@ namespace UI
  */
 class ProgressBar
 {
+    std::ostream& output_stream;    //!< the output stream
     std::chrono::system_clock::time_point last_update;  //!< the last update time
 
     unsigned int percentage;  //!< the percentage level
@@ -75,10 +76,25 @@ class ProgressBar
 
 #if WITH_INDICATORS
     indicators::ProgressBar* indicator;  //!< the progress bar implementation
+
+    /**
+     * @brief Build a new indicator progress bar
+     *
+     * @return a pointer to a new indicator progress bar
+     */
+    void build_new_indicator();
 #endif
 
 public:
     std::chrono::system_clock::duration update_interval;  //!< the time between two effective updates
+
+    /**
+     * @brief The empty constructor
+     *
+     * The progress bar built by using this constructor
+     * avoid any output.
+     */
+    ProgressBar();
 
     /**
      * @brief The constructor
@@ -144,6 +160,22 @@ public:
      * @brief Hide the console cursor
      */
     static void hide_console_cursor();
+
+    /**
+     * @brief Close the progress bar
+     *
+     * This method closes the progress bar and makes the cursor
+     * visible.
+     */
+    void close();
+
+    /**
+     * @brief Close the progress bar and initialize a new one
+     *
+     * This method closes the progress bar and initializes a
+     * new one.
+     */
+    ProgressBar& init_new();
 
     /**
      * @brief The constructor
