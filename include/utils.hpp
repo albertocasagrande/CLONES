@@ -3,7 +3,7 @@
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines utility functions
  * @version 1.4
- * @date 2025-11-24
+ * @date 2025-10-11
  *
  * @copyright Copyright (c) 2023-2025
  *
@@ -37,9 +37,48 @@
 #include <set>
 #include <algorithm>
 #include <ostream>
+#include <concepts>
+#include <type_traits>
 
 #include<regex>
 #include<clocale>
+
+namespace RACES
+{
+
+/**
+ * @brief A structure defined to deal exclusively with non-empty packs
+ */
+template<typename...> struct last_arg_type; // primary has no ::type
+
+/**
+ * @brief A specialization of `last_arg_type` for packs with one type
+ *
+ * @tparam T is the only type of the pack
+ */
+template<typename T>
+struct last_arg_type<T> { using type = T; };
+
+/**
+ * @brief A specialization of `last_arg_type` for packs with at least one type
+ *
+ * @tparam T is the first type of the pack
+ * @tparam REST are the remaining pack
+ */
+template<typename T, typename... REST>
+struct last_arg_type<T, REST...> : last_arg_type<REST...> { };
+
+/**
+ * @brief Concept that is true only when the pack is non-empty and the last arg is not T
+ *
+ * @tparam T is the non-aimed type of the last parameter
+ * @tparam ARGS is the type of the parameters
+ */
+template<typename T, typename... ARGS>
+concept last_is_not = requires { typename last_arg_type<ARGS...>::type; } &&
+                        !std::same_as<std::remove_cvref_t<typename last_arg_type<ARGS...>::type>, T>;
+
+} // RACES
 
 /**
  * @brief Build a std::regex
