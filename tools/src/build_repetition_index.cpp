@@ -2,8 +2,8 @@
  * @file build_repetition_index.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Builds the repetition index
- * @version 1.1
- * @date 2025-07-12
+ * @version 1.2
+ * @date 2025-10-12
  *
  * @copyright Copyright (c) 2023-2025
  *
@@ -38,7 +38,6 @@
 #include "common.hpp"
 
 #include "genome_mutations.hpp"
-#include "context_index.hpp"
 #include "driver_storage.hpp"
 
 #include "progress_bar.hpp"

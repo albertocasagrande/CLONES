@@ -2,10 +2,10 @@
  * @file mutations_sim.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Main file for the RACES mutations simulator
- * @version 1.5
- * @date 2025-09-29
+ * @version 1.6
+ * @date 2025-10-12
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2025
  *
  * MIT License
  *
@@ -40,7 +40,7 @@
 
 #include "simulation.hpp"
 #include "descendant_forest.hpp"
-#include "context_index.hpp"
+#include "sbs_context_index.hpp"
 #include "mutation_engine.hpp"
 #include "germline.hpp"
 #include "read_simulator.hpp"
@@ -109,7 +109,7 @@ class MutationsSimulator : public BasicExecutable
     std::filesystem::path species_directory;
     std::filesystem::path snapshot_path;
     std::filesystem::path driver_mutations_filename;
-    std::filesystem::path context_index_filename;
+    std::filesystem::path context_index_path;
     std::filesystem::path rs_index_filename;
     std::filesystem::path ref_genome_filename;
     std::filesystem::path passenger_CNA_filename;
@@ -133,9 +133,9 @@ class MutationsSimulator : public BasicExecutable
     std::string germline_subject;
     bool epigenetic_FACS;
     bool write_SAM;
+    size_t cache_size;
 
     int seed;
-    size_t bytes_per_abs_position;
     bool quiet;
 
     std::list<RACES::Mutants::Evolutions::TissueSample>
@@ -163,22 +163,6 @@ class MutationsSimulator : public BasicExecutable
         return simulation.get_tissue_samples();
     }
 
-    template<typename ABSOLUTE_GENOTYPE_POSITION = uint32_t>
-    RACES::Mutations::ContextIndex<ABSOLUTE_GENOTYPE_POSITION> load_context_index(const std::string& filename) const
-    {
-        RACES::Archive::Binary::In archive(filename);
-
-        RACES::Mutations::ContextIndex<ABSOLUTE_GENOTYPE_POSITION> context_index;
-
-        if (quiet) {
-            archive & context_index;
-        } else {
-            archive.load(context_index, "context index");
-        }
-
-        return context_index;
-    }
-
     RACES::Mutations::RSIndex load_rs_index(const std::string& filename) const
     {
         RACES::Archive::Binary::In archive(filename);
@@ -203,9 +187,9 @@ class MutationsSimulator : public BasicExecutable
         return RACES::Mutations::Signature<MUTATION_TYPE>::read_from_stream(is);
     }
 
-    template<typename ABSOLUTE_GENOME_POSITION, typename RANDOM_GENERATOR>
+    template<typename RANDOM_GENERATOR>
     RACES::Mutations::PhylogeneticForest
-    place_mutations(RACES::Mutations::MutationEngine<ABSOLUTE_GENOME_POSITION,RANDOM_GENERATOR>& engine,
+    place_mutations(RACES::Mutations::MutationEngine<RANDOM_GENERATOR>& engine,
                     const RACES::Mutants::DescendantForest& forest,
                     const size_t& num_of_pre_neoplastic_SNVs,
                     const size_t& num_of_pre_neoplastic_IDs,
@@ -281,14 +265,22 @@ class MutationsSimulator : public BasicExecutable
         return time_map;
     }
 
-    template<typename GENOME_WIDE_POSITION>
+    template<typename RANDOM_GENERATOR>
     static std::map<RACES::Mutations::ChromosomeId, size_t>
-    get_number_of_alleles(const RACES::Mutations::ContextIndex<GENOME_WIDE_POSITION>&context_index,
+    get_number_of_alleles(const RACES::Mutations::SBSContextIndex<RANDOM_GENERATOR>&context_index,
                           const nlohmann::json& simulation_cfg)
     {
         using namespace RACES::Mutations;
 
-        auto chromosome_ids = context_index.get_chromosome_ids();
+        std::vector<ChromosomeId> chromosome_ids(context_index.get_chromosome_lengths().size());
+
+        auto it = chromosome_ids.begin();
+        for (const auto& chr_id : std::views::keys(context_index.get_chromosome_lengths())) {
+            *it = chr_id;
+
+            ++it;
+        }
+
         return RACES::ConfigReader::get_number_of_alleles(simulation_cfg, chromosome_ids);
     }
 
@@ -386,7 +378,7 @@ class MutationsSimulator : public BasicExecutable
         }
     };
 
-    template<typename GENOME_WIDE_POSITION>
+    template<typename RANDOM_GENERATOR = std::mt19937_64 >
     void run_abs_position() const
     {
         using namespace RACES;
@@ -438,7 +430,7 @@ class MutationsSimulator : public BasicExecutable
         auto SBS_signatures = load_signatures<SBSType>(SBS_filename);
         auto ID_signatures = load_signatures<IDType>(ID_filename);
 
-        auto context_index = load_context_index<GENOME_WIDE_POSITION>(context_index_filename);
+        auto context_index = RACES::Mutations::SBSContextIndex<RANDOM_GENERATOR>(context_index_path);
         auto rs_index = load_rs_index(rs_index_filename);
 
         if (!simulation_cfg.contains("exposures")) {
@@ -466,10 +458,9 @@ class MutationsSimulator : public BasicExecutable
             germline = GermlineMutations::load(germline_csv_filename, num_of_alleles, germline_subject);
         }
 
-        MutationEngine<GENOME_WIDE_POSITION> engine(context_index, rs_index,
-                                                    SBS_signatures, ID_signatures,
-                                                    mutational_properties, germline, driver_storage,
-                                                    passenger_CNAs);
+        MutationEngine<RANDOM_GENERATOR> engine(rs_index, context_index_path, SBS_signatures, ID_signatures,
+                                                mutational_properties, germline, driver_storage,
+                                                cache_size*1024*1024, passenger_CNAs);
 
         const auto& exposures_json = simulation_cfg["exposures"];
 
@@ -502,23 +493,44 @@ class MutationsSimulator : public BasicExecutable
         process_statistics(forest);
     }
 
-    void test_file_existence(boost::program_options::variables_map vm, const std::string& name,
-                             const std::filesystem::path& file, const std::string& producer="") const
+    void test_existence(boost::program_options::variables_map vm, const std::string& name,
+                        const std::filesystem::path& obj_path,
+                        const std::string& producer) const
     {
         if (!vm.count(name)) {
-            std::string msg = "The " + name + " file is mandatory.";
+            std::string msg = "The " + name + " is mandatory.";
             if (producer.size()>0) {
-                msg = msg + " You can produce it by using `" + producer + "`.";
+                msg = msg + " You can produce it by using `" + producer +"`.";
             }
             print_help_and_exit(msg, 1);
         }
 
-        if (!std::filesystem::exists(file)) {
-            print_help_and_exit("\"" + to_string(file) + "\"  does not exist.", 1);
+        if (!std::filesystem::exists(obj_path)) {
+            print_help_and_exit("\"" + to_string(obj_path) + "\"  does not exist.", 1);
         }
+    }
 
-        if (!std::filesystem::is_regular_file(file)) {
-            print_help_and_exit("\"" + to_string(file) + "\"  is not a regular file.", 1);
+    void test_file_existence(boost::program_options::variables_map vm, const std::string& name,
+                             const std::filesystem::path& file_path,
+                             const std::string& producer="") const
+    {
+        test_existence(vm, name, file_path, producer);
+
+        if (!std::filesystem::is_regular_file(file_path)) {
+            print_help_and_exit("\"" + to_string(file_path)
+                                 + "\"  is not a regular file.", 1);
+        }
+    }
+
+    void test_dir_existence(boost::program_options::variables_map vm, const std::string& name,
+                            const std::filesystem::path& dir_path,
+                            const std::string& producer="") const
+    {
+        test_existence(vm, name, dir_path, producer);
+
+        if (!std::filesystem::is_directory(dir_path)) {
+            print_help_and_exit("\"" + to_string(dir_path)
+                                + "\"  is not a directory.", 1);
         }
     }
 
@@ -540,7 +552,7 @@ class MutationsSimulator : public BasicExecutable
         }
 
         test_file_existence(vm, "driver mutations", driver_mutations_filename);
-        test_file_existence(vm, "context index", context_index_filename, "build_context_index");
+        test_dir_existence(vm, "context index", context_index_path, "build_context_index");
         test_file_existence(vm, "repetition index", rs_index_filename, "build_repetition_index");
         test_file_existence(vm, "SBS signature", SBS_filename);
         test_file_existence(vm, "ID signature", ID_filename);
@@ -696,6 +708,8 @@ public:
             ("overwrite,o", "overwrite the output directory")
             ("read-size,r", po::value<size_t>(&read_size)->default_value(150),
              "simulated read size")
+            ("context-index-cache-size,z", po::value<size_t>(&cache_size)->default_value(500),
+             "the context index cache size")
             ("insert-size-mean,i", po::value<double>(&insert_size_mean),
              "insert size mean (enable paired-read)")
             ("insert-size-stddev,d", po::value<double>(&insert_size_stddev),
@@ -721,8 +735,8 @@ public:
              "the name of the file describing the mutations simulation")
             ("species simulation", po::value<std::filesystem::path>(&species_directory),
              "the species simulation directory")
-            ("context index", po::value<std::filesystem::path>(&context_index_filename),
-             "the genome context index")
+            ("SBS context index directory", po::value<std::filesystem::path>(&context_index_path),
+             "the genome context index directory")
             ("repetition index", po::value<std::filesystem::path>(&rs_index_filename),
              "the genome repetition index")
             ("SBS signature", po::value<std::filesystem::path>(&SBS_filename),
@@ -788,17 +802,6 @@ public:
         epigenetic_FACS = vm.count("epigenetic-FACS")>0;
         write_SAM = vm.count("write-SAM")>0;
 
-        try {
-            using namespace RACES::Mutations;
-
-            RACES::Archive::Binary::In archive(context_index_filename);
-
-            bytes_per_abs_position = ContextIndex<>::read_bytes_per_absolute_position(archive);
-
-        } catch (std::exception& except) {
-            print_help_and_exit(except.what(), 1);
-        }
-
         validate(vm);
 
         snapshot_path = get_last_snapshot_path(species_directory, "species simulation");
@@ -807,21 +810,7 @@ public:
     void run() const
     {
         try {
-            switch (bytes_per_abs_position) {
-                case 2:
-                    run_abs_position<uint16_t>();
-                    break;
-                case 4:
-                    run_abs_position<uint32_t>();
-                    break;
-                case 8:
-                    run_abs_position<uint64_t>();
-                    break;
-                default:
-                    std::cerr << "Unsupported bits per absolute position."
-                              << " Supported values are 2, 4, or 8." << std::endl;
-                    exit(1);
-            }
+            run_abs_position<>();
         } catch (std::exception& except) {
             print_help_and_exit(except.what(), 1);
         }

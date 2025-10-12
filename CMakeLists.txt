@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.11)
+cmake_minimum_required(VERSION 3.23)
 
 project(RACES VERSION 1.1.0
               DESCRIPTION "RACES is an Advanced Cancer Evolution Simulation"
@@ -84,7 +84,6 @@ set(RACES_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/include/allele.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/cell.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/cell_event.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/cna.hpp
-                ${CMAKE_CURRENT_SOURCE_DIR}/include/context_index.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/csv_reader.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/descendant_forest.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/driver_storage.hpp
@@ -130,6 +129,7 @@ set(RACES_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/include/allele.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/sample_specification.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/sampling.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/sbs_context.hpp
+                ${CMAKE_CURRENT_SOURCE_DIR}/include/sbs_context_index.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/sbs_signature.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/sequencer.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/sid.hpp

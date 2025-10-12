@@ -3,7 +3,7 @@
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements a class to place mutations on a descendant forest
  * @version 1.6
- * @date 2025-11-21
+ * @date 2025-10-12
  *
  * @copyright Copyright (c) 2023-2025
  *
@@ -91,7 +91,7 @@ MutationStatistics& MutationStatistics::record(const std::string& sample_name,
 }
 
 MutationStatistics& MutationStatistics::record(const PhylogeneticForest& forest,
-                                               UI::ProgressBar* progress_bar)
+                                               UI::ProgressBar& progress_bar)
 {
     using namespace RACES;
     using namespace RACES::Mutations;
@@ -99,9 +99,7 @@ MutationStatistics& MutationStatistics::record(const PhylogeneticForest& forest,
     size_t total_steps{forest.num_of_leaves()};
     size_t recorded{0};
 
-    if (progress_bar!=nullptr) {
-        progress_bar->set_message("Collecting mutation data");
-    }
+    progress_bar.set_message("Collecting mutation data");
 
     for (const auto& [leaf_id, leaf_mutations] : get_leaf_mutation_tour(forest)) {
         const auto& leaf = forest.get_node(leaf_id);
@@ -110,17 +108,13 @@ MutationStatistics& MutationStatistics::record(const PhylogeneticForest& forest,
 
         record(sample_name, leaf_mutations);
 
-        if (progress_bar!=nullptr) {
-            size_t percentage = 100*(++recorded)/total_steps;
-            if (percentage>(progress_bar->get_progress())) {
-                progress_bar->set_progress(percentage);
-            }
+        size_t percentage = 100*(++recorded)/total_steps;
+        if (percentage>(progress_bar.get_progress())) {
+            progress_bar.set_progress(percentage);
         }
     }
 
-    if (progress_bar!=nullptr) {
-        progress_bar->set_message("Mutation data collected");
-    }
+    progress_bar.set_message("Mutation data collected");
 
     return *this;
 }

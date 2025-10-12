@@ -3,7 +3,7 @@
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a class to place mutations on a descendant forest
  * @version 1.33
- * @date 2025-10-20
+ * @date 2025-10-12
  *
  * @copyright Copyright (c) 2023-2025
  *
@@ -40,7 +40,7 @@
 #include "phylogenetic_forest.hpp"
 #include "mutant_id.hpp"
 
-#include "context_index.hpp"
+#include "sbs_context_index.hpp"
 #include "rs_index.hpp"
 #include "genome_mutations.hpp"
 #include "sbs_signature.hpp"
@@ -115,23 +115,23 @@ public:
      * @brief Record the SIDs in a list of sample genomic mutations
      *
      * @param[in] forest is a phylogenetic forest
-     * @param[in,out] progress_bar is a progress bar pointer
+     * @param[in,out] progress_bar is a progress bar
      * @return a reference to the updated object
      */
     MutationStatistics& record(const PhylogeneticForest& forest,
-                               UI::ProgressBar* progress_bar=nullptr);
+                               UI::ProgressBar& progress_bar);
 
     /**
      * @brief Record the SIDs in a list of sample genomic mutations
      *
      * @param[in] forest is a phylogenetic forest
-     * @param[in,out] progress_bar is a progress bar pointer
      * @return a reference to the updated object
      */
-    inline MutationStatistics& record(const PhylogeneticForest& forest,
-                                      UI::ProgressBar& progress_bar)
+    inline MutationStatistics& record(const PhylogeneticForest& forest)
     {
-        return record(forest, &progress_bar);
+        UI::ProgressBar progress_bar;
+
+        return record(forest, progress_bar);
     }
 
     /**
@@ -170,10 +170,9 @@ using MutationalExposure = std::map<std::string, double>;
  * The objects of this class place mutations on the cell genome according
  * to a descendant forest
  *
- * @tparam GENOME_WIDE_POSITION is the type used to represent genome-wise position
  * @tparam RANDOM_GENERATOR is the type of random generator
  */
-template<typename GENOME_WIDE_POSITION = uint32_t, typename RANDOM_GENERATOR = std::mt19937_64>
+template<typename RANDOM_GENERATOR = std::mt19937_64>
 class MutationEngine
 {
     /**
@@ -196,19 +195,13 @@ class MutationEngine
     using IDSignatures = Signatures<IDType>;
 
     /**
-     * @brief The stack of contexts removed from the context index
-     */
-    using ContextStack = std::stack<std::pair<SBSContext, GENOME_WIDE_POSITION>>;
-
-    /**
      * @brief The stack of the repetition removed from the repetition index
      */
     using IDTypeStack = std::stack<IDType>;
 
     RANDOM_GENERATOR generator; //!< the random generator
 
-    ContextIndex<GENOME_WIDE_POSITION> context_index;  //!< the genome context index
-    ContextStack context_stack;                        //!< the stack of the contexts removed from `context_index`
+    SBSContextIndex<RANDOM_GENERATOR> context_index;    //!< the SBS context index
 
     RSIndex rs_index;       //!< the genome repetition index
     IDTypeStack rs_stack;   //!< the stack of the repetition removed from `rs_index`
@@ -292,37 +285,27 @@ class MutationEngine
         using namespace RACES::Mutations;
 
         SBSContext context = m_type.get_context();
-        SBSContext compl_context = context.get_reverse_complement();
+        SBSContext extracted;
 
-        size_t total_pos = context_index[context].size();
-        total_pos += context_index[compl_context].size();
-
-        size_t index;
-        {
-            std::uniform_int_distribution<> u_dist(0,total_pos-1);
-            index = u_dist(generator);
-        }
-
-        char alt_base = m_type.get_replace_base();
-        if (index >= context_index[context].size()) {
-            index -= context_index[context].size();
-            context = compl_context;
-
-            alt_base = GenomicSequence::get_complement(alt_base);
-        }
-
-        GENOME_WIDE_POSITION pos;
-
+        GenomicPosition g_pos;
         if (infinite_sites_model) {
-            pos = context_index.extract(context, index);
-
-            context_stack.push({context, pos});
+            std::tie(extracted, g_pos) = context_index.extract_from_class(generator, context);
         } else {
-            pos = context_index[context][index];
+            std::tie(extracted, g_pos) = context_index.choose_from_class(generator, context);
         }
-        auto genomic_pos = context_index.get_genomic_position(pos);
 
-        return {RANDOM_ALLELE, genomic_pos.chr_id, genomic_pos.position,
+        // the mutation occurs in the context's second position
+        ++g_pos.position;
+
+        context.get_central_nucleotide();
+        char alt_base = m_type.get_replace_base();
+        if (extracted != context) {
+            alt_base = GenomicSequence::get_complement(alt_base);
+
+            context = extracted;
+        }
+
+        return {RANDOM_ALLELE, g_pos.chr_id, g_pos.position,
                 context.get_central_nucleotide(), alt_base, Mutation::UNDEFINED};
     }
 
@@ -392,6 +375,11 @@ class MutationEngine
         size_t new_CNAs{0};
         size_t available{passenger_CNAs.size()};
         while (new_CNAs < num_of_mutations) {
+            if (available == 0) {
+                throw std::runtime_error("Missing "
+                                         + std::to_string(num_of_mutations-new_CNAs)
+                                         + " CNAs. No more passenger CNAs are available.");
+            }
             const size_t last_pos = available-1;
             std::uniform_int_distribution<size_t> u_dist(0, last_pos);
 
@@ -983,16 +971,15 @@ class MutationEngine
      * @param[in] driver_mutations is the map associating mutant ids and mutations
      * @param[in] ancestor_mutations is the genomic mutation of the ancestor
      * @param[in,out] visited_nodes is the number of visited nodes
-     * @param[in,out] progress_bar is a progress bar pointer
+     * @param[in,out] progress_bar is a progress bar
      */
     void place_mutations(PhylogeneticForest::node& node, GenomeMutations& node_mutations,
                          const std::map<Mutants::SpeciesId, Timed<PassengerRates>>& passenger_rates,
                          std::map<Mutants::MutantId, DriverMutations>& driver_mutations,
-                         size_t& visited_nodes, UI::ProgressBar *progress_bar)
+                         size_t& visited_nodes, UI::ProgressBar& progress_bar)
     {
         using namespace RACES::Mutations;
 
-        const size_t context_stack_size = context_stack.size();
         const size_t rs_stack_size = rs_stack.size();
 
         node.arising_mutations() = MutationList();
@@ -1012,12 +999,9 @@ class MutationEngine
         place_CNAs(node, node_mutations, node_rates);
 
         ++visited_nodes;
-        if (progress_bar != nullptr) {
-
-            size_t percentage = (100*visited_nodes)/(node.get_forest()).num_of_nodes();
-            if (percentage>progress_bar->get_progress()) {
-                progress_bar->set_progress(percentage);
-            }
+        size_t percentage = (100*visited_nodes)/(node.get_forest()).num_of_nodes();
+        if (percentage > progress_bar.get_progress()) {
+            progress_bar.set_progress(percentage);
         }
 
         if (node.is_leaf()) {
@@ -1039,11 +1023,6 @@ class MutationEngine
         }
 
         if (!infinite_sites_model) {
-            // reverse context index extractions
-            while (get_stack_size<SBSType>() > context_stack_size) {
-                restore_last_extracted_from_index<SBSType>();
-            }
-
             // reverse repetition index extractions
             while (get_stack_size<IDType>() > rs_stack_size) {
                 restore_last_extracted_from_index<IDType>();
@@ -1062,7 +1041,7 @@ class MutationEngine
     size_t get_stack_size() const
     {
         if constexpr(std::is_base_of_v<MUTATION_TYPE, SBSType>) {
-            return context_stack.size();
+            return 0;
         }
 
         if constexpr(std::is_base_of_v<MUTATION_TYPE, IDType>) {
@@ -1083,10 +1062,6 @@ class MutationEngine
     void restore_last_extracted_from_index()
     {
         if constexpr(std::is_base_of_v<MUTATION_TYPE, SBSType>) {
-            const auto& top_stack = context_stack.top();
-            context_index.insert(top_stack.first, top_stack.second);
-            context_stack.pop();
-
             return;
         }
 
@@ -1194,13 +1169,12 @@ class MutationEngine
      * @param[in] context_index is a context index
      * @param[in] germline_mutations are the germline mutations
      */
-    static void check_genomes_consistency(const ContextIndex<GENOME_WIDE_POSITION>& context_index,
+    static void check_genomes_consistency(const SBSContextIndex<RANDOM_GENERATOR>& context_index,
                                           const GenomeMutations& germline_mutations)
     {
-        const auto context_chr_ids = context_index.get_chromosome_ids();
         const auto& germline_chromosomes = germline_mutations.get_chromosomes();
 
-        for (const auto chr_id : context_chr_ids) {
+        for (const auto& chr_id : std::views::keys(context_index.get_chromosome_lengths())) {
             if (germline_chromosomes.find(chr_id) == germline_chromosomes.end()) {
                 throw std::out_of_range("The germline does not contain Chr. "
                                         + GenomicPosition::chrtos(chr_id)
@@ -1437,60 +1411,65 @@ public:
     /**
      * @brief A constructor
      *
-     * @param[in, out] context_index is the genome context index
      * @param[in, out] repetition_index is the genome repetition index
+     * @param[in] context_index_path is the SBS context index directory path
      * @param[in] SBS_signatures is the map of the SBS signatures
      * @param[in] ID_signatures is the map of the indel signatures
      * @param[in] germline_mutations are the germline mutations
      * @param[in] driver_storage is the storage of driver mutations
+     * @param[in] context_index_cache_size is the context index cache size
      * @param[in] passenger_CNAs is the vector of the admissible passenger CNAs
      * @param[in] driver_CNA_min_distance is the minimum distance between a driver
      *      mutation and a passenger CNA
      * @param[in] warning is the warning function
      */
-    MutationEngine(ContextIndex<GENOME_WIDE_POSITION>& context_index,
-                   RSIndex& repetition_index,
+    MutationEngine(RSIndex& repetition_index,
+                   const std::filesystem::path& context_index_path,
                    const std::map<std::string, SBSSignature>& SBS_signatures,
                    const std::map<std::string, IDSignature>& ID_signatures,
                    const GenomeMutations& germline_mutations,
                    const DriverStorage& driver_storage,
+                   const size_t context_index_cache_size = 1000000000,
                    const std::vector<CNA>& passenger_CNAs={},
                    const unsigned int& driver_CNA_min_distance=10000,
                    WarningFunction warning=RACES::warning):
-        MutationEngine(context_index, repetition_index, SBS_signatures,
+        MutationEngine(repetition_index, context_index_path, SBS_signatures,
                        ID_signatures, MutationalProperties(),
-                       germline_mutations, driver_storage, passenger_CNAs,
-                       driver_CNA_min_distance, warning)
+                       germline_mutations, driver_storage,
+                       context_index_cache_size,
+                       passenger_CNAs, driver_CNA_min_distance, warning)
     {}
 
     /**
      * @brief A constructor
      *
-     * @param[in, out] context_index is the genome context index
      * @param[in, out] repetition_index is the genome repetition index
+     * @param[in] context_index_path is the SBS context index directory path
      * @param[in] SBS_signatures is the map of the SBS signatures
      * @param[in] ID_signatures is the map of the indel signatures
      * @param[in] mutational_properties are the mutational properties of all the species
      * @param[in] germline_mutations are the germline mutations
      * @param[in] driver_storage is the storage of driver mutations
+     * @param[in] context_index_cache_size is the context index cache size
      * @param[in] passenger_CNAs is the vector of the admissible passenger CNAs
      * @param[in] driver_CNA_min_distance is the minimum distance between a driver
      *      mutation and a passenger CNA
      * @param[in] warning is the warning function
      */
-    MutationEngine(ContextIndex<GENOME_WIDE_POSITION>& context_index,
-                   RSIndex& repetition_index,
+    MutationEngine(RSIndex& repetition_index,
+                   const std::filesystem::path& context_index_path,
                    const std::map<std::string, SBSSignature>& SBS_signatures,
                    const std::map<std::string, IDSignature>& ID_signatures,
                    const MutationalProperties& mutational_properties,
                    const GenomeMutations& germline_mutations,
                    const DriverStorage& driver_storage,
+                   const size_t context_index_cache_size = 1000000000,
                    const std::vector<CNA>& passenger_CNAs={},
                    const unsigned int& driver_CNA_min_distance=10000,
                    WarningFunction warning=RACES::warning):
-        generator(), context_index(context_index), rs_index(repetition_index),
-        SBS_signatures{SBS_signatures}, ID_signatures{ID_signatures},
-        mutational_properties(mutational_properties),
+        generator(), context_index{context_index_path, context_index_cache_size},
+        rs_index(repetition_index), SBS_signatures{SBS_signatures},
+        ID_signatures{ID_signatures}, mutational_properties(mutational_properties),
         germline_mutations(std::make_shared<GenomeMutations>(germline_mutations)),
         dm_genome(germline_mutations.copy_structure()),
         driver_storage(driver_storage),
@@ -1646,33 +1625,7 @@ public:
      * @param[in] descendant_forest is a descendant forest
      * @param[in] num_of_pre_neoplastic_SNVs is the number of pre-neoplastic SNVs
      * @param[in] num_of_pre_neoplastic_indels is the number of pre-neoplastic indels
-     * @param[in] seed is the random generator seed
-     * @param[in] pre_neoplastic_SNV_signature_name is the pre-neoplastic SNV signature name
-     * @param[in] pre_neoplastic_indel_signature_name is the pre-neoplastic indel signature name
-     * @return a phylogenetic forest having the structure of `descendant_forest`
-     */
-    inline
-    PhylogeneticForest
-    place_mutations(const Mutants::DescendantForest& descendant_forest,
-                    const size_t& num_of_pre_neoplastic_SNVs,
-                    const size_t& num_of_pre_neoplastic_indels,
-                    const int& seed=0,
-                    const std::string& pre_neoplastic_SNV_signature_name="SBS1",
-                    const std::string& pre_neoplastic_indel_signature_name="ID1")
-    {
-        return place_mutations(descendant_forest, num_of_pre_neoplastic_SNVs,
-                               num_of_pre_neoplastic_indels, nullptr, seed,
-                               pre_neoplastic_SNV_signature_name,
-                               pre_neoplastic_indel_signature_name);
-    }
-
-    /**
-     * @brief Place genomic mutations on a descendant forest
-     *
-     * @param[in] descendant_forest is a descendant forest
-     * @param[in] num_of_pre_neoplastic_SNVs is the number of pre-neoplastic SNVs
-     * @param[in] num_of_pre_neoplastic_indels is the number of pre-neoplastic indels
-     * @param[in, out] progress_bar is a progress bar pointer
+     * @param[in, out] progress_bar is a progress bar
      * @param[in] seed is the random generator seed
      * @param[in] pre_neoplastic_SNV_signature_name is the pre-neoplastic SNV signature name
      * @param[in] pre_neoplastic_indel_signature_name is the pre-neoplastic indel signature name
@@ -1682,7 +1635,7 @@ public:
     place_mutations(const Mutants::DescendantForest& descendant_forest,
                     const size_t& num_of_pre_neoplastic_SNVs,
                     const size_t& num_of_pre_neoplastic_indels,
-                    UI::ProgressBar *progress_bar, const int& seed=0,
+                    UI::ProgressBar& progress_bar, const int seed=0,
                     const std::string& pre_neoplastic_SNV_signature_name="SBS1",
                     const std::string& pre_neoplastic_indel_signature_name="ID1")
     {
@@ -1714,6 +1667,11 @@ public:
         auto chr_regions = context_index.get_chromosome_regions();
 
         auto wild_type_structure = germline_mutations->copy_structure();
+
+        context_index.boot_up_tours(generator, progress_bar);
+
+        progress_bar.init_new();
+        progress_bar.set_message("Placing mutations");
 
         signature_reset();
 
@@ -1751,7 +1709,6 @@ public:
      * @param[in] descendant_forest is a descendant forest
      * @param[in] num_of_pre_neoplastic_SNVs is the number of pre-neoplastic SNVs
      * @param[in] num_of_pre_neoplastic_indels is the number of pre-neoplastic indels
-     * @param[in, out] progress_bar is a progress bar pointer
      * @param[in] seed is the random generator seed
      * @param[in] pre_neoplastic_SNV_signature_name is the pre-neoplastic SNV signature name
      * @param[in] pre_neoplastic_indel_signature_name is the pre-neoplastic indel signature name
@@ -1760,13 +1717,14 @@ public:
     PhylogeneticForest
     place_mutations(const Mutants::DescendantForest& descendant_forest,
                     const size_t& num_of_pre_neoplastic_SNVs,
-                    const size_t& num_of_pre_neoplastic_indels,
-                    UI::ProgressBar& progress_bar, const int& seed=0,
+                    const size_t& num_of_pre_neoplastic_indels, const int seed=0,
                     const std::string& pre_neoplastic_SNV_signature_name="SBS1",
                     const std::string& pre_neoplastic_indel_signature_name="ID1")
     {
+        UI::ProgressBar progress_bar;
+
         return place_mutations(descendant_forest, num_of_pre_neoplastic_SNVs,
-                               num_of_pre_neoplastic_indels, &progress_bar, seed,
+                               num_of_pre_neoplastic_indels, progress_bar, seed,
                                pre_neoplastic_SNV_signature_name,
                                pre_neoplastic_indel_signature_name);
     }

@@ -2,10 +2,10 @@
  * @file build_context_index.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Builds the context index
- * @version 1.1
- * @date 2024-07-12
+ * @version 1.2
+ * @date 2025-10-12
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2025
  *
  * MIT License
  *
@@ -38,27 +38,24 @@
 #include "common.hpp"
 
 #include "genome_mutations.hpp"
-#include "context_index.hpp"
+#include "sbs_context_index.hpp"
 #include "driver_storage.hpp"
 
 #include "progress_bar.hpp"
 
 class ContextIndexBuilder : public BasicExecutable
 {
-    std::string output_filename;
+    std::string index_directory;
     std::string genome_fasta_filename;
     std::string driver_mutations_filename;
-    size_t sampling_rate;
-    unsigned int byte_per_abs_position;
+    size_t cache_size;
     bool quiet;
 
-    template<typename GENOME_WIDE_POSITION>
-    std::list<RACES::Mutations::GenomicRegion> build_and_save_context_index() const
+    void build_and_save_context_index() const
     {
         using namespace RACES;
         using namespace RACES::Mutations;
 
-        std::list<GenomicRegion> chr_regions;
         std::set<GenomicRegion> regions_to_avoid;
 
         if (driver_mutations_filename!="") {
@@ -72,30 +69,19 @@ class ContextIndexBuilder : public BasicExecutable
         }
 
         {
-            using Index = ContextIndex<GENOME_WIDE_POSITION>;
+            using Index = SBSContextIndex<std::mt19937_64>;
 
             Index context_index;
 
+            std::mt19937_64 random_generator(0);
             if (quiet) {
-                context_index = Index::build_index(genome_fasta_filename, regions_to_avoid, sampling_rate);
+                Index::build(random_generator, index_directory, genome_fasta_filename,
+                             regions_to_avoid, cache_size);
             } else {
-                UI::ProgressBar::hide_console_cursor();
-
                 UI::ProgressBar progress_bar(std::cout);
 
-                context_index = Index::build_index(genome_fasta_filename, regions_to_avoid, sampling_rate, &progress_bar);
-            }
-
-            chr_regions = context_index.get_chromosome_regions();
-
-            if (chr_regions.size() > 0) {
-                Archive::Binary::Out archive(output_filename);
-
-                if (quiet) {
-                    archive & context_index;
-                } else {
-                    archive.save(context_index, "context index");
-                }
+                Index::build(random_generator, index_directory, genome_fasta_filename,
+                             regions_to_avoid, cache_size, progress_bar);
             }
 
             if (!quiet) {
@@ -107,21 +93,7 @@ class ContextIndexBuilder : public BasicExecutable
             UI::ProgressBar::show_console_cursor();
 
             std::cout << "done" << std::endl;
-
-            if (chr_regions.size()==0) {
-                std::cout << " No chromosome processed. Try to select the proper "
-                          << "sequence name decoder by using \"-s\"" << std::endl;
-            } else {
-                std::cout << " Processed:" << std::endl;
-                for (const auto& chr_region: chr_regions) {
-                    std::cout << "  - Chromosome "
-                                << GenomicPosition::chrtos(chr_region.get_chromosome_id())
-                                << " (size: " << chr_region.size() << " bps)" << std::endl;
-                }
-            }
         }
-
-        return chr_regions;
     }
 
 public:
@@ -134,13 +106,10 @@ public:
         visible_options.at("generic").add_options()
             ("driver-mutations,d", po::value<std::string>(&driver_mutations_filename),
              "the driver mutations file")
-            ("output-filename,o", po::value<std::string>(&output_filename),
-             "output filename")
-            ("sampling-rate,s", po::value<size_t>(&sampling_rate)->default_value(1),
-             "context sampling rate (to sample contexts and reduce index memory and space requirements)")
-            ("force-overwrite,f", "force overwriting output file")
-            ("bytes-per-pos,b", po::value<unsigned int>(&byte_per_abs_position)->default_value(4),
-             "bytes per absolute position (2, 4, or 8)")
+            ("index-directory,o", po::value<std::string>(&index_directory),
+             "index directory")
+            ("cache-size,c", po::value<size_t>(&cache_size)->default_value(1000000),
+             "cache size in Mbytes")
 #if WITH_INDICATORS
             ("quiet,q", "disable output messages")
 #endif // WITH_INDICATORS
@@ -179,40 +148,22 @@ public:
             print_help_and_exit("Missing genome FASTA filename.", 1);
         }
 
-        if (!vm.count("output-filename")) {
-            output_filename = std::filesystem::path(genome_fasta_filename + ".cif").filename();
+        if (!vm.count("index-directory")) {
+            index_directory = "context_index";
         }
 
-        if (vm.count("sampling-rate") && sampling_rate==0) {
-            print_help_and_exit("The sampling rate must be positive.", 1);
-        }
-
-        if (std::ifstream(output_filename).good() && !vm.count("force-overwrite")) {
-            const auto msg = "The output file \"" + output_filename + "\" already exists. "
-                             + "Use \"--force-overwrite\" to overwrite it.";
+        if (std::filesystem::exists(index_directory)) {
+            const auto msg = "The input directory \"" + index_directory + "\" already exists.";
 
             print_help_and_exit(msg, 1);
         }
     }
 
-    std::list<RACES::Mutations::GenomicRegion> run() const
+    void run() const
     {
         using namespace RACES::IO::FASTA;
 
-        switch (byte_per_abs_position) {
-            case 2:
-                return build_and_save_context_index<uint16_t>();
-            case 4:
-                return build_and_save_context_index<uint32_t>();
-            case 8:
-                return build_and_save_context_index<uint64_t>();
-            default:
-                std::cerr << "Unsupported bits per absolute position."
-                        << " Supported values are 1, 2, 4, or 8." << std::endl<< std::endl;
-
-                print_help_and_exit(1);
-                exit(1);
-        }
+        build_and_save_context_index();
     }
 };
 

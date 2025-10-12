@@ -2,8 +2,8 @@
  * @file phylogenetic_forest.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines classes and function for phylogenetic forests
- * @version 1.15
- * @date 2025-11-21
+ * @version 1.14
+ * @date 2025-10-12
  *
  * @copyright Copyright (c) 2023-2025
  *
@@ -552,7 +552,7 @@ public:
         return forest;
     }
 
-    template<typename GENOME_WIDE_POSITION, typename RANDOM_GENERATOR>
+    template<typename RANDOM_GENERATOR>
     friend class MutationEngine;
 };
 

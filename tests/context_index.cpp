@@ -2,10 +2,10 @@
  * @file context_index.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Testing RACES::Mutations::ContextIndex class
- * @version 0.9
- * @date 2024-05-11
+ * @version 1.0
+ * @date 2025-10-12
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2025
  *
  * MIT License
  *
@@ -33,36 +33,45 @@
 
 #include <boost/test/unit_test.hpp>
 
-#include <fstream>
+#include <filesystem>
 
-#include "context_index.hpp"
-
+#include "sbs_context_index.hpp"
 
 BOOST_AUTO_TEST_CASE(context_index_creation)
 {
     using namespace RACES::Mutations;
 
-    BOOST_CHECK_NO_THROW(ContextIndex());
+    BOOST_CHECK_NO_THROW(SBSContextIndex());
 
-    BOOST_CHECK_NO_THROW(ContextIndex<>::build_index(FASTA_FILE));
+    std::mt19937_64 random_generator(0);
+
+    const auto index_path = get_a_temporary_path("sbs_context_index_test",
+                                                 std::filesystem::temp_directory_path());
+
+    BOOST_CHECK_NO_THROW(SBSContextIndex<>::build(random_generator, index_path,
+                                                  FASTA_FILE));
+
+    std::filesystem::remove_all(index_path);
 
     std::set<GenomicRegion> regions{{{2,115}, 20},
                                     {{1,5}, 73},
                                     {{2,247}, 11}};
 
-    BOOST_CHECK_NO_THROW(ContextIndex<>::build_index(FASTA_FILE, regions));
+    BOOST_CHECK_NO_THROW(SBSContextIndex<>::build(random_generator, index_path,
+                                                  FASTA_FILE, regions));
 
-    BOOST_CHECK_THROW(ContextIndex<>::build_index("/TEST-ERROR"), std::runtime_error);
+    BOOST_CHECK_THROW(SBSContextIndex<>::build(random_generator, "/TEST-ERROR",
+                                               FASTA_FILE), std::runtime_error);
 }
 
-template<typename GENOME_WIDE_POSITION>
-std::set<RACES::Mutations::GenomicPosition> get_genomic_positions(const RACES::Mutations::ContextIndex<GENOME_WIDE_POSITION>& context_index,
+template<typename RANDOM_GENERATOR>
+std::set<RACES::Mutations::GenomicPosition> get_genomic_positions(const RACES::Mutations::SBSContextIndex<RANDOM_GENERATOR>& context_index,
                                                                    const RACES::Mutations::SBSContext& mutational_context)
 {
     std::set<RACES::Mutations::GenomicPosition> positions;
 
-    for (const auto& abs_pos: context_index[mutational_context]) {
-        positions.insert(context_index.get_genomic_position(abs_pos));
+    for (const auto& g_pos: context_index[mutational_context]) {
+        positions.insert(g_pos);
     }
 
     return positions;
@@ -77,12 +86,12 @@ struct ContextFixture
 
     ContextFixture():
         test_positions{
-            {"ACT",{{1,77},{2,264},{3,6}}},
-            {"GCG",{{1,31},{3,9}}},
-            {"TCC",{{1,84},{2,296}}},
-            {"TCT",{{1,62},{1,108},{2,164},{2,166}}},
-            {"GCT",{{1,82},{2,128},{2,171},{2,294}}},
-            {"TCG",{{2,126}}}
+            {"ACT",{{1,76},{2,263},{3,5}}},
+            {"GCG",{{1,30},{3,8}}},
+            {"TCC",{{1,83},{2,295}}},
+            {"TCT",{{1,61},{1,107},{2,163},{2,165}}},
+            {"GCT",{{1,81},{2,127},{2,170},{2,293}}},
+            {"TCG",{{2,125}}}
         }
     {}
 };
@@ -94,7 +103,13 @@ BOOST_AUTO_TEST_CASE(context_index_whole_genome)
 {
     using namespace RACES::Mutations;
 
-    auto context_index = ContextIndex<>::build_index(FASTA_FILE);
+    std::mt19937_64 random_generator(0);
+
+    const auto index_path = get_a_temporary_path("sbs_context_index_test",
+                                                 std::filesystem::temp_directory_path());
+
+    auto context_index = SBSContextIndex<>::build(random_generator, index_path,
+                                                  FASTA_FILE);
 
     for (const auto& [context_test, positions_test]: test_positions) {
         std::set<RACES::Mutations::GenomicPosition> positions;
@@ -112,8 +127,9 @@ BOOST_AUTO_TEST_CASE(context_index_whole_genome)
         for (; it != positions.end(); ++it, ++it_test) {
             BOOST_CHECK_EQUAL(*it, *it_test);
         }
-
     }
+
+    std::filesystem::remove_all(index_path);
 }
 
 bool in_regions(const std::set<RACES::Mutations::GenomicRegion>& genomic_regions,
@@ -145,7 +161,12 @@ BOOST_AUTO_TEST_CASE(context_index_regions)
         }
     }
 
-    auto context_index = ContextIndex<>::build_index(FASTA_FILE, regions);
+    std::mt19937_64 random_generator(0);
+    const auto index_path = get_a_temporary_path("sbs_context_index_test",
+                                                 std::filesystem::temp_directory_path());
+
+    auto context_index = SBSContextIndex<>::build(random_generator, index_path,
+                                                  FASTA_FILE, regions);
 
     for (const auto& [context_test, positions_test]: in_context_positions) {
         std::set<RACES::Mutations::GenomicPosition> positions;
@@ -162,38 +183,35 @@ BOOST_AUTO_TEST_CASE(context_index_regions)
         for (; it != positions.end(); ++it, ++it_test) {
             BOOST_CHECK_EQUAL(*it, *it_test);
         }
-
     }
+
+    std::filesystem::remove_all(index_path);
 }
 
 BOOST_AUTO_TEST_CASE(context_index_remove_insert)
 {
     using namespace RACES::Mutations;
 
-    auto context_index = ContextIndex<>::build_index(FASTA_FILE);
+    std::mt19937_64 random_generator(0);
+    const auto index_path = get_a_temporary_path("sbs_context_index_test",
+                                                 std::filesystem::temp_directory_path());
+
+    auto context_index = SBSContextIndex<>::build(random_generator, index_path,
+                                                  FASTA_FILE);
 
     auto context = "CCT";
 
-    BOOST_CHECK_EQUAL(context_index[context].size(), 8);
+    auto& context_bucket = context_index[context];
 
-    std::vector<uint32_t> expected{8,14,20,26,38,67,88,372};
+    BOOST_CHECK_EQUAL(context_bucket.size(), 8);
 
+    std::set<GenomicPosition> expected{{1, 7}, {1, 13}, {1, 19},
+                                       {1, 25}, {1, 37}, {1, 66},
+                                       {1, 87}, {2, 152}};
     for (size_t i=0; i<8; ++i) {
-        BOOST_CHECK_EQUAL(context_index[context][i], expected[i]);
+        BOOST_CHECK(expected.count(context_bucket[i])>0);
     }
-
-    auto value = context_index.extract(context, 3);
-
-    BOOST_CHECK_EQUAL(value, expected[3]);
-    BOOST_CHECK_EQUAL(context_index[context].size(), 7);
-
-    context_index.insert(context, value, 3);
-
-    BOOST_CHECK_EQUAL(context_index[context].size(), 8);
-
-    for (size_t i=0; i<8; ++i) {
-        BOOST_CHECK_EQUAL(context_index[context][i], expected[i]);
-    }
+    std::filesystem::remove_all(index_path);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
