@@ -2,8 +2,8 @@
  * @file sbs_context_index.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements SBS context index and its builder
- * @version 1.0
- * @date 2025-10-12
+ * @version 1.1
+ * @date 2025-10-13
  *
  * @copyright Copyright (c) 2023-2025
  *
@@ -64,7 +64,7 @@ struct partition<Mutations::SBSContext>
     /**
      * @brief Return a list of the values in a class
      *
-     * @param value is a representant of the class that is
+     * @param[in] value is a representant of the class that is
      *      aimed
      * @return a list of the values in the class including
      *      `value`
@@ -301,18 +301,18 @@ public:
      *
      * This method builds a SBS context index.
      *
-     * @param random_generator is a random generator
-     * @param index_path is the path to the directory in which
+     * @param[in,out] random_generator is a random generator
+     * @param[in] index_path is the path to the directory in which
      *         the index is stored
-     * @param genome_stream is the stream of the chromosomes to be indexed
-     * @param regions_to_avoid is the set of the regions that should
+     * @param[in] genome_stream is the stream of the chromosomes to be indexed
+     * @param[in] regions_to_avoid is the set of the regions that should
      *         not be considered by the index
-     * @param tmp_dir is the directory that will contains the
+     * @param[in] tmp_dir is the directory that will contains the
      *         temporary files
-     * @param cache_size is the size of the cache used to build the sample
-     * @param sampling_delta is the number of loci of a specific context
+     * @param[in] cache_size is the size of the cache used to build the sample
+     * @param[in] sampling_delta is the number of loci of a specific context
      *         to be found before inserting one locus in the index
-     * @param progress_bar is a progress bar
+     * @param[in,out] progress_bar is a progress bar
      * @return An SBS context index containing the loci in `genome_stream`
      *          not laying in `regions_to_avoid` sampled according
      *          `sampling_delta`
@@ -389,19 +389,19 @@ public:
      *
      * This method builds a SBS context index.
      *
-     * @param random_generator is a random generator
-     * @param index_path is the path to the directory in which
+     * @param[in,out] random_generator is a random generator
+     * @param[in] index_path is the path to the directory in which
      *         the index is stored
-     * @param genome_fasta is the path of the FASTA file containing the
+     * @param[in] genome_fasta is the path of the FASTA file containing the
      *         sequences of the chromosomes to be indexed
-     * @param regions_to_avoid is the set of the regions that should not
+     * @param[in] regions_to_avoid is the set of the regions that should not
      *         be considered by the index
-     * @param tmp_dir is the directory that will contains the
+     * @param[in] tmp_dir is the directory that will contains the
      *         temporary files
-     * @param cache_size is the size of the cache used to build the sample
-     * @param sampling_delta is the number of loci of a specific context
+     * @param[in] cache_size is the size of the cache used to build the sample
+     * @param[in] sampling_delta is the number of loci of a specific context
      *         to be found before inserting one locus in the index
-     * @param progress_bar is a progress bar
+     * @param[in,out] progress_bar is a progress bar
      * @return An SBS context index containing the loci in `genome_stream`
      *          not laying in `regions_to_avoid`
      */
@@ -431,17 +431,17 @@ public:
      *
      * This method builds a SBS context index.
      *
-     * @param random_generator is a random generator
-     * @param index_path is the path to the directory in which
+     * @param[in,out] random_generator is a random generator
+     * @param[in] index_path is the path to the directory in which
      *         the index is stored
-     * @param genome_fasta is the path of the FASTA file containing the
+     * @param[in] genome_fasta is the path of the FASTA file containing the
      *         sequences of the chromosomes to be indexed
-     * @param regions_to_avoid is the set of the regions that should not
+     * @param[in] regions_to_avoid is the set of the regions that should not
      *         be considered by the index
-     * @param cache_size is the size of the cache used to build the sample
-     * @param sampling_delta is the number of loci of a specific context
+     * @param[in] cache_size is the size of the cache used to build the sample
+     * @param[in] sampling_delta is the number of loci of a specific context
      *         to be found before inserting one locus in the index
-     * @param progress_bar is a progress bar
+     * @param[in,out] progress_bar is a progress bar
      * @return An SBS context index containing the loci in `genome_stream`
      *          not laying in `regions_to_avoid`
      */
@@ -464,15 +464,15 @@ public:
      *
      * This method builds a SBS context index.
      *
-     * @param random_generator is a random generator
-     * @param index_path is the path to the directory in which
+     * @param[in,out] random_generator is a random generator
+     * @param[in] index_path is the path to the directory in which
      *         the index is stored
-     * @param genome_fasta is the path of the FASTA file containing the
+     * @param[in] genome_fasta is the path of the FASTA file containing the
      *         sequences of the chromosomes to be indexed
-     * @param regions_to_avoid is the set of the regions that should not
+     * @param[in] regions_to_avoid is the set of the regions that should not
      *         be considered by the index
-     * @param cache_size is the size of the cache used to build the sample
-     * @param progress_bar is a progress bar
+     * @param[in] cache_size is the size of the cache used to build the sample
+     * @param[in,out] progress_bar is a progress bar
      * @return An SBS context index containing the loci in `genome_stream`
      *          not laying in `regions_to_avoid`
      */
@@ -493,14 +493,14 @@ public:
      *
      * This method builds a SBS context index.
      *
-     * @param random_generator is a random generator
-     * @param index_path is the path to the directory in which
+     * @param[in,out] random_generator is a random generator
+     * @param[in] index_path is the path to the directory in which
      *         the index is stored
-     * @param genome_fasta is the path of the FASTA file containing the
+     * @param[in] genome_fasta is the path of the FASTA file containing the
      *         sequences of the chromosomes to be indexed
-     * @param regions_to_avoid is the set of the regions that should not
+     * @param[in] regions_to_avoid is the set of the regions that should not
      *         be considered by the index
-     * @param progress_bar is a progress bar
+     * @param[in,out] progress_bar is a progress bar
      * @return An SBS context index containing the loci in `genome_stream`
      *          not laying in `regions_to_avoid`
      */
@@ -520,17 +520,17 @@ public:
      *
      * This method builds a SBS context index.
      *
-     * @param random_generator is a random generator
-     * @param index_path is the path to the directory in which
+     * @param[in,out] random_generator is a random generator
+     * @param[in] index_path is the path to the directory in which
      *         the index is stored
-     * @param genome_fasta is the path of the FASTA file containing the
+     * @param[in] genome_fasta is the path of the FASTA file containing the
      *         sequences of the chromosomes to be indexed
-     * @param tmp_dir is the directory that will contains the
+     * @param[in] tmp_dir is the directory that will contains the
      *         temporary files
-     * @param cache_size is the size of the cache used to build the sample
-     * @param sampling_delta is the number of loci of a specific context
+     * @param[in] cache_size is the size of the cache used to build the sample
+     * @param[in] sampling_delta is the number of loci of a specific context
      *         to be found before inserting one locus in the index
-     * @param progress_bar is a progress bar
+     * @param[in,out] progress_bar is a progress bar
      * @return An SBS context index containing the loci in `genome_stream`
      */
     static inline SBSContextIndex<RANDOM_GENERATOR>
@@ -551,15 +551,15 @@ public:
      *
      * This method builds a SBS context index.
      *
-     * @param random_generator is a random generator
-     * @param index_path is the path to the directory in which
+     * @param[in,out] random_generator is a random generator
+     * @param[in] index_path is the path to the directory in which
      *         the index is stored
-     * @param genome_fasta is the path of the FASTA file containing the
+     * @param[in] genome_fasta is the path of the FASTA file containing the
      *         sequences of the chromosomes to be indexed
-     * @param tmp_dir is the directory that will contains the
+     * @param[in] tmp_dir is the directory that will contains the
      *         temporary files
-     * @param cache_size is the size of the cache used to build the sample
-     * @param progress_bar is a progress bar
+     * @param[in] cache_size is the size of the cache used to build the sample
+     * @param[in,out] progress_bar is a progress bar
      * @return An SBS context index containing the loci in `genome_stream`
      */
     static inline SBSContextIndex<RANDOM_GENERATOR>
@@ -579,13 +579,13 @@ public:
      *
      * This method builds a SBS context index.
      *
-     * @param random_generator is a random generator
-     * @param index_path is the path to the directory in which
+     * @param[in,out] random_generator is a random generator
+     * @param[in] index_path is the path to the directory in which
      *         the index is stored
-     * @param genome_fasta is the path of the FASTA file containing the
+     * @param[in] genome_fasta is the path of the FASTA file containing the
      *         sequences of the chromosomes to be indexed
-     * @param cache_size is the size of the cache used to build the sample
-     * @param progress_bar is a progress bar
+     * @param[in] cache_size is the size of the cache used to build the sample
+     * @param[in,out] progress_bar is a progress bar
      * @return An SBS context index containing the loci in `genome_stream`
      */
     static inline SBSContextIndex<RANDOM_GENERATOR>
@@ -605,12 +605,12 @@ public:
      *
      * This method builds a SBS context index.
      *
-     * @param random_generator is a random generator
-     * @param index_path is the path to the directory in which
+     * @param[in,out] random_generator is a random generator
+     * @param[in] index_path is the path to the directory in which
      *         the index is stored
-     * @param genome_fasta is the path of the FASTA file containing the
+     * @param[in] genome_fasta is the path of the FASTA file containing the
      *         sequences of the chromosomes to be indexed
-     * @param progress_bar is a progress bar
+     * @param[in,out] progress_bar is a progress bar
      * @return An SBS context index containing the loci in `genome_stream`
      */
     static inline SBSContextIndex<RANDOM_GENERATOR>
@@ -623,7 +623,6 @@ public:
                      default_cache_size(), progress_bar);
     }
 
-
     /**
      * @brief Buid a SBS context index
      *
@@ -632,7 +631,7 @@ public:
      * as the new last parameter.
      *
      * @tparam ARGS is the pack of the parameter type
-     * @param args are the parameters
+     * @param[in,out] args are the parameters
      * @return An SBS context index according `args`
      */
     template <typename... ARGS>
@@ -658,8 +657,8 @@ public:
      * This constructor loads an already built SBS context index from
      * the directory in which it is stored.
      *
-     * @param index_path is the path to the SBS context index directory
-     * @param cache_size is the index read cache size
+     * @param[in] index_path is the path to the SBS context index directory
+     * @param[in] cache_size is the index read cache size
      */
     SBSContextIndex(const std::filesystem::path index_path,
                     const size_t cache_size = default_cache_size()):

@@ -1,9 +1,9 @@
 /**
- * @file sbs_sbs_context.hpp
+ * @file sbs_context.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines SBS contexts and extended context automata
- * @version 1.1
- * @date 2025-07-07
+ * @version 1.2
+ * @date 2025-10-13
  *
  * @copyright Copyright (c) 2023-2025
  *
@@ -78,14 +78,14 @@ public:
     /**
      * @brief A constructor
      *
-     * @param nucleic_triplet is the string of the nucleic triplet
+     * @param[in] nucleic_triplet is the string of the nucleic triplet
      */
     SBSContext(const char* nucleic_triplet);
 
     /**
      * @brief A constructor
      *
-     * @param nucleic_triplet is the string of the nucleic triplet
+     * @param[in] nucleic_triplet is the string of the nucleic triplet
      */
     SBSContext(const std::string& nucleic_triplet);
 
@@ -141,7 +141,7 @@ public:
     /**
      * @brief Test whether two SBS contexts are equivalent
      *
-     * @param context is the SBS context to compare
+     * @param[in] context is the SBS context to compare
      * @return `true` if and only if the two SBS contexts represent
      *      the same nucleic triplet
      */
@@ -153,7 +153,7 @@ public:
     /**
      * @brief Test whether two SBS contexts differ
      *
-     * @param context is the SBS context to compare
+     * @param[in] context is the SBS context to compare
      * @return `true` if and only if the two SBS contexts represent
      *      different nucleic triplets
      */
@@ -166,7 +166,7 @@ public:
      * @brief Save a SBS context in an archive
      *
      * @tparam ARCHIVE is the output archive type
-     * @param archive is the output archive
+     * @param[in,out] archive is the output archive
      */
     template<typename ARCHIVE, std::enable_if_t<std::is_base_of_v<Archive::Basic::Out, ARCHIVE>, bool> = true>
     inline void save(ARCHIVE& archive) const
@@ -178,7 +178,7 @@ public:
      * @brief Load a SBS context from an archive
      *
      * @tparam ARCHIVE is the input archive type
-     * @param archive is the input archive
+     * @param[in,out] archive is the input archive
      * @return the loaded SBS context
      */
     template<typename ARCHIVE, std::enable_if_t<std::is_base_of_v<Archive::Basic::In, ARCHIVE>, bool> = true>
@@ -194,7 +194,7 @@ public:
     /**
      * @brief Get the code of the complement SBS context
      *
-     * @param code is the SBS context code whose complement is request
+     * @param[in] code is the SBS context code whose complement is request
      * @return the code of the complement context of the
      *      context whose code is `code`
      */
@@ -203,7 +203,7 @@ public:
     /**
      * @brief Get the code of the reverse complement SBS context
      *
-     * @param code is the SBS context code whose reverse complement
+     * @param[in] code is the SBS context code whose reverse complement
      *      is request
      * @return the code of the reverse complement context of the
      *      context whose code is `code`
@@ -248,7 +248,7 @@ struct ExtendedContextAutomaton
     /**
      * @brief Get a code for a character
      *
-     * @param character is a possible base
+     * @param[in] character is a possible base
      * @return a number in the interval [0,5]. The
      *      value 5 is returned for all the characters
      *      different from  'A', 'C', 'G', 'T', and 'N'.
@@ -258,9 +258,9 @@ struct ExtendedContextAutomaton
     /**
      * @brief Get the state corresponding to an extended context
      *
-     * @param first is the first character of the extended context
-     * @param second is the second character of the extended context
-     * @param third is the third character of the extended context
+     * @param[in] first is the first character of the extended context
+     * @param[in] second is the second character of the extended context
+     * @param[in] third is the third character of the extended context
      * @return the automaton state corresponding to the extended
      *      context formed by the three characters.
      */
@@ -307,7 +307,7 @@ public:
     /**
      * @brief Read a character and update the automaton state
      *
-     * @param character is the read character
+     * @param[in] character is the read character
      * @return `true` if and only if the read character is a valid
      *      nucleotide character, i.e., it is among 'A', 'C', 'G',
      *      'T', and 'N'.
@@ -324,7 +324,7 @@ public:
     /**
      * @brief Check whether the character is a nucleotide
      *
-     * @param character is a character
+     * @param[in] character is a character
      * @return `true` if and only if the read character is a valid
      *      nucleotide character, i.e., it is among 'A', 'C', 'G',
      *      'T', and 'N'.
@@ -355,8 +355,8 @@ namespace std
 /**
  * @brief Stream the SBS context in a stream
  *
- * @param out is the output stream
- * @param context is the SBS context to stream
+ * @param[in,out] out is the output stream
+ * @param[in] context is the SBS context to stream
  * @return a reference to the output stream
  */
 inline std::ostream& operator<<(std::ostream& out, const RACES::Mutations::SBSContext& context)
