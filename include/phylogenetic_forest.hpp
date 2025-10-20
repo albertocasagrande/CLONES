@@ -2,8 +2,8 @@
  * @file phylogenetic_forest.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines classes and function for phylogenetic forests
- * @version 1.13
- * @date 2025-10-02
+ * @version 1.14
+ * @date 2025-10-20
  *
  * @copyright Copyright (c) 2023-2025
  *
@@ -646,19 +646,16 @@ private:
          *      contains the germinal mutations
          * @return the constant iterator to the tour begin
          */
-        inline const_iterator begin(const GenomeMutations& template_mutations) const
+        const_iterator begin(const MUTATION_CONTAINER& germline_mutations) const
         {
-            if constexpr(std::is_same_v<MUTATION_CONTAINER, GenomeMutations>) {
-                return const_iterator{forest, template_mutations,
+            if (with_germinal) {
+                return const_iterator{forest, germline_mutations,
                                       only_leaves, with_pre_neoplastic};
             }
 
-            if constexpr(std::is_same_v<MUTATION_CONTAINER, ChromosomeMutations>) {
-                return const_iterator{forest, template_mutations.get_chromosome(this->chr_id),
-                                      only_leaves, with_pre_neoplastic};
-            }
-
-            static_assert(true, "MutationTour::begin(): unsupported template type.");
+            const auto germinal_structure = germline_mutations.copy_structure();
+            return const_iterator{forest, germinal_structure,
+                                  only_leaves, with_pre_neoplastic};
         }
 public:
         /**
@@ -669,21 +666,23 @@ public:
         const_iterator begin() const
         {
             if (forest == nullptr) {
-                return const_iterator();
+                return const_iterator{forest, only_leaves};
             }
 
             if (forest->num_of_nodes()==0) {
-                return const_iterator();
-            }
-
-            if (with_germinal) {
-                return begin(forest->get_germline_mutations());
+                return const_iterator{forest, only_leaves};
             }
 
             const auto& germline_mutations = forest->get_germline_mutations();
-            const auto germinal_structure = germline_mutations.copy_structure();
+            if constexpr(std::is_same_v<MUTATION_CONTAINER, GenomeMutations>) {
+                return begin(germline_mutations);
+            }
 
-            return begin(germinal_structure);
+            if constexpr(std::is_same_v<MUTATION_CONTAINER, ChromosomeMutations>) {
+                return begin(germline_mutations.get_chromosome(this->chr_id));
+            }
+
+            static_assert(true, "MutationTour::begin(): unsupported template type.");
         }
 
         /**

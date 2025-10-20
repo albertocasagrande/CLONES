@@ -2,8 +2,8 @@
  * @file phylogenetic_forest.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements classes and function for phylogenetic forests
- * @version 1.14
- * @date 2025-10-02
+ * @version 1.15
+ * @date 2025-10-20
  *
  * @copyright Copyright (c) 2023-2025
  *
@@ -142,17 +142,27 @@ PhylogeneticForest::get_subforest_for(const std::vector<std::string>& sample_nam
     static_cast<Mutants::DescendantForest&>(forest) = Mutants::DescendantForest::get_subforest_for(sample_names);
 
     for (const auto& root_id : forest.get_root_cell_ids()) {
-        forest.pre_neoplastic_mutations.emplace(root_id, pre_neoplastic_mutations.at(root_id));
+        auto found = pre_neoplastic_mutations.find(root_id);
+
+        if (found != pre_neoplastic_mutations.end()) {
+            forest.pre_neoplastic_mutations.emplace(root_id, found->second);
+        }
     }
 
     for (const auto& cell_id: std::views::keys(forest.get_cells())) {
-        forest.arising_mutations.emplace(cell_id, arising_mutations.at(cell_id));
+        auto found = arising_mutations.find(cell_id);
+        if (found != arising_mutations.end()) {
+            forest.arising_mutations.emplace(cell_id, found->second);
+        }
     }
 
     for (const auto& sample : forest.get_samples()) {
         const auto& sample_id = sample.get_id();
 
-        forest.sample_statistics.emplace(sample_id, sample_statistics.at(sample_id));
+        auto found = sample_statistics.find(sample_id);
+        if (found != sample_statistics.end()) {
+            forest.sample_statistics.emplace(sample_id, found->second);
+        }
     }
 
     forest.SID_first_cells = filter_by_cells_in(SID_first_cells, forest);
