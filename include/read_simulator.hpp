@@ -2,8 +2,8 @@
  * @file read_simulator.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines classes to simulate sequencing
- * @version 1.26
- * @date 2025-10-02
+ * @version 1.27
+ * @date 2025-10-20
  *
  * @copyright Copyright (c) 2023-2025
  *
@@ -41,6 +41,7 @@
 #include <cctype>
 #include <random>
 #include <ranges>
+#include <memory>
 #include <iomanip> // std::setw and std::setfill
 
 #include "sid.hpp"
@@ -564,6 +565,8 @@ class ChrSampleStatistics : public ChrCoverage
 {
     std::map<SID, SIDData> SID_data;    //!< The SID data about the simulated reads
 
+    bool with_germline;     //!< A Boolean flag to account/avoid germinal mutations
+
     /**
      * @brief Add the mutation of a chromosome to the statistics
      *
@@ -593,10 +596,13 @@ public:
      * @param[in] size is the size of the chromosome whose sequencing
      *          statistics are collected
      * @param[in] forest is the phylogenetic forest of the samples to be sequenced
+     * @param[in] with_missed_SID is a Boolean flag to account/avoid SIDs that are not
+     *      sequenced
      * @param[in] with_germline is a Boolean flag to account/avoid germinal mutations
      */
     ChrSampleStatistics(const ChromosomeId& chromosome_id, const GenomicRegion::Length& size,
-                        const PhylogeneticForest& forest, const bool& with_germline=true);
+                        const PhylogeneticForest& forest, const bool& with_missed_SID=false,
+                        const bool& with_germline=false);
 
     /**
      * @brief Update the data associated to an SID
@@ -861,7 +867,7 @@ class ReadSimulator;
 
 class SampleSetStatistics
 {
-    std::map<std::string, SampleStatistics> stats_map;  //!< The map of the sample statistics
+    std::unique_ptr<std::map<std::string, SampleStatistics>> stats_map;  //!< The map of the sample statistics
 
     std::set<ChromosomeId> chr_ids; //!< The identifiers of the chromosomes whose statistics have been collected
 
@@ -892,7 +898,7 @@ public:
      */
     inline std::map<std::string, SampleStatistics>::const_iterator find(const std::string& sample_name) const
     {
-        return stats_map.find(sample_name);
+        return stats_map->find(sample_name);
     }
 
     /**
@@ -902,7 +908,7 @@ public:
      */
     inline std::map<std::string, SampleStatistics>::const_iterator begin() const
     {
-        return stats_map.begin();
+        return stats_map->begin();
     }
 
     /**
@@ -912,7 +918,7 @@ public:
      */
     inline std::map<std::string, SampleStatistics>::const_iterator end() const
     {
-        return stats_map.end();
+        return stats_map->end();
     }
 
     /**
@@ -990,7 +996,7 @@ public:
      */
     inline size_t num_of_samples() const
     {
-        return stats_map.size();
+        return stats_map->size();
     }
 
     /**
@@ -1155,7 +1161,7 @@ public:
     inline void save(ARCHIVE& archive) const
     {
         archive & data_dir
-                & stats_map;
+                & *stats_map;
     }
 
     /**
@@ -1174,9 +1180,9 @@ public:
 
         SampleSetStatistics statistics(data_dir);
 
-        archive & statistics.stats_map;
+        archive & *(statistics.stats_map);
 
-        for (const auto& [sample_name, sample_stats] : statistics.stats_map ) {
+        for (const auto& [sample_name, sample_stats] : *(statistics.stats_map) ) {
             for (const auto& chr_id : sample_stats.get_chromosome_ids()) {
                 statistics.chr_ids.insert(chr_id);
             }
@@ -1653,7 +1659,7 @@ private:
                               size_t& steps, RACES::UI::ProgressBar& progress_bar,
                               std::ostream* SAM_stream=nullptr)
     {
-        for (const auto& [cell_id, chr_mutations]: 
+        for (const auto& [cell_id, chr_mutations]:
                 sample_forest.get_leaf_mutation_tour(chr_data.chr_id)) {
 
             generate_chromosome_reads(sequencer, sample_simulation_data, chr_statistics,
@@ -1762,8 +1768,8 @@ private:
         if (sample_target.sample_id != NORMAL_SAMPLE_ID) {
             const auto sample_forest = forest.get_subforest_for({sample_target.sample_name});
             generate_chr_tumour_reads(sequencer, sample_simulation_data, chr_statistics,
-                                    chr_data, sample_target, sample_forest, germline_chr_mut,
-                                    total_steps, steps, progress_bar, SAM_stream);
+                                      chr_data, sample_target, sample_forest, germline_chr_mut,
+                                      total_steps, steps, progress_bar, SAM_stream);
         }
 
         generate_chr_wild_type_reads(sequencer, sample_simulation_data, chr_statistics,
@@ -1789,6 +1795,9 @@ private:
      * @param[in] chr_data is the data about the chromosome from which the simulated read come from
      * @param[in] total_steps is the total number of steps required to complete the overall procedure
      * @param[in,out] steps is the number of performed steps
+     * @param[in] missed_SID_statistics is a Boolean flag that enable/disable statistics about SIDs that
+     *      never occurred in the chromosome reads
+     * @param[in] germinal_statistics is a Boolean flag that enable/disable statistics about germinal mutations
      * @param[in,out] progress_bar is the progress bar
      * @param[in,out] SAM_stream is the SAM file output stream
      */
@@ -1797,8 +1806,8 @@ private:
     void generate_chromosome_reads(SEQUENCER& sequencer, SampleSetStatistics& statistics,
                                    std::map<Mutants::Evolutions::TissueSampleId, ReadSimulationData>& simulation_data,
                                    const RACES::IO::FASTA::ChromosomeData<RACES::IO::FASTA::Sequence>& chr_data,
-                                   const SequencingTargets& targets,
-                                   const size_t& total_steps, size_t& steps,
+                                   const SequencingTargets& targets, const size_t& total_steps, size_t& steps,
+                                   const bool& missed_SID_statistics, const bool& germinal_statistics,
                                    RACES::UI::ProgressBar& progress_bar,
                                    std::ostream* SAM_stream=nullptr)
     {
@@ -1806,8 +1815,8 @@ private:
         progress_bar.set_message("Processing chr. " + chr_name);
 
         ChrSampleStatistics basic_chr_stats{chr_data.chr_id,
-				                            static_cast<GenomicRegion::Length>(chr_data.length),
-                                            targets.forest(), targets.with_germinal()};
+                                            static_cast<GenomicRegion::Length>(chr_data.length),
+                                            targets.forest(), missed_SID_statistics, germinal_statistics};
 
         for (const auto& [sample_id, sample_target] : targets.sample_targets()) {
             auto chr_stats = generate_chromosome_reads(sequencer, simulation_data.at(sample_id), basic_chr_stats,
@@ -1979,6 +1988,9 @@ private:
      *      simulated
      * @param[in] coverage is the aimed coverage
      * @param[in] base_name is the prefix of the filename
+     * @param[in] missed_SID_statistics is a Boolean flag that enable/disable statistics about SIDs that
+     *      never occurred in the chromosome reads
+     * @param[in] germinal_statistics is a Boolean flag that enable/disable statistics about germinal mutations
      * @param[in] progress_bar is the progress bar
      * @return the statistics about the generated reads
      */
@@ -1987,6 +1999,7 @@ private:
     SampleSetStatistics generate_reads(SEQUENCER& sequencer, SequencingTargets& targets,
                                        const std::set<ChromosomeId>& chromosome_ids,
                                        const double& coverage, const std::string& base_name,
+                                       const bool& missed_SID_statistics, const bool& germinal_statistics,
                                        UI::ProgressBar& progress_bar)
     {
         auto read_simulation_data = get_initial_data(targets, chromosome_ids, coverage);
@@ -2017,10 +2030,12 @@ private:
 
                 generate_chromosome_reads(sequencer, statistics, read_simulation_data,
                                           chr_data, targets, total_steps, steps,
+                                          missed_SID_statistics, germinal_statistics,
                                           progress_bar, &SAM_stream);
             } else {
                 generate_chromosome_reads(sequencer, statistics, read_simulation_data,
                                           chr_data, targets, total_steps, steps,
+                                          missed_SID_statistics, germinal_statistics,
                                           progress_bar);
             }
 
@@ -2207,6 +2222,10 @@ public:
      * @param[in] with_germinal is a Boolean flag to consider/avoid germinal mutations
      *              (default: true)
      * @param[in] base_name is the prefix of the filename (default: "chr_")
+     * @param[in] missed_SID_statistics is a Boolean flag that enable/disable statistics
+     *      about SIDs that never occurred in the chromosome reads
+     * @param[in] germinal_statistics is a Boolean flag that enable/disable statistics
+     *      about germinal mutations
      * @param[in] progress_bar_stream is the output stream for the progress bar
      *              (default: std::cout)
      * @param[in] quiet is a Boolean flag to avoid progress bar and user messages
@@ -2220,6 +2239,8 @@ public:
                                    const double& coverage, const bool& produce_normal_sample,
                                    const double purity, const bool& with_pre_neoplastic=true,
                                    const bool& with_germinal=true, const std::string& base_name="chr_",
+                                   const bool& missed_SID_statistics=false,
+                                   const bool& germinal_statistics=false,
                                    std::ostream& progress_bar_stream=std::cout,
                                    const bool quiet=false)
     {
@@ -2251,7 +2272,8 @@ public:
         UI::ProgressBar progress_bar(progress_bar_stream, quiet);
 
         return generate_reads<SEQUENCER>(sequencer, targets, chromosome_ids, coverage,
-                                         base_name, progress_bar);
+                                         base_name, missed_SID_statistics,
+                                         germinal_statistics, progress_bar);
     }
 
     /**
@@ -2272,6 +2294,10 @@ public:
      * @param[in] with_germinal is a Boolean flag to consider/avoid germinal mutations
      *              (default: true)
      * @param[in] base_name is the prefix of the filename (default: "chr_")
+     * @param[in] missed_SID_statistics is a Boolean flag that enable/disable statistics
+     *      about SIDs that never occurred in the chromosome reads
+     * @param[in] germinal_statistics is a Boolean flag that enable/disable statistics
+     *      about germinal mutations
      * @param[in] progress_bar_stream is the output stream for the progress bar
      *              (default: std::cout)
      * @param[in] quiet is a Boolean flag to avoid progress bar and user messages
@@ -2284,11 +2310,14 @@ public:
                                           const std::set<ChromosomeId>& chromosome_ids,
                                           const double& coverage, const bool& with_pre_neoplastic=true,
                                           const bool& with_germinal=true, const std::string& base_name="chr_",
+                                          const bool& missed_SID_statistics=false,
+                                          const bool& germinal_statistics=false,
                                           std::ostream& progress_bar_stream=std::cout,
                                           const bool quiet=false)
     {
         return operator()(sequencer, forest, chromosome_ids, coverage, false, 1.0, with_pre_neoplastic,
-                          with_germinal, base_name, progress_bar_stream, quiet);
+                          with_germinal, base_name, missed_SID_statistics, germinal_statistics,
+                          progress_bar_stream, quiet);
     }
 
     /**
@@ -2311,6 +2340,10 @@ public:
      * @param[in] with_germinal is a Boolean flag to consider/avoid germinal mutations
      *              (default: true)
      * @param[in] base_name is the prefix of the filename (default: "chr_")
+     * @param[in] missed_SID_statistics is a Boolean flag that enable/disable statistics
+     *      about SIDs that never occurred in the chromosome reads
+     * @param[in] germinal_statistics is a Boolean flag that enable/disable statistics
+     *      about germinal mutations
      * @param[in] progress_bar_stream is the output stream for the progress bar
      *              (default: std::cout)
      * @param[in] quiet is a Boolean flag to avoid progress bar and user messages
@@ -2323,14 +2356,16 @@ public:
                                           const double& coverage, const bool& produce_normal_sample,
                                           const double purity, const bool& with_pre_neoplastic=true,
                                           const bool& with_germinal=true, const std::string& base_name="chr_",
+                                          const bool& missed_SID_statistics=false,
+                                          const bool& germinal_statistics=false,
                                           std::ostream& progress_bar_stream=std::cout,
                                           const bool quiet=false)
     {
         const auto chromosome_ids = get_genome_chromosome_ids(forest.get_germline_mutations());
 
         return operator()(sequencer, forest, chromosome_ids, coverage, produce_normal_sample,
-                          purity, with_pre_neoplastic, with_germinal, base_name,
-                          progress_bar_stream, quiet);
+                          purity, with_pre_neoplastic, with_germinal, base_name, missed_SID_statistics,
+                          germinal_statistics, progress_bar_stream, quiet);
     }
 
     /**
@@ -2349,6 +2384,10 @@ public:
      * @param[in] with_germinal is a Boolean flag to consider/avoid germinal mutations
      *              (default: true)
      * @param[in] base_name is the prefix of the filename (default: "chr_")
+     * @param[in] missed_SID_statistics is a Boolean flag that enable/disable statistics
+     *      about SIDs that never occurred in the chromosome reads
+     * @param[in] germinal_statistics is a Boolean flag that enable/disable statistics
+     *      about germinal mutations
      * @param[in] progress_bar_stream is the output stream for the progress bar
      *              (default: std::cout)
      * @param[in] quiet is a Boolean flag to avoid progress bar and user messages
@@ -2360,11 +2399,14 @@ public:
     inline SampleSetStatistics operator()(SEQUENCER& sequencer, const PhylogeneticForest& forest,
                                           const double& coverage, const bool& with_pre_neoplastic=true,
                                           const bool& with_germinal=true, const std::string& base_name="chr_",
+                                          const bool& missed_SID_statistics=false,
+                                          const bool& germinal_statistics=false,
                                           std::ostream& progress_bar_stream=std::cout,
                                           const bool quiet=false)
     {
         return operator()(sequencer, forest, coverage, false, 1.0, with_pre_neoplastic, with_germinal,
-                          base_name, progress_bar_stream, quiet);
+                          base_name, missed_SID_statistics, germinal_statistics, progress_bar_stream,
+                          quiet);
     }
 
     /**
@@ -2383,6 +2425,10 @@ public:
      * @param[in] with_germinal is a Boolean flag to consider/avoid germinal mutations
      *              (default: true)
      * @param[in] base_name is the prefix of the filename (default: "chr_")
+     * @param[in] missed_SID_statistics is a Boolean flag that enable/disable statistics
+     *      about SIDs that never occurred in the chromosome reads
+     * @param[in] germinal_statistics is a Boolean flag that enable/disable statistics
+     *      about germinal mutations
      * @param[in] progress_bar_stream is the output stream for the progress bar
      *              (default: std::cout)
      * @param[in] quiet is a Boolean flag to avoid progress bar and user messages
@@ -2395,11 +2441,13 @@ public:
                                           const double& coverage, const double& purity,
                                           const bool& with_pre_neoplastic=true,
                                           const bool& with_germinal=true, const std::string& base_name="chr_",
+                                          const bool& missed_SID_statistics=false,
+                                          const bool& germinal_statistics=false,
                                           std::ostream& progress_bar_stream=std::cout,
                                           const bool quiet=false)
     {
         return operator()(sequencer, forest, coverage, false, purity, with_pre_neoplastic, with_germinal,
-                          base_name, progress_bar_stream, quiet);
+                          base_name, missed_SID_statistics, germinal_statistics, progress_bar_stream, quiet);
     }
 
     /**

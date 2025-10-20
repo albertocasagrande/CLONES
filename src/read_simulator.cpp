@@ -2,8 +2,8 @@
  * @file read_simulator.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements classes to simulate sequencing
- * @version 1.4
- * @date 2025-07-29
+ * @version 1.5
+ * @date 2025-10-20
  *
  * @copyright Copyright (c) 2023-2025
  *
@@ -265,22 +265,26 @@ ChrSampleStatistics::ChrSampleStatistics():
 {}
 
 ChrSampleStatistics::ChrSampleStatistics(const ChrSampleStatistics& original):
-    ChrCoverage(original), SID_data{original.SID_data}
+    ChrCoverage(original), SID_data{original.SID_data},
+    with_germline{original.with_germline}
 {}
 
 ChrSampleStatistics::ChrSampleStatistics(const ChromosomeId& chromosome_id,
                                          const GenomicRegion::Length& size,
                                          const PhylogeneticForest& forest,
+                                         const bool& with_missed_SID,
                                          const bool& with_germline):
-    ChrCoverage(chromosome_id, size)
+    ChrCoverage(chromosome_id, size), with_germline{with_germline}
 {
-    if (with_germline) {
-        account_for(forest.get_germline_mutations().get_chromosome(chromosome_id));
-    }
+    if (with_missed_SID) {
+        if (with_germline) {
+            account_for(forest.get_germline_mutations().get_chromosome(chromosome_id));
+        }
 
-    for (const auto& sid : std::views::keys(forest.get_mutation_first_cells())) {
-        if (sid.get_chromosome_id() == chromosome_id) {
-            SID_data.emplace(sid, SIDData{sid, 0});
+        for (const auto& sid : std::views::keys(forest.get_mutation_first_cells())) {
+            if (sid.get_chromosome_id() == chromosome_id) {
+                SID_data.emplace(sid, SIDData{sid, 0});
+            }
         }
     }
 }
@@ -316,14 +320,16 @@ void check_in(const SID& mutation, const ChromosomeId& chr_id)
 
 void ChrSampleStatistics::update(const SID& mutation)
 {
-    check_in(mutation, get_chr_id());
+    if (mutation.nature != Mutation::GERMINAL || with_germline) {
+        check_in(mutation, get_chr_id());
 
-    auto SID_data_it = SID_data.find(mutation);
+        auto SID_data_it = SID_data.find(mutation);
 
-    if (SID_data_it == SID_data.end()) {
-        SID_data.emplace(mutation, SIDData{mutation, 1});
-    } else {
-        SID_data_it->second.update(mutation);
+        if (SID_data_it == SID_data.end()) {
+            SID_data.emplace(mutation, SIDData{mutation, 1});
+        } else {
+            SID_data_it->second.update(mutation);
+        }
     }
 }
 
@@ -541,8 +547,8 @@ std::ofstream& SampleSetStatistics::stream_VAF_csv_header(std::ofstream& os, con
         << "ref" << separator << "alt" << separator
         << "type" << separator << "causes" << separator << "classes";
 
-    if (stats_map.size()>1) {
-        for (const auto& [sample_name, sample_stats]: stats_map) {
+    if (stats_map->size()>1) {
+        for (const auto& [sample_name, sample_stats]: *stats_map) {
             os << separator << sample_name << " occurrences"
                << separator << sample_name << " coverage"
                << separator << sample_name << " VAF";
@@ -559,16 +565,9 @@ std::ofstream& SampleSetStatistics::stream_VAF_csv_header(std::ofstream& os, con
     return os;
 }
 
-void check_in(const std::map<std::string, SampleStatistics>& stats_map,
-              const std::string& sample_name)
-{
-    if (stats_map.count(sample_name)>0) {
-        throw std::runtime_error("The statistics of the sample \"" + sample_name
-                                 + "\" are already contained by the object.");
-    }
-}
 
 SampleSetStatistics::SampleSetStatistics(const std::filesystem::path& data_directory):
+    stats_map{std::make_unique<std::map<std::string, SampleStatistics>>()},
     data_dir(data_directory)
 {
     create_dir(data_dir);
@@ -625,14 +624,14 @@ bool have_different_keys(const std::map<K, V>& map_a, const std::map<K, V>& map_
 
 bool SampleSetStatistics::is_canonical() const
 {
-    if (stats_map.size()<2) {
+    if (stats_map->size()<2) {
         return true;
     }
 
-    auto it = stats_map.begin();
+    auto it = stats_map->begin();
     const auto& first_SID_data = it->second.get_data();
 
-    for (++it; it != stats_map.end(); ++it) {
+    for (++it; it != stats_map->end(); ++it) {
         if (have_different_keys(first_SID_data, it->second.get_data())) {
             return false;
         }
@@ -645,11 +644,11 @@ const SampleStatistics& SampleSetStatistics::add_chr_statistics(const std::strin
                                                                 ChrSampleStatistics&& chr_statistics,
                                                                 const bool coverage_save)
 {
-    auto found = stats_map.find(sample_name);
+    auto found = stats_map->find(sample_name);
 
-    if (found == stats_map.end()) {
-        found = stats_map.emplace(sample_name,
-                                  SampleStatistics{data_dir, sample_name, coverage_save}).first;
+    if (found == stats_map->end()) {
+        found = stats_map->emplace(sample_name,
+                                   SampleStatistics{data_dir, sample_name, coverage_save}).first;
     }
 
     found->second.add_chr_statistics(chr_statistics);
@@ -661,11 +660,11 @@ const SampleStatistics& SampleSetStatistics::add_chr_statistics(const std::strin
                                                                 const ChrSampleStatistics& chr_statistics,
                                                                 const bool coverage_save)
 {
-    auto found = stats_map.find(sample_name);
+    auto found = stats_map->find(sample_name);
 
-    if (found == stats_map.end()) {
-        found = stats_map.emplace(sample_name,
-                                  SampleStatistics{data_dir, sample_name, coverage_save}).first;
+    if (found == stats_map->end()) {
+        found = stats_map->emplace(sample_name,
+                                   SampleStatistics{data_dir, sample_name, coverage_save}).first;
     }
 
     found->second.add_chr_statistics(chr_statistics);
@@ -676,13 +675,13 @@ const SampleStatistics& SampleSetStatistics::add_chr_statistics(const std::strin
 const SampleStatistics& SampleSetStatistics::add_statistics(const SampleStatistics& sample_statistics)
 {
     const auto& name = sample_statistics.get_sample_name();
-    auto found = stats_map.find(name);
+    auto found = stats_map->find(name);
 
-    if (found != stats_map.end()) {
+    if (found != stats_map->end()) {
         throw std::domain_error("The current object already contains a statistics for sample.");
     }
 
-    return stats_map.emplace(name, sample_statistics).first->second;
+    return stats_map->emplace(name, sample_statistics).first->second;
 }
 
 const SampleStatistics& SampleSetStatistics::operator[](const std::string& sample_name) const
@@ -700,7 +699,7 @@ std::list<std::string> SampleSetStatistics::get_sample_names() const
 {
     std::list<std::string> sample_names;
 
-    for (const auto& [sample_name, sample_statistics] : stats_map) {
+    for (const auto& [sample_name, sample_statistics] : *stats_map) {
         sample_names.push_back(sample_name);
     }
 
@@ -758,9 +757,9 @@ get_total_SID_coverage(const std::map<std::string, SampleStatistics>& stats_map,
 
 void SampleSetStatistics::canonize()
 {
-    auto total_SID_data = get_total_SID_data(stats_map);
+    auto total_SID_data = get_total_SID_data(*stats_map);
 
-    for (auto& [sample_name, sample_stats]: stats_map) {
+    for (auto& [sample_name, sample_stats]: *stats_map) {
         ChrCoverage chr_coverage;
 
         for (auto& [mutation, total_data] : total_SID_data) {
@@ -827,11 +826,11 @@ void SampleSetStatistics::save_VAF_CSV(const std::filesystem::path& filename,
 
     stream_VAF_csv_header(os, separator);
 
-    if (stats_map.size()==0) {
+    if (stats_map->size()==0) {
         return;
     }
 
-    auto total_SID_data = get_total_SID_data(stats_map);
+    auto total_SID_data = get_total_SID_data(*stats_map);
 
     for (const auto& [mutation, total_mutation_data]: total_SID_data) {
         os << GenomicPosition::chrtos(chr_id) << separator << mutation.position
@@ -848,7 +847,7 @@ void SampleSetStatistics::save_VAF_CSV(const std::filesystem::path& filename,
         print_join(os, descriptions, ';');
 
         size_t total_mutation_coverage{0};
-        for (const auto& [sample_name, sample_stats]: stats_map) {
+        for (const auto& [sample_name, sample_stats]: *stats_map) {
             const auto& mutation_coverage = sample_stats.get_coverage(mutation);
             auto mutation_data = sample_stats.get_data(mutation);
 
@@ -857,7 +856,7 @@ void SampleSetStatistics::save_VAF_CSV(const std::filesystem::path& filename,
             total_mutation_coverage += mutation_coverage;
         }
 
-        if (stats_map.size()>1) {
+        if (stats_map->size()>1) {
             print_SID_data(os, total_mutation_coverage, total_mutation_data, separator);
         }
 
@@ -920,14 +919,14 @@ void SampleSetStatistics::save_coverage_image(const std::filesystem::path& filen
 
     using namespace matplot;
 
-    size_t num_of_plots = stats_map.size();
+    size_t num_of_plots = stats_map->size();
     const size_t new_size = 300;
 
     auto f = figure(true);
     f->size(1500, 1500);
 
     if (num_of_plots==1) {
-        const auto& chr_stats = stats_map.begin()->second;
+        const auto& chr_stats = stats_map->begin()->second;
 
         const auto coverage = chr_stats.get_chr_coverage(chromosome_id).get_coverage_vector();
 
@@ -1053,13 +1052,13 @@ void SampleSetStatistics::save_SID_histogram(const std::filesystem::path& filena
     using namespace matplot;
 
     size_t num_of_bins = 50;
-    size_t num_of_plots = stats_map.size();
+    size_t num_of_plots = stats_map->size();
 
     auto f = figure(true);
     f->size(1500, 1500);
 
     if (num_of_plots==1) {
-        const auto& sample_stats = (stats_map.begin()->second);
+        const auto& sample_stats = (stats_map->begin()->second);
 
         std::vector<double> VAF = get_VAF_data(sample_stats, chromosome_id, 0.15);
 
