@@ -2,8 +2,8 @@
  * @file descendant_forest.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements classes and function for descendant forests
- * @version 1.2
- * @date 2025-09-29
+ * @version 1.3
+ * @date 2025-10-20
  *
  * @copyright Copyright (c) 2023-2025
  *
@@ -298,6 +298,14 @@ std::map<Mutants::Evolutions::TissueSampleId, std::map<Mutants::CellId, size_t>>
 DescendantForest::count_cells_per_root() const
 {
     std::map<Mutants::Evolutions::TissueSampleId, std::map<Mutants::CellId, size_t>> counter;
+
+    for (const auto& sample : get_samples()) {
+        std::map<Mutants::CellId, size_t> forest_counter;
+        for (const auto& root_id : get_root_cell_ids()) {
+            forest_counter.emplace(root_id, 0);
+        }
+        counter.emplace(sample.get_id(), std::move(forest_counter));
+    }
 
     for (const auto& root_id : get_root_cell_ids()) {
         std::list<Mutants::CellId> queue{root_id};
