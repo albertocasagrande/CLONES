@@ -2,8 +2,8 @@
  * @file genome_mutations.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements genome and chromosome data structures
- * @version 1.18
- * @date 2025-10-02
+ * @version 1.19
+ * @date 2025-10-20
  *
  * @copyright Copyright (c) 2023-2025
  *
@@ -335,23 +335,23 @@ bool ChromosomeMutations::apply_contained(const MutationList& mutation_list)
         switch(list_it.get_type()) {
             case MutationList::SID_TURN:
                 if (list_it.get_last_SID().chr_id == id()) {
-                    success = success && apply(list_it.get_last_SID());
-                } else {
-                    success = false;
+                    if (!apply(list_it.get_last_SID())) {
+                        success = false;
+                    }
                 }
                 break;
             case MutationList::CNA_TURN:
                 if (list_it.get_last_CNA().chr_id == id()) {
-                    success = success && apply(list_it.get_last_CNA());
-                } else {
-                    success = false;
+                    if (!apply(list_it.get_last_CNA())) {
+                        success = false;
+                    }
                 }
                 break;
             case MutationList::WGD_TURN:
                 duplicate_alleles();
                 break;
             default:
-                throw std::runtime_error("ChromosomeMutations::apply(const MutationList&):"
+                throw std::runtime_error("ChromosomeMutations::apply_contained(const MutationList&):"
                                          " Unsupported mutation type");
         }
     }
@@ -681,10 +681,14 @@ bool GenomeMutations::apply(const MutationList& mutation_list)
             list_it != mutation_list.end(); ++list_it) {
         switch(list_it.get_type()) {
             case MutationList::SID_TURN:
-                success = success && apply(list_it.get_last_SID());
+                if (!apply(list_it.get_last_SID())) {
+                    success = false;
+                }
                 break;
             case MutationList::CNA_TURN:
-                success = success && apply(list_it.get_last_CNA());
+                if (!apply(list_it.get_last_CNA())) {
+                    success = false;
+                }
                 break;
             case MutationList::WGD_TURN:
                 duplicate_alleles();
