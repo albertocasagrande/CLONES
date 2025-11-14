@@ -1,9 +1,9 @@
 /**
- * @file build_context_index.cpp
+ * @file build_SBS_context_index.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Builds the context index
- * @version 1.2
- * @date 2025-10-12
+ * @version 1.3
+ * @date 2025-10-31
  *
  * @copyright Copyright (c) 2023-2025
  *
@@ -43,6 +43,7 @@
 
 #include "progress_bar.hpp"
 
+template<typename INDEX_TYPE>
 class ContextIndexBuilder : public BasicExecutable
 {
     std::string index_directory;
@@ -69,19 +70,17 @@ class ContextIndexBuilder : public BasicExecutable
         }
 
         {
-            using Index = SBSContextIndex<std::mt19937_64>;
-
-            Index context_index;
+            INDEX_TYPE context_index;
 
             std::mt19937_64 random_generator(0);
             if (quiet) {
-                Index::build(random_generator, index_directory, genome_fasta_filename,
-                             regions_to_avoid, cache_size);
+                INDEX_TYPE::build(random_generator, index_directory, genome_fasta_filename,
+                                  regions_to_avoid, cache_size);
             } else {
                 UI::ProgressBar progress_bar(std::cout);
 
-                Index::build(random_generator, index_directory, genome_fasta_filename,
-                             regions_to_avoid, cache_size, progress_bar);
+                INDEX_TYPE::build(random_generator, index_directory, genome_fasta_filename,
+                                  regions_to_avoid, cache_size, progress_bar);
             }
 
             if (!quiet) {
@@ -108,7 +107,7 @@ public:
              "the driver mutations file")
             ("index-directory,o", po::value<std::string>(&index_directory),
              "index directory")
-            ("cache-size,c", po::value<size_t>(&cache_size)->default_value(1000000),
+            ("cache-size,c", po::value<size_t>(&cache_size)->default_value(1000),
              "cache size in Mbytes")
 #if WITH_INDICATORS
             ("quiet,q", "disable output messages")
@@ -169,7 +168,10 @@ public:
 
 int main(const int argc, const char* argv[])
 {
-    ContextIndexBuilder builder(argc, argv);
+    using namespace RACES::Mutations;
+    using Index = SBSContextIndex<std::mt19937_64>;
+
+    ContextIndexBuilder<Index> builder(argc, argv);
 
     builder.run();
 

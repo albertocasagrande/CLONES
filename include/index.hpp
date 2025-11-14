@@ -2,8 +2,8 @@
  * @file index.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines index
- * @version 1.1
- * @date 2025-10-11
+ * @version 1.2
+ * @date 2025-11-14
  *
  * @copyright Copyright (c) 2023-2025
  *
@@ -41,12 +41,6 @@
 namespace RACES
 {
 
-namespace Archive
-{
-
-#define RACES_INDEX_DESC "RACES index"
-#define RACES_INDEX_VERSION 0
-
 /**
  * @brief A structure to define the partitions of the values of a type
  *
@@ -76,6 +70,9 @@ struct partition
         return std::list<TYPE>{value};
     }
 };
+
+namespace Archive
+{
 
 /**
  * @brief A base class for `IndexBuilder` and `IndexReader`
@@ -110,6 +107,25 @@ protected:
         this->bucket_prefix = bucket_prefix;
     }
 
+    /**
+     * @brief Get the file format description string
+     *
+     * @return the file format description string
+     */
+    static constexpr std::string index_file_descr()
+    {
+        return "RACES index";
+    }
+
+    /**
+     * @brief Get the file format version
+     *
+     * @return the file format version
+     */
+    static constexpr uint8_t index_file_version()
+    {
+        return 0;
+    }
 public:
     /**
      * @brief The empty constructor
@@ -486,8 +502,8 @@ public:
 
         Binary::Out archive(this->get_map_path());
 
-        Binary::Out::write_header(archive, RACES_INDEX_DESC,
-                                  RACES_INDEX_VERSION);
+        Binary::Out::write_header(archive, IndexBase<KEY>::index_file_descr(),
+                                  IndexBase<KEY>::index_file_version());
 
         archive & this->get_bucket_prefix()
                 & buckets.size();
@@ -531,6 +547,11 @@ template<class KEY, class VALUE, class RANDOM_GENERATOR,
 class IndexReader : private IndexBase<KEY>
 {
 public:
+    /**
+     * @brief The key type
+     */
+    using key_type = KEY;
+
     /**
      * @brief The value type
      */
@@ -649,8 +670,8 @@ public:
 
         Binary::In archive(map_path);
 
-        Binary::In::read_header(archive, RACES_INDEX_DESC,
-                                RACES_INDEX_VERSION);
+        Binary::In::read_header(archive, IndexBase<KEY>::index_file_descr(),
+                                IndexBase<KEY>::index_file_version());
 
         {
             std::string buffer_prefix;

@@ -50,10 +50,10 @@ set(DESCENDANTS_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/descendants_builder.cpp
 set(MUTATIONS_SIM_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/mutations_sim.cpp
                         ${COMMON_SOURCES})
 
-set(BUILD_CONTEXT_INDEX_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/build_context_index.cpp
+set(BUILD_SBS_CONTEXT_INDEX_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/build_SBS_context_index.cpp
                                 ${COMMON_SOURCES})
 
-set(BUILD_RS_INDEX_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/build_repetition_index.cpp
+set(BUILD_ID_CONTEXT_INDEX_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/build_ID_context_index.cpp
                         ${COMMON_SOURCES})
 
 set(SAMPLE_INDEX_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/sample_context_index.cpp)
@@ -73,15 +73,15 @@ target_include_directories(tissue_sampler PRIVATE ${Boost_INCLUDE_DIR})
 target_link_libraries(tissue_sampler ${TOOLS_LIBRARIES} nlohmann_json::nlohmann_json)
 install(TARGETS tissue_sampler)
 
-add_executable(build_context_index ${BUILD_CONTEXT_INDEX_SOURCES})
-target_include_directories(build_context_index PRIVATE ${Boost_INCLUDE_DIR})
-target_link_libraries(build_context_index ${TOOLS_LIBRARIES})
-install(TARGETS build_context_index)
+add_executable(build_SBS_context_index ${BUILD_SBS_CONTEXT_INDEX_SOURCES})
+target_include_directories(build_SBS_context_index PRIVATE ${Boost_INCLUDE_DIR})
+target_link_libraries(build_SBS_context_index ${TOOLS_LIBRARIES})
+install(TARGETS build_SBS_context_index)
 
-add_executable(build_repetition_index ${BUILD_RS_INDEX_SOURCES})
-target_include_directories(build_repetition_index PRIVATE ${Boost_INCLUDE_DIR})
-target_link_libraries(build_repetition_index ${TOOLS_LIBRARIES})
-install(TARGETS build_repetition_index)
+add_executable(build_ID_context_index ${BUILD_ID_CONTEXT_INDEX_SOURCES})
+target_include_directories(build_ID_context_index PRIVATE ${Boost_INCLUDE_DIR})
+target_link_libraries(build_ID_context_index ${TOOLS_LIBRARIES})
+install(TARGETS build_ID_context_index)
 
 add_executable(mutations_sim ${MUTATIONS_SIM_SOURCES})
 target_include_directories(mutations_sim PRIVATE ${Boost_INCLUDE_DIR})

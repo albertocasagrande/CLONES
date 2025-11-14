@@ -3,7 +3,7 @@
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements SBS signature
  * @version 1.1
- * @date 2025-07-08
+ * @date 2025-11-14
  *
  * @copyright Copyright (c) 2023-2025
  *
@@ -40,13 +40,12 @@ namespace Mutations
 {
 
 IDType::IDType():
-    ftype{FragmentType::HOMOPOLYMER},
-    fl_index{0}, sl_index{0}, insertion{true}
+    IDContext{}
 {}
 
-IDType::IDType(const FragmentType& fragment_type, const uint8_t& first_level_index,
-               const RepetitionType& second_level_index, const bool& insertion):
-    ftype{fragment_type}, fl_index{first_level_index}, sl_index{second_level_index},
+IDType::IDType(const FragmentType& fragment_type, const FirstLevelType& first_level_code,
+               const SecondLevelType& second_level_code, const bool& insertion):
+    IDContext{fragment_type, first_level_code, second_level_code},
     insertion{insertion}
 {}
 
@@ -79,41 +78,49 @@ IDType::IDType(const std::string& type):
 
     if (fields[2].size() != 1) {
         throw std::domain_error("\"" + type + "\" does not represent an ID type: "
-                                + "\"" +fields[2] + "\" should be a character among "
-                                + "'C', 'T', 'R', or 'M'.");
+                                + "\"" + fields[2] + "\" should be a character among "
+                                + "'A', 'C', 'G', 'T', 'R', or 'M'.");
     }
 
+    FragmentType ftype;
+    FirstLevelType fl_code;
+    SecondLevelType sl_code;
+
     switch (fields[2][0]) {
+        case 'A':
+            fl_code = 'A';
+            ftype = FragmentType::HOMOPOLYMER;
+            break;
         case 'C':
-            fl_index = 'C';
+            fl_code = 'C';
+            ftype = FragmentType::HOMOPOLYMER;
+            break;
+        case 'G':
+            fl_code = 'G';
             ftype = FragmentType::HOMOPOLYMER;
             break;
         case 'T':
-            fl_index = 'T';
+            fl_code = 'T';
             ftype = FragmentType::HOMOPOLYMER;
             break;
         case 'R':
-            fl_index = read_size<uint8_t>(fields[0], type);
+            fl_code = read_size<uint8_t>(fields[0], type);
             ftype = FragmentType::HETEROPOLYMER;
             break;
         case 'M':
-            fl_index = read_size<uint8_t>(fields[0], type);
+            fl_code = read_size<uint8_t>(fields[0], type);
             ftype = FragmentType::MICROHOMOLOGY;
             break;
         default:
             throw std::domain_error("\""+type+"\" does not represent an ID type.");
     }
 
-    if (ftype == FragmentType::MICROHOMOLOGY) {
-        sl_index = read_size<uint8_t>(fields[3], type);
-    } else {
-        sl_index = read_size<RepetitionType>(fields[3], type);
-    }
+    sl_code = read_size<SecondLevelType>(fields[3], type);
 
     if (fields[1] == "Del") {
         insertion = false;
         if (ftype != FragmentType::MICROHOMOLOGY) {
-            ++sl_index;
+            ++sl_code;
         }
     } else if (fields[1] != "Ins") {
         throw std::domain_error("\"" + type + "\" does not represent an ID type: "
@@ -121,6 +128,7 @@ IDType::IDType(const std::string& type):
                                 + "\"Del\".");
     }
 
+    static_cast<IDContext &>(*this) = IDContext{ftype, fl_code, sl_code};
 }
 
 
@@ -136,34 +144,17 @@ bool less<RACES::Mutations::IDType>::operator()(const RACES::Mutations::IDType &
 {
     using namespace RACES::Mutations;
 
-    if (!lhs.insertion && rhs.insertion) {
+    if (lhs.is_deletion() && rhs.is_insertion()) {
         return true;
     }
 
-    if (lhs.insertion && !rhs.insertion) {
+    if (lhs.is_insertion() && rhs.is_deletion()) {
         return false;
     }
 
-    if (lhs.fl_index<rhs.fl_index) {
-        return true;
-    }
+    std::less<RACES::Mutations::IDContext> less_context;
 
-    if (lhs.fl_index>rhs.fl_index) {
-        return false;
-    }
-
-    if (lhs.sl_index<rhs.sl_index) {
-        return true;
-    }
-
-    if (lhs.sl_index>rhs.sl_index) {
-        return false;
-    }
-
-    using Type = RACES::Mutations::IDType::FragmentType;
-
-    return (lhs.ftype == Type::HOMOPOLYMER && rhs.ftype != Type::HOMOPOLYMER)
-            || (lhs.ftype == Type::HETEROPOLYMER && rhs.ftype == Type::MICROHOMOLOGY);
+    return less_context(lhs, rhs);
 }
 
 
@@ -172,20 +163,16 @@ std::ostream& operator<<(std::ostream& out, const RACES::Mutations::IDType& type
     using namespace RACES::Mutations;
     using FragmentType = IDType::FragmentType;
 
-    if (type.ftype == FragmentType::HOMOPOLYMER) {
-        out << "1:" << (type.insertion?"Ins":"Del") << ":"
-            << (type.fl_index=='C'?"C":"T");
+    if (type.fragment_type() == FragmentType::HOMOPOLYMER) {
+        out << "1" << (type.is_insertion()?":Ins:":":Del:")
+            << type.unit_base();
     } else {
-        if (!type.insertion) {
-            out << static_cast<unsigned int>(type.fl_index-1) << ":Del:";
-        } else {
-            out << static_cast<unsigned int>(type.fl_index) << ":Ins:";
-        }
-
-        out << (type.ftype == FragmentType::HETEROPOLYMER?"R":"M");
+        out << static_cast<unsigned int>(type.unit_size())
+            << (type.is_insertion()?":Ins:":":Del:")
+            << (type.fragment_type() == FragmentType::HETEROPOLYMER?"R":"M");
     }
 
-    out << ":" << type.sl_index;
+    out << ":" << type.get_second_level_code();
 
     return out;
 }

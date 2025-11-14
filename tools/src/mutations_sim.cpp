@@ -41,6 +41,7 @@
 #include "simulation.hpp"
 #include "descendant_forest.hpp"
 #include "sbs_context_index.hpp"
+#include "id_context_index.hpp"
 #include "mutation_engine.hpp"
 #include "germline.hpp"
 #include "read_simulator.hpp"
@@ -109,8 +110,8 @@ class MutationsSimulator : public BasicExecutable
     std::filesystem::path species_directory;
     std::filesystem::path snapshot_path;
     std::filesystem::path driver_mutations_filename;
-    std::filesystem::path context_index_path;
-    std::filesystem::path rs_index_filename;
+    std::filesystem::path SBS_context_index_path;
+    std::filesystem::path ID_context_index_path;
     std::filesystem::path ref_genome_filename;
     std::filesystem::path passenger_CNA_filename;
     std::filesystem::path SBS_filename;
@@ -161,21 +162,6 @@ class MutationsSimulator : public BasicExecutable
         }
 
         return simulation.get_tissue_samples();
-    }
-
-    RACES::Mutations::RSIndex load_rs_index(const std::string& filename) const
-    {
-        RACES::Archive::Binary::In archive(filename);
-
-        RACES::Mutations::RSIndex rs_index;
-
-        if (quiet) {
-            archive & rs_index;
-        } else {
-            archive.load(rs_index, "repetition index");
-        }
-
-        return rs_index;
     }
 
     template<typename MUTATION_TYPE>
@@ -430,15 +416,14 @@ class MutationsSimulator : public BasicExecutable
         auto SBS_signatures = load_signatures<SBSType>(SBS_filename);
         auto ID_signatures = load_signatures<IDType>(ID_filename);
 
-        auto context_index = RACES::Mutations::SBSContextIndex<RANDOM_GENERATOR>(context_index_path);
-        auto rs_index = load_rs_index(rs_index_filename);
+        auto SBS_context_index = RACES::Mutations::SBSContextIndex<RANDOM_GENERATOR>(SBS_context_index_path);
 
         if (!simulation_cfg.contains("exposures")) {
             throw std::runtime_error("The passengers simulation configuration must contain "
                                      "a \"exposures\" field");
         }
 
-        auto num_of_alleles = get_number_of_alleles(context_index, simulation_cfg);
+        auto num_of_alleles = get_number_of_alleles(SBS_context_index, simulation_cfg);
 
         const auto passenger_CNAs = MutationsSimulator::load_passenger_CNAs(passenger_CNA_filename);
 
@@ -446,7 +431,7 @@ class MutationsSimulator : public BasicExecutable
 
         auto germline_mutations_per_kbase = ConfigReader::get_number_of_germline_mutations_per_kbase(simulation_cfg);
 
-        auto chromosome_regions = context_index.get_chromosome_regions();
+        auto chromosome_regions = SBS_context_index.get_chromosome_regions();
 
         GenomeMutations germline;
 
@@ -458,9 +443,14 @@ class MutationsSimulator : public BasicExecutable
             germline = GermlineMutations::load(germline_csv_filename, num_of_alleles, germline_subject);
         }
 
-        MutationEngine<RANDOM_GENERATOR> engine(rs_index, context_index_path, SBS_signatures, ID_signatures,
+        // convert cache size from MBs to Bytes
+        const auto byte_cache_size = cache_size*1024*1024;
+        MutationEngine<RANDOM_GENERATOR> engine(ref_genome_filename,
+                                                SBS_context_index_path, ID_context_index_path,
+                                                SBS_signatures, ID_signatures,
                                                 mutational_properties, germline, driver_storage,
-                                                cache_size*1024*1024, passenger_CNAs);
+                                                byte_cache_size/2, byte_cache_size/2,
+                                                passenger_CNAs);
 
         const auto& exposures_json = simulation_cfg["exposures"];
 
@@ -552,8 +542,8 @@ class MutationsSimulator : public BasicExecutable
         }
 
         test_file_existence(vm, "driver mutations", driver_mutations_filename);
-        test_dir_existence(vm, "context index", context_index_path, "build_context_index");
-        test_file_existence(vm, "repetition index", rs_index_filename, "build_repetition_index");
+        test_dir_existence(vm, "SBS context index", SBS_context_index_path, "build_SBS_context_index");
+        test_file_existence(vm, "ID context index", ID_context_index_path, "build_ID_context_index");
         test_file_existence(vm, "SBS signature", SBS_filename);
         test_file_existence(vm, "ID signature", ID_filename);
         test_file_existence(vm, "reference genome", ref_genome_filename);
@@ -735,10 +725,10 @@ public:
              "the name of the file describing the mutations simulation")
             ("species simulation", po::value<std::filesystem::path>(&species_directory),
              "the species simulation directory")
-            ("SBS context index directory", po::value<std::filesystem::path>(&context_index_path),
-             "the genome context index directory")
-            ("repetition index", po::value<std::filesystem::path>(&rs_index_filename),
-             "the genome repetition index")
+            ("SBS context index directory", po::value<std::filesystem::path>(&SBS_context_index_path),
+             "the genome SBS context index directory")
+            ("ID context index directory", po::value<std::filesystem::path>(&ID_context_index_path),
+             "the genome ID context index directory")
             ("SBS signature", po::value<std::filesystem::path>(&SBS_filename),
              "the SBS signature")
             ("ID signature", po::value<std::filesystem::path>(&ID_filename),

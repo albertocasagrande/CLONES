@@ -2,10 +2,10 @@
  * @file id_signature.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines indel signature
- * @version 1.0
- * @date 2024-06-10
+ * @version 1.1
+ * @date 2025-11-14
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2025
  *
  * MIT License
  *
@@ -39,6 +39,8 @@
 #include "mutation.hpp"
 #include "signature.hpp"
 
+#include "id_context.hpp"
+
 namespace RACES
 {
 
@@ -55,27 +57,11 @@ namespace Mutations
  * HETEROPOLYMER) or the homology size (for MICROHOMOLOGY), and a Boolean flag
  * establishing whether the mutation is an insertion or a deletion.
  */
-class IDType : public MutationType
+class IDType : public MutationType, public IDContext
 {
-public:
-    using RepetitionType = uint16_t;
-
-    /**
-     * @brief The type of the fragment involved in the mutation
-     */
-    enum class FragmentType
-    {
-        HOMOPOLYMER,    //!< A repeated sequence whose nucleotides are the same
-        HETEROPOLYMER,  //!< A repeated sequence whose nucleotides may differ
-        MICROHOMOLOGY  //!< A fragment followed by a sequence that matches its prefix
-    };
-
-    FragmentType ftype;         //!< The type of mutated fragment
-
-    uint8_t fl_index;           //!< The first level index
-    RepetitionType sl_index;    //!< The second level index
-
     bool insertion;     //!< A Boolean flag establishing whether the mutation is an insertion
+
+public:
 
     /**
      * @brief The empty constructor
@@ -86,36 +72,43 @@ public:
      * @brief A constructor
      *
      * @param fragment_type is the fragment type
-     * @param first_level_index is the first level index
-     * @param second_level_index is the second level index
+     * @param first_level_code is the first level code
+     * @param first_level_code is the second level code
      * @param insertion is a Boolean flag establishing whether the mutation is an insertion
      */
-    IDType(const FragmentType& fragment_type, const uint8_t& first_level_index,
-           const RepetitionType& second_level_index, const bool& insertion);
+    IDType(const FragmentType& fragment_type, const FirstLevelType& first_level_code,
+           const SecondLevelType& second_level_code, const bool& insertion);
 
     /**
      * @brief A constructor
      *
-     * An indel type is conventionally represented by a string in the
-     * form `{number}:{"Del"|"Ins"}:{'C':'T':'R':'M'}:{number}`. The
-     * first number is the unit size for both HOMOPOLYMER and
-     * HETEROPOLYMER, and the fragment size for MICROHOMOLOGY. When
-     * the string represents a HETEROPOLYMER or a MICROHOMOLOGY it
-     * is the first level index.
+     * An indel context is conventionally represented by a string in the form
+     * `{number}:{"Del"|"Ins"}:{'A','C','G','T','R','M'}:{number}`. The first
+     * number is the unit size for both homopolymer and heteropolymer, and the
+     * fragment size for microhomology. When the string represents a
+     * heteropolymer or a microhomology it is the first level index.
      * The strings "Del" and "Ins" represent deletions and insertions,
-     * respectively. The character between the second and the third
-     * ':' denotes the fragment type: 'R' stands for HETEROPOLYMER,
-     * 'M' for MICROHOMOLOGY, and both 'C' and 'T' for HOMOPOLYMER.
-     * Dealing with HOMOPOLYMER, the character is the first level
-     * index.
-     * The last number is the size of the MICROHOMOLOGY (for
-     * microhomologies), the number of repetitions in the reference
-     * sequence (for polymer insertions), or the number of repetitions in
-     * the altered sequence (for polymer deletions).
+     * respectively. The character between the second and the third ':' denotes
+     * the fragment type: 'R' stands for heteropolymer, 'M' for microhomology,
+     * and 'A', 'C', 'G', and 'T' for homopolymer. Dealing with homopolymer,
+     * the character is the first level index.
+     * The last number is the size of the microhomology (for microhomologies)
+     * and the number of repetitions in the reference sequence (for polymer
+     * insertions).
      *
      * @param type is the textual representation of an ID type
      */
     explicit IDType(const std::string& type);
+
+    inline bool is_insertion() const
+    {
+        return insertion;
+    }
+
+    inline bool is_deletion() const
+    {
+        return !insertion;
+    }
 
     /**
      * @brief Get the type of the mutation type
@@ -146,9 +139,9 @@ public:
      */
     inline bool operator==(const IDType& type) const
     {
-        return (ftype == type.ftype) && (fl_index == type.fl_index)
-                && (sl_index == type.sl_index)
-                && (insertion == type.insertion);
+        return static_cast<const IDContext&>(*this)
+                    == static_cast<const IDContext&>(type)
+                && insertion == type.insertion;
     }
 
     /**

@@ -2,8 +2,8 @@
  * @file mutation_engine.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a class to place mutations on a descendant forest
- * @version 1.33
- * @date 2025-10-12
+ * @version 1.34
+ * @date 2025-11-14
  *
  * @copyright Copyright (c) 2023-2025
  *
@@ -32,7 +32,6 @@
 #define __RACES_MUTATION_ENGINE__
 
 #include <map>
-#include <stack>
 #include <random>
 #include <ostream>
 #include <iterator>
@@ -41,12 +40,14 @@
 #include "mutant_id.hpp"
 
 #include "sbs_context_index.hpp"
-#include "rs_index.hpp"
-#include "genome_mutations.hpp"
+#include "id_context_index.hpp"
 #include "sbs_signature.hpp"
 #include "id_signature.hpp"
+#include "genome_mutations.hpp"
 #include "mutational_properties.hpp"
 #include "driver_storage.hpp"
+
+#include "fasta_chr_reader.hpp"
 
 #include "filter.hpp"
 #include "utils.hpp"
@@ -195,16 +196,16 @@ class MutationEngine
     using IDSignatures = Signatures<IDType>;
 
     /**
-     * @brief The stack of the repetition removed from the repetition index
+     * @brief An indexed genome reader
      */
-    using IDTypeStack = std::stack<IDType>;
+    using GenomeReader = IO::FASTA::IndexedReader<IO::FASTA::ChromosomeData<IO::FASTA::Sequence>>;
 
     RANDOM_GENERATOR generator; //!< the random generator
 
-    SBSContextIndex<RANDOM_GENERATOR> context_index;    //!< the SBS context index
+    std::shared_ptr<GenomeReader> genome_reader; //!< the genome reader
 
-    RSIndex rs_index;       //!< the genome repetition index
-    IDTypeStack rs_stack;   //!< the stack of the repetition removed from `rs_index`
+    SBSContextIndex<RANDOM_GENERATOR> sbs_context_index;    //!< the SBS context index
+    IDContextIndex<RANDOM_GENERATOR> id_context_index;      //!< the ID context index
 
     std::map<Time, MutationalExposure> timed_exposures[2];  //!< the timed exposures
     SBSSignatures SBS_signatures;   //!< the SBS signatures
@@ -273,8 +274,7 @@ class MutationEngine
      *
      * This method selects a random SBS among whose having a specified
      * SBS type and available in a context index. The selected SBS is
-     * extracted from the context index and inserted into a stack to
-     * revert the selection.
+     * extracted from the context index.
      *
      * @param[in] m_type is the SBS type of the SBS to be selected
      * @return a SBS whose type is `m_type` and which was available in
@@ -289,9 +289,9 @@ class MutationEngine
 
         GenomicPosition g_pos;
         if (infinite_sites_model) {
-            std::tie(extracted, g_pos) = context_index.extract_from_class(generator, context);
+            std::tie(extracted, g_pos) = sbs_context_index.extract_from_class(generator, context);
         } else {
-            std::tie(extracted, g_pos) = context_index.choose_from_class(generator, context);
+            std::tie(extracted, g_pos) = sbs_context_index.choose_from_class(generator, context);
         }
 
         // the mutation occurs in the context's second position
@@ -310,11 +310,43 @@ class MutationEngine
     }
 
     /**
+     * @brief Build a random k-mer
+     *
+     * @param[in] k is the size of the k-mer to build
+     * @return a random k-mer
+     */
+    std::string build_random_k_mer(const uint8_t k)
+    {
+        std::uniform_int_distribution<uint8_t> dist(0, 3);
+
+        std::string k_mer(k, 'T');
+        for (auto& nucleotide : k_mer) {
+            switch(dist(generator)) {
+                case 0:
+                    nucleotide = 'A';
+                    break;
+                case 1:
+                    nucleotide = 'C';
+                    break;
+                case 2:
+                    nucleotide = 'G';
+                    break;
+                case 3:
+                default:
+                    //nucleotide = 'T';
+                    break;
+            }
+        }
+
+        return k_mer;
+    }
+
+    /**
      * @brief Select a random indel
      *
      * This method selects a random indel among whose having a specified ID type
      * and available in the repetition index. The selected indel is extracted
-     * from the repetition index and inserted into a stack to revert the selection.
+     * from the repetition index.
      *
      * @param[in] id_type is the ID type of the indel to be selected
      * @return an indel whose type is `m_type` and which was available in the
@@ -324,23 +356,43 @@ class MutationEngine
     {
         using namespace RACES::Mutations;
 
+        IDContext extracted;
+
+        RepetitionReference rep_ref;
         if (infinite_sites_model) {
-            rs_stack.push(id_type);
+            std::tie(extracted, rep_ref) = id_context_index.extract_from_class(generator, id_type);
+        } else {
+            std::tie(extracted, rep_ref) = id_context_index.choose_from_class(generator, id_type);
         }
-        const auto& repetition = rs_index.select(id_type, infinite_sites_model);
 
-        std::string alt(1, repetition.prev_base);
+        std::string chr_name = GenomicPosition::chrtos(rep_ref.position.chr_id);
+
+        std::string unit;
+        size_t num_of_rep{0};
+
+        if (extracted.fragment_type() != IDContext::FragmentType::MICROHOMOLOGY) {
+            num_of_rep = extracted.num_of_repetitions();
+        }
+
+        if (id_type.is_insertion() && num_of_rep == 0) {
+            unit = build_random_k_mer(rep_ref.unit_size);
+        } else {
+            genome_reader->read(unit, chr_name, rep_ref.position.position-1,
+                                rep_ref.unit_size);
+        }
+        --rep_ref.position.position;
+
+        std::string alt;
+        genome_reader->read(alt, chr_name, rep_ref.position.position-1, 1);
+
         std::string ref = alt;
-        ref.append(repetition.unit);
+        ref.append(unit);
 
-        if (id_type.insertion) {
+        if (id_type.is_insertion()) {
             std::swap(alt, ref);
         }
 
-        GenomicPosition pos(repetition.g_position);
-        --pos.position;
-
-        return {RANDOM_ALLELE, pos, ref, alt, Mutation::UNDEFINED};
+        return {RANDOM_ALLELE, rep_ref.position, ref, alt, Mutation::UNDEFINED};
     }
 
     /**
@@ -530,7 +582,7 @@ class MutationEngine
      */
     inline size_t count_available(const SBSType& SBS_type) const
     {
-        return context_index[SBS_type.get_context()].size();
+        return sbs_context_index[SBS_type.get_context()].size();
     }
 
     /**
@@ -541,7 +593,7 @@ class MutationEngine
      */
     inline size_t count_available(const IDType& ID_type) const
     {
-        return rs_index.count_available_for(ID_type);
+        return id_context_index[ID_type].size();
     }
 
     /**
@@ -980,8 +1032,6 @@ class MutationEngine
     {
         using namespace RACES::Mutations;
 
-        const size_t rs_stack_size = rs_stack.size();
-
         node.arising_mutations() = MutationList();
 
         place_driver_mutations(node, node_mutations, driver_mutations);
@@ -1021,58 +1071,6 @@ class MutationEngine
             place_mutations(children.back(), node_mutations, passenger_rates, driver_mutations,
                             visited_nodes, progress_bar);
         }
-
-        if (!infinite_sites_model) {
-            // reverse repetition index extractions
-            while (get_stack_size<IDType>() > rs_stack_size) {
-                restore_last_extracted_from_index<IDType>();
-            }
-        }
-    }
-
-    /**
-     * @brief Get the size of the stack associated to a mutation type
-     *
-     * @tparam MUTATION_TYPE is the mutation type of the
-     *      of the stack
-     */
-    template<typename MUTATION_TYPE,
-             std::enable_if_t<std::is_base_of_v<MutationType, MUTATION_TYPE>, bool> = true>
-    size_t get_stack_size() const
-    {
-        if constexpr(std::is_base_of_v<MUTATION_TYPE, SBSType>) {
-            return 0;
-        }
-
-        if constexpr(std::is_base_of_v<MUTATION_TYPE, IDType>) {
-            return rs_stack.size();
-        }
-
-        throw std::runtime_error("Unsupported mutation type.");
-    }
-
-    /**
-     * @brief Re-insert the last extracted from an index
-     *
-     * @tparam MUTATION_TYPE is the mutation type of the
-     *      of the index
-     */
-    template<typename MUTATION_TYPE,
-             std::enable_if_t<std::is_base_of_v<MutationType, MUTATION_TYPE>, bool> = true>
-    void restore_last_extracted_from_index()
-    {
-        if constexpr(std::is_base_of_v<MUTATION_TYPE, SBSType>) {
-            return;
-        }
-
-        if constexpr(std::is_base_of_v<MUTATION_TYPE, IDType>) {
-            rs_index.restore(rs_stack.top());
-            rs_stack.pop();
-
-            return;
-        }
-
-        throw std::runtime_error("Unsupported mutation type.");
     }
 
     /**
@@ -1146,7 +1144,7 @@ class MutationEngine
     std::vector<CNA>
     filter_CNA_by_chromosome_ids(const std::vector<CNA>& CNAs) const
     {
-        auto chr_ids = context_index.get_chromosome_ids();
+        auto chr_ids = sbs_context_index.get_chromosome_ids();
 
         std::set<ChromosomeId> chr_id_set(chr_ids.begin(),chr_ids.end());
 
@@ -1166,15 +1164,15 @@ class MutationEngine
      * This method checks whether germline contains the reference sequence chromosomes
      * and throws a `std::out_of_range` exception this is not the case.
      *
-     * @param[in] context_index is a context index
+     * @param[in] sbs_context_index is a context index
      * @param[in] germline_mutations are the germline mutations
      */
-    static void check_genomes_consistency(const SBSContextIndex<RANDOM_GENERATOR>& context_index,
+    static void check_genomes_consistency(const SBSContextIndex<RANDOM_GENERATOR>& sbs_context_index,
                                           const GenomeMutations& germline_mutations)
     {
         const auto& germline_chromosomes = germline_mutations.get_chromosomes();
 
-        for (const auto& chr_id : std::views::keys(context_index.get_chromosome_lengths())) {
+        for (const auto& chr_id : std::views::keys(sbs_context_index.get_chromosome_lengths())) {
             if (germline_chromosomes.find(chr_id) == germline_chromosomes.end()) {
                 throw std::out_of_range("The germline does not contain Chr. "
                                         + GenomicPosition::chrtos(chr_id)
@@ -1404,6 +1402,7 @@ public:
      * @brief The empty constructor
      */
     MutationEngine():
+        genome_reader{nullptr},
         driver_CNA_min_distance(0), warning(RACES::warning),
         infinite_sites_model(true), avoid_homozygous_losses(true)
     {}
@@ -1411,65 +1410,75 @@ public:
     /**
      * @brief A constructor
      *
-     * @param[in, out] repetition_index is the genome repetition index
-     * @param[in] context_index_path is the SBS context index directory path
+     * @param[in] genome_path is path to the genome FASTA file
+     * @param[in] sbs_context_index_path is the SBS context index directory path
+     * @param[in] id_context_index_path is the ID context index directory path
      * @param[in] SBS_signatures is the map of the SBS signatures
      * @param[in] ID_signatures is the map of the indel signatures
      * @param[in] germline_mutations are the germline mutations
      * @param[in] driver_storage is the storage of driver mutations
-     * @param[in] context_index_cache_size is the context index cache size
+     * @param[in] sbs_context_index_cache_size is the context index cache size
+     * @param[in] id_context_index_cache_size is the context index cache size
      * @param[in] passenger_CNAs is the vector of the admissible passenger CNAs
      * @param[in] driver_CNA_min_distance is the minimum distance between a driver
      *      mutation and a passenger CNA
      * @param[in] warning is the warning function
      */
-    MutationEngine(RSIndex& repetition_index,
-                   const std::filesystem::path& context_index_path,
+    MutationEngine(const std::filesystem::path& genome_path,
+                   const std::filesystem::path& sbs_context_index_path,
+                   const std::filesystem::path& id_context_index_path,
                    const std::map<std::string, SBSSignature>& SBS_signatures,
                    const std::map<std::string, IDSignature>& ID_signatures,
                    const GenomeMutations& germline_mutations,
                    const DriverStorage& driver_storage,
-                   const size_t context_index_cache_size = 1000000000,
+                   const size_t sbs_context_index_cache_size = 1000000000,
+                   const size_t id_context_index_cache_size = 1000000000,
                    const std::vector<CNA>& passenger_CNAs={},
                    const unsigned int& driver_CNA_min_distance=10000,
                    WarningFunction warning=RACES::warning):
-        MutationEngine(repetition_index, context_index_path, SBS_signatures,
-                       ID_signatures, MutationalProperties(),
+        MutationEngine(genome_path, sbs_context_index_path, id_context_index_path,
+                       SBS_signatures, ID_signatures, MutationalProperties(),
                        germline_mutations, driver_storage,
-                       context_index_cache_size,
+                       sbs_context_index_cache_size, id_context_index_cache_size,
                        passenger_CNAs, driver_CNA_min_distance, warning)
     {}
 
     /**
      * @brief A constructor
      *
-     * @param[in, out] repetition_index is the genome repetition index
-     * @param[in] context_index_path is the SBS context index directory path
+     * @param[in] genome_path is path to the genome FASTA file
+     * @param[in] sbs_context_index_path is the SBS context index directory path
+     * @param[in] id_context_index_path is the ID context index directory path
      * @param[in] SBS_signatures is the map of the SBS signatures
      * @param[in] ID_signatures is the map of the indel signatures
      * @param[in] mutational_properties are the mutational properties of all the species
      * @param[in] germline_mutations are the germline mutations
      * @param[in] driver_storage is the storage of driver mutations
-     * @param[in] context_index_cache_size is the context index cache size
+     * @param[in] sbs_context_index_cache_size is the context index cache size
+     * @param[in] id_context_index_cache_size is the context index cache size
      * @param[in] passenger_CNAs is the vector of the admissible passenger CNAs
      * @param[in] driver_CNA_min_distance is the minimum distance between a driver
      *      mutation and a passenger CNA
      * @param[in] warning is the warning function
      */
-    MutationEngine(RSIndex& repetition_index,
-                   const std::filesystem::path& context_index_path,
+    MutationEngine(const std::filesystem::path& genome_path,
+                   const std::filesystem::path& sbs_context_index_path,
+                   const std::filesystem::path& id_context_index_path,
                    const std::map<std::string, SBSSignature>& SBS_signatures,
                    const std::map<std::string, IDSignature>& ID_signatures,
                    const MutationalProperties& mutational_properties,
                    const GenomeMutations& germline_mutations,
                    const DriverStorage& driver_storage,
-                   const size_t context_index_cache_size = 1000000000,
+                   const size_t sbs_context_index_cache_size = 1000000000,
+                   const size_t id_context_index_cache_size = 1000000000,
                    const std::vector<CNA>& passenger_CNAs={},
                    const unsigned int& driver_CNA_min_distance=10000,
                    WarningFunction warning=RACES::warning):
-        generator(), context_index{context_index_path, context_index_cache_size},
-        rs_index(repetition_index), SBS_signatures{SBS_signatures},
-        ID_signatures{ID_signatures}, mutational_properties(mutational_properties),
+        generator(), genome_reader{std::make_shared<GenomeReader>(genome_path)},
+        sbs_context_index{sbs_context_index_path, sbs_context_index_cache_size},
+        id_context_index{id_context_index_path, id_context_index_cache_size},
+        SBS_signatures{SBS_signatures}, ID_signatures{ID_signatures},
+        mutational_properties(mutational_properties),
         germline_mutations(std::make_shared<GenomeMutations>(germline_mutations)),
         dm_genome(germline_mutations.copy_structure()),
         driver_storage(driver_storage),
@@ -1477,7 +1486,7 @@ public:
         driver_CNA_min_distance{driver_CNA_min_distance},
         warning{warning}, infinite_sites_model{true}, avoid_homozygous_losses{true}
     {
-        MutationEngine::check_genomes_consistency(context_index, germline_mutations);
+        MutationEngine::check_genomes_consistency(sbs_context_index, germline_mutations);
     }
 
     /**
@@ -1664,11 +1673,11 @@ public:
         auto species_rates = get_species_rate_map(descendant_forest);
         auto driver_mutations = get_driver_mutation_map(descendant_forest);
 
-        auto chr_regions = context_index.get_chromosome_regions();
+        auto chr_regions = sbs_context_index.get_chromosome_regions();
 
         auto wild_type_structure = germline_mutations->copy_structure();
 
-        context_index.boot_up_tours(generator, progress_bar);
+        sbs_context_index.boot_up_tours(generator, progress_bar);
 
         progress_bar.init_new();
         progress_bar.set_message("Placing mutations");
@@ -1695,10 +1704,6 @@ public:
         for (const auto& [mutant_id, mutant_drivers] : driver_mutations) {
             forest.mutational_properties.set_mutant_drivers(mutant_drivers);
         }
-
-        // reverse index extractions
-        reset_index<SBSType>();
-        reset_index<IDType>();
 
         return forest;
     }
@@ -1802,21 +1807,6 @@ public:
     inline const GenomeMutations& get_germline_mutations() const
     {
         return *germline_mutations;
-    }
-
-    /**
-     * @brief Reset the index to its original state
-     *
-     * @tparam MUTATION_TYPE is the mutation type of the
-     *      of the index to be reset
-     */
-    template<typename MUTATION_TYPE,
-             std::enable_if_t<std::is_base_of_v<MutationType, MUTATION_TYPE>, bool> = true>
-    void reset_index()
-    {
-        while (get_stack_size<MUTATION_TYPE>()>0) {
-            restore_last_extracted_from_index<MUTATION_TYPE>();
-        }
     }
 };
 

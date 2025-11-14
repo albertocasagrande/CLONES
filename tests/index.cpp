@@ -2,8 +2,8 @@
  * @file index.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Index tests
- * @version 1.0
- * @date 2025-09-17
+ * @version 1.1
+ * @date 2025-11-14
  *
  * @copyright Copyright (c) 2023-2025
  *
@@ -303,7 +303,7 @@ void index_extract_class(std::mt19937_64& random_generator,
 
     for (const auto key : index.get_keys()) {
         if (!key_done.contains(key)) {
-            auto class_keys = partition<KEY>::get_class_of(key);
+            auto class_keys = RACES::partition<KEY>::get_class_of(key);
             key_done.insert(class_keys.begin(), class_keys.end());
 
             std::set<KEY> class_set(class_keys.begin(), class_keys.end());
@@ -377,7 +377,7 @@ void index_choose_class(std::mt19937_64& random_generator,
     size_t total_available{0};
     for (const auto key : index.get_keys()) {
         if (!key_done.contains(key)) {
-            auto class_keys = partition<KEY>::get_class_of(key);
+            auto class_keys = RACES::partition<KEY>::get_class_of(key);
             key_done.insert(class_keys.begin(), class_keys.end());
 
             std::set<KEY> class_set(class_keys.begin(), class_keys.end());

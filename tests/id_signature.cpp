@@ -2,10 +2,10 @@
  * @file id_signature.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Some ID example
- * @version 0.1
- * @date 2024-05-13
+ * @version 1.0
+ * @date 2025-11-14
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2025
  *
  * MIT License
  *
@@ -49,15 +49,25 @@ BOOST_AUTO_TEST_CASE(ID_type_create)
 
     BOOST_CHECK_NO_THROW(IDType());
 
-    for (const IDType::FragmentType ftype : {IDType::FragmentType::HOMOPOLYMER,
-                                             IDType::FragmentType::HETEROPOLYMER,
+    for (const IDType::FragmentType ftype : {IDType::FragmentType::HETEROPOLYMER,
                                              IDType::FragmentType::MICROHOMOLOGY}) {
-        for (const uint8_t first_level_index: {1, 2, 3, 4, 5}) {
-            for (const IDType::RepetitionType second_level_index: {0, 1, 2, 3, 4, 5}) {
+        for (const IDType::FirstLevelType first_level_code: {1, 2, 3, 4, 5}) {
+            for (const IDType::SecondLevelType second_level_code: {0, 1, 2, 3, 4, 5}) {
                 for (const bool insertion: {true, false}) {
-                    BOOST_CHECK_NO_THROW(IDType(ftype, first_level_index,
-                                                second_level_index, insertion));
+                    BOOST_CHECK_NO_THROW(IDType(ftype, first_level_code,
+                                                second_level_code, insertion));
                 }
+            }
+        }
+    }
+
+    for (const IDType::FirstLevelType first_level_code: {'a', 'A', 'c', 'C',
+                                                         'g', 'G', 't', 'T'}) {
+        for (const IDType::SecondLevelType second_level_code: {0, 1, 2, 3, 4, 5}) {
+            for (const bool insertion: {true, false}) {
+                BOOST_CHECK_NO_THROW(IDType(IDType::FragmentType::HOMOPOLYMER,
+                                            first_level_code, second_level_code,
+                                            insertion));
             }
         }
     }
@@ -70,8 +80,8 @@ BOOST_AUTO_TEST_CASE(ID_type_read)
     struct IDTypeData
     {
         IDType::FragmentType ftype;
-        uint8_t first_level_index;
-        IDType::RepetitionType second_level_index;
+        IDType::FirstLevelType first_level_code;
+        IDType::SecondLevelType second_level_code;
         bool insertion;
     };
 
@@ -93,10 +103,10 @@ BOOST_AUTO_TEST_CASE(ID_type_read)
 
         is >> type;
 
-        BOOST_CHECK(type.ftype==results.ftype);
-        BOOST_CHECK_EQUAL(type.fl_index, results.first_level_index);
-        BOOST_CHECK_EQUAL(type.sl_index, results.second_level_index);
-        BOOST_CHECK_EQUAL(type.insertion, results.insertion);
+        BOOST_CHECK(type.fragment_type()==results.ftype);
+        BOOST_CHECK_EQUAL(type.get_first_level_code(), results.first_level_code);
+        BOOST_CHECK_EQUAL(type.get_second_level_code(), results.second_level_code);
+        BOOST_CHECK_EQUAL(type.is_insertion(), results.insertion);
     }
 }
 

@@ -2,8 +2,8 @@
  * @file archive.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines some archive classes and their methods
- * @version 1.7
- * @date 2025-09-12
+ * @version 1.8
+ * @date 2025-11-14
  *
  * @copyright Copyright (c) 2023-2025
  *
@@ -119,10 +119,10 @@ public:
 
 /**
  * @brief A template to test whether a type requires a constant amount of space on disk
- * 
+ *
  * A template to test whether a type requires a constant amount of space on disk. By
  * default any type does not use constant space on disk.
- * 
+ *
  * @tparam T is the type to be tested
  * @tparam ENABLE is an optional parameter to enable/disable the template
  */
@@ -132,7 +132,7 @@ struct uses_constant_space_on_disk : std::false_type {};
 // a template specialization for arithmetic and enumerative types.
 // These types uses constant spaces on disk.
 template <typename T>
-struct uses_constant_space_on_disk<T, std::enable_if_t<std::is_arithmetic_v<T> 
+struct uses_constant_space_on_disk<T, std::enable_if_t<std::is_arithmetic_v<T>
     || std::is_enum_v<T>>> : std::true_type {};
 
 #define CHECK_CONSTANT_SPACE_ON_DISK(...) \
@@ -159,10 +159,12 @@ template <Constant_Space_on_Disk T>
 struct uses_constant_space_on_disk<T, void> {
     using tuple_type = decay_tuple_t<decltype(std::declval<T>().constant_space_on_disk())>;
 
-    static constexpr bool value =
-        std::apply([](auto&&... members) constexpr {
-            return (uses_constant_space_on_disk<std::decay_t<decltype(members)>>::value && ...);
-        }, tuple_type{});
+    template <std::size_t... Is>
+    static consteval bool check(std::index_sequence<Is...>) {
+        return (uses_constant_space_on_disk<std::tuple_element_t<Is, tuple_type>>::value && ...);
+    }
+
+    static constexpr bool value = check(std::make_index_sequence<std::tuple_size_v<tuple_type>>{});
 };
 
 /**
@@ -742,7 +744,7 @@ public:
 
     /**
      * @brief Save an object referenced by a shared pointer
-     * 
+     *
      * @tparam T is the type of the object to be saved
      * @param obj_ptr a shared pointer to the object to be save
      * @return a reference to the updated archive
@@ -837,13 +839,13 @@ public:
         if (progress_bar != nullptr) {
             progress_bar->update_elapsed_time();
         }
-    
+
         return *this;
     }
 
     /**
      * @brief Measure the space required by an object in dynamic memory
-     * 
+     *
      * @tparam T is the type of the object whose archive space is required
      * @param obj_ptr a shared pointer to the object whose archive space
      *    is required
@@ -979,7 +981,7 @@ public:
 
     /**
      * @brief Load an object in dynamic memory
-     * 
+     *
      * @tparam T is the type of the object to be loaded
      * @param obj_ptr a shared pointer that will reference
      *      the loaded object
@@ -1645,7 +1647,7 @@ Out& Out::operator&(const std::shared_ptr<T>& obj_ptr)
     }
 
     *this & *obj_ptr;
-    
+
     return *this;
 }
 
@@ -1696,7 +1698,7 @@ In& In::operator&(std::shared_ptr<T>& obj_ptr)
         }
 
         if (it->second.first != typeid(T).hash_code()) {
-            throw std::runtime_error("Wrong hash code for index " 
+            throw std::runtime_error("Wrong hash code for index "
                                         + std::to_string(idx));
         }
 
@@ -1788,7 +1790,7 @@ ByteCounter& ByteCounter::operator&(const std::shared_ptr<T>& obj_ptr)
     }
 
     *this & *obj_ptr;
-    
+
     return *this;
 }
 

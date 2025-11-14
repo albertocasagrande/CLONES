@@ -2,8 +2,8 @@
  * @file sbs_context_index.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements SBS context index and its builder
- * @version 1.1
- * @date 2025-10-13
+ * @version 1.2
+ * @date 2025-11-14
  *
  * @copyright Copyright (c) 2023-2025
  *
@@ -51,9 +51,6 @@
 namespace RACES
 {
 
-namespace Archive
-{
-
 /**
  * @brief A `partition` specialization for `SBSContext`
  *
@@ -76,8 +73,6 @@ struct partition<Mutations::SBSContext>
                                                 context.get_reverse_complement()};
     }
 };
-
-}   // Archive
 
 namespace Mutations
 {
@@ -126,6 +121,8 @@ class SBSContextIndex : public Archive::IndexReader<SBSContext, GenomicPosition,
     using SkippedContexts = std::array<size_t, possible_context_code()>;
 
     std::map<ChromosomeId, GenomicRegion::Length> chr_lengths;  //!< The lengths of the genome chromosomes
+
+    uint8_t sampling_delta; //!< The number of contexts to skip before sampling one context
 
     /**
      * @brief Initialize a skipped contexts array
@@ -269,24 +266,6 @@ class SBSContextIndex : public Archive::IndexReader<SBSContext, GenomicPosition,
     }
 
     /**
-     * @brief Split a set of genomic regions by chromosome id
-     *
-     * @param[in] genomic_regions is the set of genomic region to be split
-     * @return a map that associates a chromosome id to the the set of genomic regions
-     *     laying in the corresponding chromosome
-     */
-    static std::map<ChromosomeId, std::set<GenomicRegion> > split_by_chromosome_id(const std::set<GenomicRegion>& genomic_regions)
-    {
-        std::map<ChromosomeId, std::set<GenomicRegion> > split;
-
-        for (const auto& genomic_region: genomic_regions) {
-            split[genomic_region.get_chromosome_id()].insert(genomic_region);
-        }
-
-        return split;
-    }
-
-    /**
      * @brief Get the SBS context index specific data filename
      *
      * @return the SBS context index specific data filename
@@ -333,7 +312,7 @@ public:
 
         auto regions_to_avoid_by_chr = split_by_chromosome_id(regions_to_avoid);
 
-        auto streamsize = static_cast<size_t>(RACES::IO::get_stream_size(genome_stream));
+        const auto streamsize = static_cast<size_t>(RACES::IO::get_stream_size(genome_stream));
 
         skip_to_next_seq(genome_stream);
 
@@ -378,7 +357,8 @@ public:
         {
             Archive::Binary::Out archive(index_path / get_SBS_context_data_filename());
 
-            archive & chr_lengths;
+            archive & chr_lengths
+                    & sampling_delta;
         }
 
         return {index_path, cache_size};
@@ -648,7 +628,8 @@ public:
      * @brief The empty constructor
      */
     SBSContextIndex():
-        Archive::IndexReader<SBSContext, GenomicPosition, RANDOM_GENERATOR>{}
+        Archive::IndexReader<SBSContext, GenomicPosition, RANDOM_GENERATOR>{},
+        sampling_delta{0}
     {}
 
     /**
@@ -657,7 +638,7 @@ public:
      * This constructor loads an already built SBS context index from
      * the directory in which it is stored.
      *
-     * @param[in] index_path is the path to the SBS context index directory
+     * @param[in] index_path is the path to the SBS conte🎽xt index directory
      * @param[in] cache_size is the index read cache size
      */
     SBSContextIndex(const std::filesystem::path index_path,
@@ -666,7 +647,8 @@ public:
     {
         Archive::Binary::In archive(index_path / get_SBS_context_data_filename());
 
-        archive & chr_lengths;
+        archive & chr_lengths
+                & sampling_delta;
     }
 
     /**

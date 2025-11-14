@@ -1,9 +1,9 @@
 /**
- * @file build_repetition_index.cpp
+ * @file build_ID_context_index.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
- * @brief Builds the repetition index
- * @version 1.2
- * @date 2025-10-12
+ * @brief Builds the ID context index
+ * @version 1.0
+ * @date 2025-10-31
  *
  * @copyright Copyright (c) 2023-2025
  *
@@ -38,27 +38,25 @@
 #include "common.hpp"
 
 #include "genome_mutations.hpp"
+#include "id_context_index.hpp"
 #include "driver_storage.hpp"
 
 #include "progress_bar.hpp"
 
-class RepetitionIndexBuilder: public BasicExecutable
+class IDContextIndexBuilder : public BasicExecutable
 {
-    std::string output_filename;
+    std::string index_directory;
     std::string genome_fasta_filename;
     std::string driver_mutations_filename;
-    size_t max_rep_per_type;
-    size_t max_unit_size;
-    unsigned int rep_type_size;
+    size_t cache_size;
+    uint8_t max_unit_size;
     bool quiet;
 
-    template<typename GENOME_WIDE_POSITION>
-    void build_and_save_rs_index() const
+    void build_and_save_context_index() const
     {
         using namespace RACES;
         using namespace RACES::Mutations;
 
-        std::list<GenomicRegion> chr_regions;
         std::set<GenomicRegion> regions_to_avoid;
 
         if (driver_mutations_filename!="") {
@@ -72,35 +70,36 @@ class RepetitionIndexBuilder: public BasicExecutable
         }
 
         {
-            RSIndex rs_index;
+            using Index = IDContextIndex<std::mt19937_64>;
 
+            Index context_index;
+
+            std::mt19937_64 random_generator(0);
             if (quiet) {
-                rs_index = RSIndex::build_index(genome_fasta_filename, regions_to_avoid,
-                                                max_unit_size, max_rep_per_type, 0);
+                Index::build(random_generator, index_directory, genome_fasta_filename,
+                             regions_to_avoid, max_unit_size, cache_size);
             } else {
-                UI::ProgressBar::hide_console_cursor();
-
                 UI::ProgressBar progress_bar(std::cout);
 
-                rs_index = RSIndex::build_index(genome_fasta_filename, regions_to_avoid, max_unit_size,
-                                                max_rep_per_type, 0, &progress_bar);
+                Index::build(random_generator, index_directory, genome_fasta_filename,
+                             regions_to_avoid, max_unit_size, cache_size, progress_bar);
             }
 
-            Archive::Binary::Out archive(output_filename);
-
-            if (quiet) {
-                archive & rs_index;
-            } else {
-                archive.save(rs_index, "repetition index");
+            if (!quiet) {
                 std::cout << " Cleaning memory..." << std::flush;
             }
         }
-        std::cout << "done" << std::endl;
+
+        if (!quiet) {
+            UI::ProgressBar::show_console_cursor();
+
+            std::cout << "done" << std::endl;
+        }
     }
 
 public:
 
-    RepetitionIndexBuilder(const int argc, const char* argv[]):
+    IDContextIndexBuilder(const int argc, const char* argv[]):
         BasicExecutable(argv[0], {{"generic", "Options"}})
     {
         namespace po = boost::program_options;
@@ -108,15 +107,12 @@ public:
         visible_options.at("generic").add_options()
             ("driver-mutations,d", po::value<std::string>(&driver_mutations_filename),
              "the driver mutations file")
-            ("output-filename,o", po::value<std::string>(&output_filename),
-             "output filename")
-            ("reps-per-type,r", po::value<size_t>(&max_rep_per_type)->default_value(500000),
-             "maximum number of stored repetitions per type")
-            ("max-motif-size,s", po::value<size_t>(&max_unit_size)->default_value(50),
-             "maximum size of the repeated motif")
-            ("force-overwrite,f", "force overwriting output file")
-            ("rep-type-bytes,b", po::value<unsigned int>(&rep_type_size)->default_value(4),
-             "size of the repetition type (one among 1, 2, 4, or 8)")
+            ("index-directory,o", po::value<std::string>(&index_directory),
+             "index directory")
+            ("cache-size,c", po::value<size_t>(&cache_size)->default_value(1000),
+             "cache size in Mbytes")
+            ("max-motif-size,m", po::value<uint8_t>(&max_unit_size)->default_value(50),
+             "maximum repeated motif size")
 #if WITH_INDICATORS
             ("quiet,q", "disable output messages")
 #endif // WITH_INDICATORS
@@ -124,7 +120,7 @@ public:
 
         hidden_options.add_options()
             ("genome file", po::value<std::string>(&genome_fasta_filename),
-            "the path to the genome in FASTA file format")
+             "the path to the genome in FASTA file format")
         ;
 
         po::options_description program_options;
@@ -155,27 +151,12 @@ public:
             print_help_and_exit("Missing genome FASTA filename.", 1);
         }
 
-        if (!vm.count("output-filename")) {
-            output_filename = std::filesystem::path(genome_fasta_filename + ".rsif").filename();
+        if (!vm.count("index-directory")) {
+            index_directory = "context_index";
         }
 
-        std::set<size_t> admitted_rep_type_size{1,2,4,8};
-
-        if (admitted_rep_type_size.count(rep_type_size)==0) {
-            print_help_and_exit("The size of repetition type must be among 1, 2, 4, and 8.", 1);
-        }
-
-        if (max_unit_size<1 || max_unit_size > 255) {
-            print_help_and_exit("The maximum motif size must lay in the interval [1, 255].", 1);
-        }
-
-        if (max_rep_per_type<=0) {
-            print_help_and_exit("The maximum stored repetitions per type must be a positive value.", 1);
-        }
-
-        if (std::ifstream(output_filename).good() && !vm.count("force-overwrite")) {
-            const auto msg = "The output file \"" + output_filename + "\" already exists. "
-                             + "Use \"--force-overwrite\" to overwrite it.";
+        if (std::filesystem::exists(index_directory)) {
+            const auto msg = "The input directory \"" + index_directory + "\" already exists.";
 
             print_help_and_exit(msg, 1);
         }
@@ -183,31 +164,15 @@ public:
 
     void run() const
     {
-        switch (rep_type_size) {
-            case 1:
-                build_and_save_rs_index<uint8_t>();
-                return;
-            case 2:
-                build_and_save_rs_index<uint16_t>();
-                return;
-            case 4:
-                build_and_save_rs_index<uint32_t>();
-                return;
-            case 8:
-                build_and_save_rs_index<uint64_t>();
-                return;
-            default:
-                std::cerr << "Unsupported bits per absolute position."
-                        << " Supported values are 1, 2, 4, or 8." << std::endl<< std::endl;
+        using namespace RACES::IO::FASTA;
 
-                print_help_and_exit(1);
-        }
+        build_and_save_context_index();
     }
 };
 
 int main(const int argc, const char* argv[])
 {
-    RepetitionIndexBuilder builder(argc, argv);
+    IDContextIndexBuilder builder(argc, argv);
 
     builder.run();
 

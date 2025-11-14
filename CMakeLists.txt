@@ -38,6 +38,8 @@ set(RACES_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/allele.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/genomic_region.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/genomic_sequence.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/germline.cpp
+                ${CMAKE_CURRENT_SOURCE_DIR}/src/id_context.cpp
+                ${CMAKE_CURRENT_SOURCE_DIR}/src/id_context_index.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/id_signature.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/lineage_graph.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/logger.cpp
@@ -58,7 +60,6 @@ set(RACES_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/allele.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/rate_update.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/read.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/read_simulator.cpp
-                ${CMAKE_CURRENT_SOURCE_DIR}/src/rs_index.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/sample_specification.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/sampling.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/sbs_context.cpp
@@ -98,6 +99,8 @@ set(RACES_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/include/allele.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/genomic_region.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/genomic_sequence.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/germline.hpp
+                ${CMAKE_CURRENT_SOURCE_DIR}/include/id_context.hpp
+                ${CMAKE_CURRENT_SOURCE_DIR}/include/id_context_index.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/id_signature.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/imap.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/index.hpp
@@ -125,7 +128,6 @@ set(RACES_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/include/allele.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/rate_update.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/read.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/read_simulator.hpp
-                ${CMAKE_CURRENT_SOURCE_DIR}/include/rs_index.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/sample_specification.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/sampling.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/sbs_context.hpp
