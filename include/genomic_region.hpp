@@ -2,8 +2,8 @@
  * @file genomic_region.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines genomic regions
- * @version 1.3
- * @date 2025-09-20
+ * @version 1.4
+ * @date 2025-11-14
  *
  * @copyright Copyright (c) 2023-2025
  *
@@ -519,7 +519,7 @@ public:
 
 /**
  * @brief Test whether two `GenomicRegion` objects are the same
- * 
+ *
  * @param lhs is the left-hand side of the relation
  * @param rhs is the right-hand side of the relation
  * @return `true` is and only if `lhs` and `rhs` represent the same
@@ -534,7 +534,7 @@ inline bool operator==(const RACES::Mutations::GenomicRegion& lhs,
 
 /**
  * @brief Test whether two `GenomicRegion` objects differ
- * 
+ *
  * @param lhs is the left-hand side of the relation
  * @param rhs is the right-hand side of the relation
  * @return `false` is and only if `lhs` and `rhs` represent the same
@@ -545,6 +545,16 @@ inline bool operator!=(const RACES::Mutations::GenomicRegion& lhs,
 {
     return !(lhs == rhs);
 }
+
+/**
+ * @brief Split a set of genomic regions by chromosome id
+ *
+ * @param[in] genomic_regions is the set of genomic region to be split
+ * @return a map that associates a chromosome id to the the set of genomic regions
+ *     laying in the corresponding chromosome
+ */
+std::map<ChromosomeId, std::set<GenomicRegion>>
+split_by_chromosome_id(const std::set<GenomicRegion>& genomic_regions);
 
 }   // Mutations
 

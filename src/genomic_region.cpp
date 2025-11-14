@@ -2,10 +2,10 @@
  * @file genomic_region.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements genomic region
- * @version 1.0
- * @date 2024-06-10
+ * @version 1.1
+ * @date 2025-11-14
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2025
  *
  * MIT License
  *
@@ -117,6 +117,20 @@ bool GenomicRegion::strictly_contains(const SID& mutation) const
     const auto mutation_region = mutation.get_region();
 
     return strictly_contains(mutation_region);
+}
+
+std::map<ChromosomeId, std::set<GenomicRegion>>
+split_by_chromosome_id(const std::set<GenomicRegion>& genomic_regions)
+{
+    using namespace RACES::Mutations;
+
+    std::map<ChromosomeId, std::set<GenomicRegion> > split;
+
+    for (const auto& genomic_region: genomic_regions) {
+        split[genomic_region.get_chromosome_id()].insert(genomic_region);
+    }
+
+    return split;
 }
 
 }   // Mutations
