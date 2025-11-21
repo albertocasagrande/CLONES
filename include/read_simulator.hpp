@@ -2,8 +2,8 @@
  * @file read_simulator.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines classes to simulate sequencing
- * @version 1.27
- * @date 2025-10-20
+ * @version 1.28
+ * @date 2025-11-21
  *
  * @copyright Copyright (c) 2023-2025
  *
@@ -1660,7 +1660,7 @@ private:
                               std::ostream* SAM_stream=nullptr)
     {
         for (const auto& [cell_id, chr_mutations]:
-                sample_forest.get_leaf_mutation_tour(chr_data.chr_id)) {
+                get_leaf_mutation_tour(sample_forest, chr_data.chr_id)) {
 
             generate_chromosome_reads(sequencer, sample_simulation_data, chr_statistics,
                                       chr_data, sample_target.sample_name, cell_id,
@@ -1896,7 +1896,7 @@ private:
         std::map<Mutants::Evolutions::TissueSampleId, size_t> non_relevant;
 
         const auto& forest = targets.forest();
-        for (const auto& [leaf_id, leaf_mutations]: forest.get_leaf_mutation_tour()) {
+        for (const auto& [leaf_id, leaf_mutations]: get_leaf_mutation_tour(forest)) {
             const auto leaf = forest.get_node(leaf_id);
             const auto sample_id = leaf.get_sample().get_id();
 

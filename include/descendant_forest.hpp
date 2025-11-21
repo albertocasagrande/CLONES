@@ -2,8 +2,8 @@
  * @file descendant_forest.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines classes and function for descendant forests
- * @version 1.5
- * @date 2025-10-02
+ * @version 1.6
+ * @date 2025-11-21
  *
  * @copyright Copyright (c) 2023-2025
  *
@@ -384,7 +384,7 @@ protected:
                 throw std::domain_error("The node does not correspond to a sampled cell");
             }
 
-            return forest->samples[found->second];
+            return forest->samples.at(found->second);
         }
 
         /**
@@ -428,13 +428,30 @@ protected:
         }
 
         /**
-         * @brief Get the node species name
+         * @brief Get the cell's birth time
          *
-         * @return the node species name
+         * @return the cell's birth time
          */
         inline const Time& get_birth_time() const
         {
             return forest->cells.at(cell_id).get_birth_time();
+        }
+
+        /**
+         * @brief Get the cell's death time
+         *
+         * @return the cell's death time
+         */
+        const Time& get_death_time() const
+        {
+            const auto& siblings = forest->branches.at(cell_id);
+            if (siblings.empty()) {
+                return get_sample().get_time();
+            }
+
+            const auto& a_child = *(siblings.begin());
+
+            return forest->cells.at(a_child).get_birth_time();
         }
 
         /**

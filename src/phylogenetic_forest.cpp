@@ -2,8 +2,8 @@
  * @file phylogenetic_forest.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements classes and function for phylogenetic forests
- * @version 1.15
- * @date 2025-10-20
+ * @version 1.16
+ * @date 2025-11-21
  *
  * @copyright Copyright (c) 2023-2025
  *
@@ -256,7 +256,7 @@ PhylogeneticForest::get_CNA_break_points() const
 {
     std::map<ChromosomeId, std::set<ChrPosition>> b_points;
 
-    for (const auto& [leaf_id, leaf_mutations] : get_leaf_mutation_tour()) {
+    for (const auto& [leaf_id, leaf_mutations] : get_leaf_mutation_tour(*this)) {
         for (const auto& [chr_id, cb_points] : leaf_mutations.get_CNA_break_points()) {
             auto& chr_b_points = b_points[chr_id];
             for (const auto& cb_point : cb_points) {
@@ -289,7 +289,7 @@ PhylogeneticForest::get_allelic_count(const AlleleCounter& min_allelic_size) con
 
     PhylogeneticForest::AllelicCount allelic_count;
 
-    for (const auto& [leaf_id, leaf_mutations] : get_leaf_mutation_tour()) {
+    for (const auto& [leaf_id, leaf_mutations] : get_leaf_mutation_tour(*this)) {
         const auto allelic_map = leaf_mutations.get_allelic_map(b_points, min_allelic_size);
 
         update_allelic_count_on(allelic_count, allelic_map);
@@ -339,6 +339,47 @@ void PhylogeneticForest::clear()
     CNA_first_cells.clear();
     sample_statistics.clear();
     DescendantForest::clear();
+}
+
+MutationTour<GenomeMutations>
+get_leaf_mutation_tour(const PhylogeneticForest& forest,
+                       const bool with_pre_neoplastic,
+                       const bool with_germinal)
+{
+    using FunctorType = MutationLabellingFunctor<GenomeMutations>;
+    using LabelTourType = MutationTour<GenomeMutations>;
+
+    FunctorType l_functor(with_pre_neoplastic);
+
+    const auto& germline_mutations = forest.get_germline_mutations();
+    if (with_germinal) {
+        return LabelTourType(forest, l_functor, germline_mutations, true);
+    }
+
+    GenomeMutations template_genome = germline_mutations.copy_structure();
+
+    return LabelTourType(forest, l_functor, template_genome, true);
+}
+
+MutationTour<ChromosomeMutations>
+get_leaf_mutation_tour(const PhylogeneticForest& forest,
+                       const ChromosomeId& chromosome_id,
+                       const bool with_pre_neoplastic,
+                       const bool with_germinal)
+{
+    using FunctorType = MutationLabellingFunctor<ChromosomeMutations>;
+    using LabelTourType = MutationTour<ChromosomeMutations>;
+
+    FunctorType l_functor(with_pre_neoplastic);
+
+    const auto& chr_mutations = forest.get_germline_mutations().get_chromosome(chromosome_id);
+    if (with_germinal) {
+        return LabelTourType(forest, l_functor, chr_mutations, true);
+    }
+
+    const auto template_chromosome = chr_mutations.copy_structure();
+
+    return LabelTourType(forest, l_functor, template_chromosome, true);
 }
 
 }   // Mutants

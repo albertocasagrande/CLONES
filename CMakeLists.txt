@@ -103,6 +103,7 @@ set(RACES_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/include/allele.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/imap.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/index.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/irb_tree.hpp
+                ${CMAKE_CURRENT_SOURCE_DIR}/include/label_tour.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/lineage_graph.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/logger.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/logics.hpp

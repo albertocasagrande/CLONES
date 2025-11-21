@@ -2,8 +2,8 @@
  * @file mutation_engine.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements a class to place mutations on a descendant forest
- * @version 1.5
- * @date 2025-10-02
+ * @version 1.6
+ * @date 2025-11-21
  *
  * @copyright Copyright (c) 2023-2025
  *
@@ -103,7 +103,7 @@ MutationStatistics& MutationStatistics::record(const PhylogeneticForest& forest,
         progress_bar->set_message("Collecting mutation data");
     }
 
-    for (const auto& [leaf_id, leaf_mutations] : forest.get_leaf_mutation_tour()) {
+    for (const auto& [leaf_id, leaf_mutations] : get_leaf_mutation_tour(forest)) {
         const auto& leaf = forest.get_node(leaf_id);
         const auto& leaf_sample = leaf.get_sample();
         const auto& sample_name = leaf_sample.get_name();
