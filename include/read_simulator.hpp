@@ -2,8 +2,8 @@
  * @file read_simulator.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines classes to simulate sequencing
- * @version 1.28
- * @date 2025-11-21
+ * @version 1.29
+ * @date 2025-11-24
  *
  * @copyright Copyright (c) 2023-2025
  *
@@ -262,8 +262,8 @@ public:
      * @param[in] forest is a phylogenetic forest
      * @param[in] produce_normal_sample is a Boolean flag to add/avoid a normal sample
      * @param[in] purity is the aimed sequencing purity
-     * @param[in] with_pre_neoplastic is a Boolean flag to add/avoid pre-neoplastic
-     *      mutations
+     * @param[in] with_pre_neoplastic_mutations is a Boolean flag to add/avoid
+     *      pre-neoplastic mutations
      * @param[in] with_germinal is a Boolean flag to add/avoid germinal mutations
      * @return the sequencing target of the samples in the phylogenetic forest
      */
@@ -2193,11 +2193,11 @@ public:
     ReadSimulator(const std::filesystem::path& output_directory,
                   const std::filesystem::path& ref_genome_filename,
                   const size_t& read_size,
-                  const std::binomial_distribution<uint32_t>& insert_size, const Mode mode=Mode::CREATE,
-                  const bool& save_coverage=false,
+                  const std::binomial_distribution<uint32_t>& insert_size_distribution,
+                  const Mode mode=Mode::CREATE, const bool& save_coverage=false,
                   const std::string& template_name_prefix="r", const int& seed=0):
         ReadSimulator(output_directory, ref_genome_filename, ReadType::PAIRED_READ, read_size,
-                      insert_size, mode, save_coverage, template_name_prefix, seed)
+                      insert_size_distribution, mode, save_coverage, template_name_prefix, seed)
     {}
 
     /**
@@ -2420,6 +2420,7 @@ public:
      * @param[in,out] sequencer is the sequencer
      * @param[in] forest is a phylogenetic forest
      * @param[in] coverage is the aimed coverage
+     * @param[in] purity is the aimed sample purity
      * @param[in] with_pre_neoplastic is a Boolean flag to consider/avoid pre-neoplastic
      *              mutations (default: true)
      * @param[in] with_germinal is a Boolean flag to consider/avoid germinal mutations

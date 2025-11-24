@@ -2,8 +2,8 @@
  * @file mutational_properties.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a class to represent the mutational properties
- * @version 1.5
- * @date 2025-10-04
+ * @version 1.6
+ * @date 2025-11-24
  *
  * @copyright Copyright (c) 2023-2025
  *
@@ -588,7 +588,7 @@ public:
     /**
      * @brief Set the driver mutation map
      *
-     * @param driver_mutations is the new list of driver mutations
+     * @param mutant_drivers is the new list of driver mutations
      */
     void set_mutant_drivers(const DriverMutations& mutant_drivers);
 

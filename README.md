@@ -24,7 +24,7 @@ RACES consists in a library `libRACES` and 6 main CLI tools:
 
 ## Required Packages
 -   CMake
--   a C++17 compiler
+-   a C++20 compiler
 
 ### CLI Tools Required Packages
 -   Boost::program_options
@@ -50,11 +50,11 @@ make -j
 
 ## Wrapper
 
--  [ProCESS](https://caravagnalab.github.io/ProCESS/index.html) is a R wrapper for RACES.
+-  [ProCESS](https://caravagnalab.github.io/ProCESS/index.html) is an R wrapper for RACES.
 
 ## License
 
-Copyright (c) 2023-2024
+Copyright (c) 2023-2025
 Alberto Casagrande <[alberto.casagrande@uniud.it](mailto:alberto.casagrande@uniud.it)>
 
 MIT License

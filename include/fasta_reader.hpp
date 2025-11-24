@@ -2,8 +2,8 @@
  * @file fasta_reader.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a FASTA file reader and support structures
- * @version 1.4
- * @date 2025-05-20
+ * @version 1.5
+ * @date 2025-11-24
  *
  * @copyright Copyright (c) 2023-2025
  *
@@ -116,7 +116,6 @@ protected:
     /**
      * @brief Read the next content of the stream up-to a new sequence
      *
-     * @param fasta_stream is an input stream referring to a FASTA file
      * @param progress_bar is a progress bar
      */
     void filter_remaining_sequence(RACES::UI::ProgressBar& progress_bar)
@@ -155,10 +154,11 @@ protected:
     }
 
     /**
-     * @brief Read FASTA sequence nucleotide from a stream
+     * @brief Read a nucleotide sequence from a FALSE stream
      *
      * @param[out] nucleotides is a pointer to the string that will be filled by the
-     *          sequence nucleotides
+     *          nucleotide sequence
+     * @param[in] length is the length of the nucleotide sequence to be read
      * @param[in,out] progress_bar is a progress bar
      * @return The string of nucleotides up to the end of the stream or of the
      *          current sequence
@@ -975,7 +975,7 @@ public:
      *           then `nucleotides` is updated according to the read bases
      */
     bool read(std::string& nucleotides, const std::string& sequence_name,
-        const size_t offset, const size_t length)
+              const size_t offset, const size_t length)
     {
         RACES::UI::ProgressBar progress_bar(std::cout, true);
 

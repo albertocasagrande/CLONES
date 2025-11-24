@@ -2,8 +2,8 @@
  * @file rs_index.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a class to compute the repeated substring index
- * @version 1.2
- * @date 2025-08-21
+ * @version 1.3
+ * @date 2025-11-24
  *
  * @copyright Copyright (c) 2023-2025
  *
@@ -755,7 +755,7 @@ struct RSIndex
     }
 
     /**
-     * @brief Find a microhomolory
+     * @brief Find a microhomology
      *
      * @param homology_distance is the aimed micro-homology distance
      * @param homology_size is the aimed micro-homology size
@@ -766,7 +766,7 @@ struct RSIndex
     inline std::pair<RepetitionStorage*, size_t>
     find_a_microhomology(const uint8_t& homology_distance, const uint8_t& homology_size)
     {
-        return find_a_polymer(*micro_map, "microhomolory", get_first_index(homology_distance),
+        return find_a_polymer(*micro_map, "microhomology", get_first_index(homology_distance),
                               homology_size, false);
     }
 

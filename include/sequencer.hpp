@@ -2,8 +2,8 @@
  * @file sequencer.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines sequencer models
- * @version 1.7
- * @date 2025-01-15
+ * @version 1.8
+ * @date 2025-11-24
  *
  * @copyright Copyright (c) 2023-2025
  *
@@ -238,14 +238,14 @@ private:
      * linearly increase from the first base reaching a peak around the 7th
      * base and, then, linearly sink. Because of this, this function models
      * the mean by the linear switching function
-     * $$
+     * \f[
      * f_m(x) = \begin{cases}
      * a_1 x + b & \textrm{if $x<p$}\\
      * a_2 x + b + p (a_1-a_2) & \textrm{if $x\geq p$}
      * \end{cases}
-     * $$
-     * where \$p\$ is the mean peak position, \$b\$ is the mean quality
-     * score for the first base, and \$a_1\$ and \$a_2\$ are the linear
+     * \f]
+     * where \f$p\f$ is the mean peak position, \f$b\f$ is the mean quality
+     * score for the first base, and \f$a_1\f$ and \f$a_2\f$ are the linear
      * coefficients before and after the peak, respectively.
      * The parameters were fitted to real sequencing data.
      *
@@ -274,9 +274,9 @@ private:
      *
      * This function models the standard deviations of the quality scores by the quadratic
      * function
-     * $$
+     * \f[
      * f_s(x) = c x^2 + d.
-     * $$
+     * \f]
      * The parameters were fitted to real sequencing data.
      *
      * @param position is the position for which the standard deviation
@@ -654,6 +654,8 @@ public:
      * @param[in,out] read is the read whose sequencing must be simulated
      * @param[in] position is the position of the first read base in the reference
      *      genome
+     * @param[in] reverse is a Boolean flag to simulate the reversed/reference
+     *      read
      * @return the quality scores of the read in Sanger FASTQ format
      */
     std::string simulate_seq(Mutations::SequencingSimulations::Read& read,

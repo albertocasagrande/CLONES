@@ -2,8 +2,8 @@
  * @file utils.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines utility functions
- * @version 1.3
- * @date 2025-09-17
+ * @version 1.4
+ * @date 2025-11-24
  *
  * @copyright Copyright (c) 2023-2025
  *
@@ -148,7 +148,7 @@ inline bool is_suffix_of(const std::string& suffix, const std::string& text) {
  * @tparam T is the type of the set values
  * @param A is a set of T values
  * @param B is a set of T values
- * @return the set \$A \cup B\$
+ * @return the set \f$A \cup B\f$
  */
 template<typename T>
 std::set<T> get_union(const std::set<T>& A, const std::set<T>& B)
