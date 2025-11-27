@@ -2,8 +2,8 @@
  * @file phylogenetic_forest.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines classes and function for phylogenetic forests
- * @version 1.15
- * @date 2025-11-21
+ * @version 1.16
+ * @date 2025-11-28
  *
  * @copyright Copyright (c) 2023-2025
  *
@@ -596,11 +596,12 @@ public:
                                     const PhylogeneticForest::const_node& node) const
     {
         MUTATION_CONTAINER mutations{parent_mutations};
-        mutations.apply_contained(node.arising_mutations());
 
         if (node.is_root() && with_pre_neoplastic) {
             mutations.apply_contained(node.pre_neoplastic_mutations());
         }
+
+        mutations.apply_contained(node.arising_mutations());
 
         return mutations;
     }
