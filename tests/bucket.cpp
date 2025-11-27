@@ -2,8 +2,8 @@
  * @file bucket.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Bucket tests
- * @version 1.2
- * @date 2025-09-17
+ * @version 1.3
+ * @date 2025-11-27
  *
  * @copyright Copyright (c) 2023-2025
  *
@@ -66,26 +66,26 @@ inline RACES::Mutations::GenomicPosition create_data(const size_t& i)
 template<typename TYPE>
 struct BucketFixture
 {
-    RACES::Archive::Bucket<TYPE> bucket;
+    std::filesystem::path bucket_filepath;
     std::set<TYPE> dataset;
 
     BucketFixture():
-        bucket{get_a_temporary_path(), DEFAULT_WRITE_CACHE_SIZE}
+        bucket_filepath{get_a_temporary_path()}
     {
+        RACES::Archive::BucketWriter<TYPE> bucket_writer{bucket_filepath, DEFAULT_WRITE_CACHE_SIZE};
+
         for (size_t i=0; i<DEFAULT_DATASET_SIZE; ++i) {
             TYPE data = create_data<TYPE>(i);
-            BOOST_CHECK_NO_THROW(bucket.push_back(data));
+            BOOST_CHECK_NO_THROW(bucket_writer.push_back(data));
             dataset.emplace(std::move(data));
         }
 
-        bucket.flush();
+        bucket_writer.flush();
     }
 
     ~BucketFixture()
     {
-        bucket.flush();
-
-        std::filesystem::remove(bucket.path());
+        std::filesystem::remove(bucket_filepath);
     }
 };
 
@@ -113,27 +113,41 @@ test_random_tour_on(const RACES::Archive::BucketRandomTour<TYPE, RANDOM_GENERATO
 }
 
 template<typename TYPE>
-void shuffle_bucket(RACES::Archive::Bucket<TYPE>& bucket,
+void shuffle_bucket(const std::filesystem::path& bucket_filepath,
                     const std::set<TYPE>& dataset,
-                    const size_t read_cache_size)
+                    const size_t cache_size)
 {
     using namespace RACES::Archive;
     namespace fs = std::filesystem;
 
+    BucketWriter<TYPE> bucket_writer{bucket_filepath, cache_size};
+
     std::mt19937_64 gen(0);
 
-    {
-        BOOST_CHECK_NO_THROW(bucket.shuffle(gen, read_cache_size,
-                                            fs::temp_directory_path()));
+    if (cache_size < 2*sizeof(TYPE)) {
+        throw std::domain_error("Minimum cache size (i.e., " + std::to_string(sizeof(TYPE))
+                                + ") not respected. Parameter \"cache_size\" set to "
+                                + std::to_string(cache_size) + ".");
     }
 
     {
-        Bucket<TYPE> bucket2(bucket.path(), DEFAULT_READ_CACHE_SIZE);
+        // minimum buffer size not respected
+        BOOST_CHECK_THROW(bucket_writer.shuffle(gen, sizeof(TYPE),
+                                                fs::temp_directory_path()), std::domain_error);
+    }
+
+    {
+        BOOST_CHECK_NO_THROW(bucket_writer.shuffle(gen, cache_size,
+                                                   fs::temp_directory_path()));
+    }
+
+    {
+        BucketReader<TYPE> bucket_reader(bucket_filepath, DEFAULT_READ_CACHE_SIZE);
         std::set<TYPE> local_dataset(dataset.begin(), dataset.end());
 
-        BOOST_CHECK(bucket2.size()==dataset.size());
+        BOOST_CHECK(bucket_reader.size()==dataset.size());
 
-        for (const TYPE& data: bucket2) {
+        for (const TYPE& data: bucket_reader) {
             auto found = local_dataset.find(data);
             BOOST_CHECK(found != dataset.end());
 
@@ -145,7 +159,6 @@ void shuffle_bucket(RACES::Archive::Bucket<TYPE>& bucket,
     }
 }
 
-
 BOOST_AUTO_TEST_CASE_TEMPLATE(create_bucket_T, T, test_types)
 {
     using namespace RACES::Archive;
@@ -155,38 +168,39 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(create_bucket_T, T, test_types)
 
     BOOST_CHECK(!fs::exists(bucket_filepath));
 
-    Bucket<T> bucket(bucket_filepath);
+    BucketWriter<T> bucket_writer(bucket_filepath);
 
-    BOOST_CHECK(fs::exists(bucket.path()));
+    BOOST_CHECK(fs::exists(bucket_filepath));
+    BOOST_CHECK(bucket_writer.get_path()==bucket_filepath);
 
-    bucket.flush();
+    bucket_writer.flush();
 
-    fs::remove(bucket.path());
+    fs::remove(bucket_writer.get_path());
 
-    BOOST_CHECK_THROW(Bucket<T>("/"), std::domain_error);
+    BOOST_CHECK_THROW(BucketWriter<T>("/"), std::domain_error);
 
-    BOOST_CHECK_THROW(Bucket<T>(get_a_temporary_path(), 0),
+    BOOST_CHECK_THROW(BucketWriter<T>(get_a_temporary_path(), 0),
                       std::domain_error);
 }
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(load_bucket_T, T, test_types, BucketFixture<T>)
 {
     using namespace RACES::Archive;
-    
-    Bucket<T> load_bucket(this->bucket.path());
-    BOOST_CHECK(load_bucket.size()==DEFAULT_DATASET_SIZE);
+
+    BucketReader<T> bucket_reader(this->bucket_filepath);
+    BOOST_CHECK(bucket_reader.size()==DEFAULT_DATASET_SIZE);
 }
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(sequential_bucket_T, T, test_types, BucketFixture<T>)
 {
     using namespace RACES::Archive;
 
-    Bucket<T> reading_bucket(this->bucket.path(), DEFAULT_READ_CACHE_SIZE);
+    BucketReader<T> bucket_reader(this->bucket_filepath, DEFAULT_READ_CACHE_SIZE);
 
-    BOOST_CHECK(reading_bucket.size()==DEFAULT_DATASET_SIZE);
+    BOOST_CHECK(bucket_reader.size()==DEFAULT_DATASET_SIZE);
 
     size_t i=0;
-    for (const auto& value: reading_bucket) {
+    for (const auto& value: bucket_reader) {
         BOOST_CHECK(create_data<T>(i)==value);
         ++i;
     }
@@ -196,8 +210,10 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(random_io_bucket_T, T, test_types, BucketFixtur
 {
     using namespace RACES::Archive;
 
+    BucketReader<T> bucket_reader(this->bucket_filepath, DEFAULT_READ_CACHE_SIZE);
+
     // create a list of indices and randomly shuffle them
-    std::vector<size_t> indices(this->bucket.size());
+    std::vector<size_t> indices(bucket_reader.size());
     std::iota(indices.begin(), indices.end(), 0);
 
     std::mt19937_64 gen(0);
@@ -207,7 +223,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(random_io_bucket_T, T, test_types, BucketFixtur
     // check whether the values in the dataset correspond to
     // those in the same positions in the bucket
     for (const auto& index: indices) {
-        BOOST_CHECK(create_data<T>(index)==this->bucket[index]);
+        BOOST_CHECK(create_data<T>(index)==bucket_reader[index]);
     }
 }
 
@@ -217,12 +233,14 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(random_tour_T, T, test_types, BucketFixture<T>)
 
     std::mt19937_64 gen(0);
 
+    BucketReader<T> bucket_reader(this->bucket_filepath, DEFAULT_READ_CACHE_SIZE);
+
     // testing different tours with different generators
     std::set<T> last_values;
     for (size_t i=0; i<5; ++i) {
         std::mt19937_64 gen(i);
 
-        auto tour = this->bucket.random_tour(gen, DEFAULT_READ_CACHE_SIZE);
+        auto tour = bucket_reader.random_tour(gen);
 
         last_values.insert(test_random_tour_on(tour, this->dataset));
     }
@@ -231,7 +249,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(random_tour_T, T, test_types, BucketFixture<T>)
     // testing different tours with the same generator
     last_values = std::set<T>();
     for (size_t i=0; i<5; ++i) {
-        auto tour = this->bucket.random_tour(gen, DEFAULT_READ_CACHE_SIZE);
+        auto tour = bucket_reader.random_tour(gen);
 
         last_values.insert(test_random_tour_on(tour, this->dataset));
     }
@@ -239,7 +257,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(random_tour_T, T, test_types, BucketFixture<T>)
 
     // testing multiple time the same generator
     last_values = std::set<T>();
-    auto tour = this->bucket.random_tour(gen, DEFAULT_READ_CACHE_SIZE);
+    auto tour = bucket_reader.random_tour(gen);
     for (size_t i=0; i<5; ++i) {
         last_values.insert(test_random_tour_on(tour, this->dataset));
     }
@@ -251,16 +269,16 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(copy_bucket_T, T, test_types, BucketFixture<T>)
 {
     using namespace RACES::Archive;
 
-    BOOST_CHECK_NO_THROW(Bucket<T> bucket2(this->bucket));
+    BucketReader<T> bucket_reader(this->bucket_filepath);
+    BOOST_CHECK_NO_THROW(BucketReader<T> bucket_reader2(bucket_reader));
 
     try {
-        Bucket<T> bucket2(this->bucket);
+        BucketReader<T> bucket_reader2(bucket_reader);
 
-        BOOST_CHECK(this->bucket.size() == bucket2.size());
-        BOOST_CHECK(this->bucket.get_cache_size() == bucket2.get_cache_size());
+        BOOST_CHECK(bucket_reader.size() == bucket_reader2.size());
 
-        auto it = bucket2.begin();
-        for (const T& value: this->bucket) {
+        auto it = bucket_reader2.begin();
+        for (const T& value: bucket_reader) {
             BOOST_CHECK(value == *it);
             ++it;
         }
@@ -270,11 +288,10 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(copy_bucket_T, T, test_types, BucketFixture<T>)
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(shuffle_bucket_with_split_T, T, test_types, BucketFixture<T>)
 {
-    shuffle_bucket(this->bucket, this->dataset, DEFAULT_WRITE_CACHE_SIZE);
+    shuffle_bucket(this->bucket_filepath, this->dataset, DEFAULT_WRITE_CACHE_SIZE);
 }
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(shuffle_bucket_without_split_T, T, test_types, BucketFixture<T>)
 {
-    shuffle_bucket(this->bucket, this->dataset,
-                   this->bucket.size()*sizeof(T));
+    shuffle_bucket(this->bucket_filepath, this->dataset, 2*sizeof(T));
 }

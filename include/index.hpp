@@ -2,8 +2,8 @@
  * @file index.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines index
- * @version 1.2
- * @date 2025-11-14
+ * @version 1.3
+ * @date 2025-11-27
  *
  * @copyright Copyright (c) 2023-2025
  *
@@ -270,17 +270,17 @@ public:
     using value_type = VALUE;
 
     /**
-     * @brief The type of buckets
+     * @brief The type of bucket writers
      *
      * A bucket is a container for values associated to the
      * same key.
      */
-    using BucketType = Bucket<VALUE>;
+    using BucketWriterType = BucketWriter<VALUE>;
 
     /**
      * @brief The bucket map type
      */
-    using BucketMapType = std::map<KEY, BucketType>;
+    using BucketMapType = std::map<KEY, BucketWriterType>;
 
 private:
     BucketMapType buckets;  //!< the key-bucket map
@@ -313,11 +313,11 @@ private:
         const auto bucket_cache_size = this->cache_size_per_bucket(buckets.size()+1);
 
         for (auto& [key, bucket]: buckets) {
-            bucket.set_max_cache_size(bucket_cache_size);
+            bucket.set_cache_size(bucket_cache_size);
         }
 
-        const auto result = buckets.emplace(key, Bucket<VALUE>{bucket_path,
-                                                               bucket_cache_size});
+        const auto result = buckets.emplace(key, BucketWriterType{bucket_path,
+                                                                  bucket_cache_size});
 
         if (result.second) {
             return result.first;
@@ -568,7 +568,7 @@ public:
      * A bucket is a container for values associated to the
      * same key.
      */
-    using BucketType = Archive::Bucket<VALUE>;
+    using BucketType = Archive::BucketReader<VALUE>;
 
     /**
      * @brief The type of buckets
@@ -692,7 +692,7 @@ public:
 
             const auto bucket_path = this->get_bucket_path(key);
 
-            buckets.emplace(key, Bucket<VALUE>{bucket_path,  bucket_cache_size});
+            buckets.emplace(key, BucketType{bucket_path,  bucket_cache_size});
         }
     }
 

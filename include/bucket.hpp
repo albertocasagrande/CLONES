@@ -2,8 +2,8 @@
  * @file bucket.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines bucket
- * @version 1.4
- * @date 2025-10-11
+ * @version 1.5
+ * @date 2025-11-27
  *
  * @copyright Copyright (c) 2023-2025
  *
@@ -54,7 +54,7 @@ template<typename VALUE, typename RANDOM_GENERATOR>
 class BucketRandomTour;
 
 /**
- * @brief A class for buckets
+ * @brief A base class for buckets
  *
  * A bucket is a container that stores a collection of values in
  * a file. These values are maintained in a specific order and can
@@ -64,18 +64,208 @@ class BucketRandomTour;
  * @tparam VALUE is the type of the values contained in the bucket
  */
 template<typename VALUE>
-class Bucket
+class BucketBase
 {
+protected:
     std::filesystem::path filepath;   //!< the name of the file storing the bucket
 
     std::streampos size_pos;    //!< the position of the bucket size in the file
     std::streampos data_pos;    //!< the position of the first value in the file
-    std::streampos file_size;   //!< the last position in the file
+    std::streampos final_pos;   //!< the last position in the file
 
     size_t num_of_values;   //!< the number of values in the bucket (i.e., bucket size)
 
-    size_t cacheable_values;    //!< the number of the cacheable values
-    std::list<VALUE> write_cache; //!< the write cache
+    /**
+     * @brief Read the bucket file header
+     *
+     * This method reads the bucket file header and sets the
+     * position of the bucket size and that of the data in the
+     * file.
+     * @param archive is a reference to the input archive
+     * @return a reference to the input archive
+     */
+    Archive::Binary::In& read_header(Archive::Binary::In& archive)
+    {
+        if (!archive.is_open()) {
+            archive.open(filepath);
+        }
+
+        Archive::Binary::In::read_header(archive, "RACES Bucket", 0);
+
+        size_pos = archive.tellg();
+        archive & num_of_values;
+        data_pos = archive.tellg();
+
+        final_pos = archive.size();
+
+        return archive;
+    }
+
+    /**
+     * @brief Read the bucket file header
+     *
+     * This method reads the bucket file header and sets the
+     * position of the bucket size and that of the data in the
+     * file.
+     */
+    inline void read_header()
+    {
+        Archive::Binary::In archive(filepath);
+
+        read_header(archive);
+    }
+
+    /**
+     * @brief Compute the position of the i-th value in the bucket file
+     *
+     * @param[in] i is the index of the aimed value in the bucket file
+     * @return the position of the `i`-th value in the bucket file or,
+     *      whenever the bucket file contains less than i values, the
+     *      end file position
+     */
+    template<typename VALUE2=VALUE, std::enable_if_t<std::is_same_v<VALUE2, VALUE>
+                && uses_constant_space_on_disk<VALUE>::value, bool> = true>
+    std::streampos get_value_pos(const size_t& i) const
+    {
+        if (i<num_of_values) {
+            const std::streamoff offset = i*(final_pos-data_pos)/num_of_values;
+            return data_pos + offset;
+        }
+
+        return final_pos;
+    }
+
+    /**
+     * @brief Load values into a buffer
+     *
+     * This method loads a set of values from a specified position of the bucket
+     * file into a buffer and returns the number of values loaded into the buffer.
+     * This value corresponds to the minimum among the buffer size and the number
+     * of values in the buffer file from the specified file position.
+     *
+     * @param[in, out] buffer is the buffer that will store the read values
+     * @param[in, out] read_pos is the position in the bucket file from which values
+     *      are load
+     * @return the number of values read from the bucket file
+     */
+    size_t load_buffer(std::vector<VALUE>& buffer, std::streampos& read_pos) const
+    {
+        Archive::Binary::In archive(filepath);
+
+        const std::streampos final_pos{archive.size()};
+
+        if (read_pos < data_pos) {
+            read_pos = data_pos;
+        } else {
+            if (archive.size()==read_pos) {
+                return 0;
+            }
+        }
+        archive.seekg(read_pos);
+
+        size_t read_values{0};
+        for (auto& value: buffer) {
+            if (final_pos==read_pos) {
+                return read_values;
+            }
+            archive & value;
+
+            read_pos = archive.tellg();
+            ++read_values;
+        }
+
+        return read_values;
+    }
+
+public:
+    BucketBase():
+        filepath{}, size_pos{0}, data_pos{0}, final_pos{0},
+        num_of_values{0}
+    {}
+
+    explicit BucketBase(const std::filesystem::path& filepath):
+        BucketBase<VALUE>{}
+    {
+        this->filepath = filepath;
+    }
+
+    BucketBase(const BucketBase<VALUE>& orig_obj):
+        filepath{orig_obj.filepath}, size_pos{orig_obj.size_pos},
+        data_pos{orig_obj.data_pos}, final_pos{orig_obj.final_pos},
+        num_of_values{orig_obj.num_of_values}
+    {}
+
+    BucketBase<VALUE>& operator=(BucketBase<VALUE>&& orig_obj)
+    {
+        swap(filepath, orig_obj.filepath);
+        swap(size_pos, orig_obj.size_pos);
+        swap(data_pos, orig_obj.data_pos);
+        swap(final_pos, orig_obj.final_pos);
+        swap(num_of_values, orig_obj.num_of_values);
+
+        return *this;
+    }
+
+    /**
+     * @brief Get the bucket size position in the file
+     *
+     * @return the bucket size position in the file
+     */
+    inline std::streampos get_size_pos() const
+    {
+        return size_pos;
+    }
+
+    /**
+     * @brief Get the bucket file final position
+     *
+     * @return the bucket file final position
+     */
+    inline std::streampos get_final_pos() const
+    {
+        return final_pos;
+    }
+
+    /**
+     * @brief Get the bucket data position in the file
+     *
+     * @return the bucket data position in the file
+     */
+    inline std::streampos get_data_pos() const
+    {
+        return data_pos;
+    }
+
+    /**
+     * @brief Get the bucket file path
+     *
+     * @return the bucket file path
+     */
+    inline std::filesystem::path get_path() const
+    {
+        return filepath;
+    }
+
+    /**
+     * @brief Get the number of values in the bucket
+     *
+     * @return the number of values in the bucket
+     */
+    inline const size_t& size() const
+    {
+        return num_of_values;
+    }
+};
+
+/**
+ * @brief A bucket writer
+ *
+ * @tparam VALUE is the type of the values contained in the bucket
+ */
+template<typename VALUE>
+class BucketWriter : public BucketBase<VALUE>
+{
+    std::vector<VALUE> cache; //!< the write cache
 
     /**
      * @brief Load a set of values from a file
@@ -103,7 +293,7 @@ class Bucket
         }
 
         if (!archive.eof()) {
-            throw std::runtime_error("load_buffer: The file is larger than the buffer");
+            throw std::runtime_error("BucketWriter::load_buffer(): The file is larger than the buffer");
         }
 
         return buffer_it;
@@ -171,7 +361,7 @@ class Bucket
                            const std::filesystem::path& tmp_dir,
                            UI::ProgressBar& progress_bar)
     {
-        const auto num_of_chunks = (size()-1)/max_chunk_size+1;
+        const auto num_of_chunks = (this->size()-1)/max_chunk_size+1;
         auto last_chunk = num_of_chunks-1;
 
         std::uniform_int_distribution<size_t> chunk_dist(0, last_chunk);
@@ -186,11 +376,11 @@ class Bucket
         std::vector<VALUE> cache{max_chunk_size};
         std::streampos read_pos{0};
 
-        size_t value_in_caches = load_buffer(cache, read_pos);
+        size_t value_in_caches = BucketBase<VALUE>::load_buffer(cache, read_pos);
         auto cache_it = cache.begin();
-        for (size_t i=0; i<num_of_values; ++i) {
+        for (size_t i=0; i<this->size(); ++i) {
             if (value_in_caches == 0) {
-                value_in_caches = load_buffer(cache, read_pos);
+                value_in_caches = BucketBase<VALUE>::load_buffer(cache, read_pos);
 
                 cache_it = cache.begin();
 
@@ -219,144 +409,9 @@ class Bucket
     }
 
     /**
-     * @brief Load values into a buffer
+     * @brief Write the bucket file header
      *
-     * This method loads a set of values from a specified position of the bucket
-     * file into a buffer and returns the number of values loaded into the buffer.
-     * This value corresponds to the minimum among the buffer size and the number
-     * of values in the buffer file from the specified file position.
-     *
-     * @param[in, out] buffer is the buffer that will store the read values
-     * @param[in, out] read_pos is the position in the bucket file from which values
-     *      are load
-     * @return the number of values read from the bucket file
-     */
-    size_t load_buffer(std::vector<VALUE>& buffer, std::streampos& read_pos) const
-    {
-        Archive::Binary::In archive(filepath);
-
-        const std::streampos final_pos{archive.size()};
-
-        if (read_pos < data_pos) {
-            read_pos = data_pos;
-        } else {
-            if (archive.size()==read_pos) {
-                return 0;
-            }
-        }
-        archive.seekg(read_pos);
-
-        size_t read_values{0};
-        for (auto& value: buffer) {
-            if (final_pos==read_pos) {
-                return read_values;
-            }
-            archive & value;
-
-            read_pos = archive.tellg();
-            ++read_values;
-        }
-
-        return read_values;
-    }
-
-    /**
-     * @brief Load values into a buffer
-     *
-     * This method loads a set of values from a specified position of the bucket
-     * file into a buffer and returns the number of values loaded into the buffer.
-     * When the final position of the bucket file is reached the read position is
-     * updated to read the first value in the file. The method stops to read
-     * values from the bucket file when either the buffer has been filled or the
-     * a specified final position has been reached. A Boolean flag allows the
-     * method to proceed the first time the final position is reached.
-     *
-     * @param[in, out] buffer is the buffer that will store the read values
-     * @param[in, out] read_pos is the position in the bucket file from which values
-     *      are load
-     * @param[in] final_pos is the reading final position
-     * @param[in] init is a Boolean flag that must be set to `true` during the
-     *      first buffer load
-     * @return the number of values read from the bucket file
-     */
-    size_t load_buffer(std::vector<VALUE>& buffer, std::streampos& read_pos,
-                       std::streampos final_pos, bool init=false) const
-    {
-        Archive::Binary::In archive(this->path());
-
-        if (read_pos < this->get_data_pos()) {
-            read_pos = this->get_data_pos();
-        }
-        if (final_pos < this->get_data_pos()) {
-            final_pos = read_pos;
-        }
-        archive.seekg(read_pos);
-
-        size_t read_values{0};
-        for (auto& value: buffer) {
-            if (archive.eof()) {
-                read_pos = this->get_data_pos();
-                archive.seekg(read_pos);
-            }
-            if (final_pos==read_pos) {
-                if (!init) {
-                    return read_values;
-                }
-                init = false;
-            }
-            archive & value;
-
-            read_pos = archive.tellg();
-            ++read_values;
-        }
-
-        return read_values;
-    }
-
-    /**
-     * @brief Read the buffer file header
-     *
-     * This method reads the buffer file header and sets the
-     * position of the bucket size and that of the data in the
-     * file.
-     * @param archive is a reference to the input archive
-     * @return a reference to the input archive
-     */
-    Archive::Binary::In& read_header(Archive::Binary::In& archive)
-    {
-        if (!archive.is_open()) {
-            archive.open(filepath);
-        }
-
-        Archive::Binary::In::read_header(archive, "RACES Bucket", 0);
-
-        size_pos = archive.tellg();
-        archive & num_of_values;
-        data_pos = archive.tellg();
-
-        file_size = archive.size();
-
-        return archive;
-    }
-
-    /**
-     * @brief Read the buffer file header
-     *
-     * This method reads the buffer file header and sets the
-     * position of the bucket size and that of the data in the
-     * file.
-     */
-    inline void read_header()
-    {
-        Archive::Binary::In archive(filepath);
-
-        read_header(archive);
-    }
-
-    /**
-     * @brief Write the buffer file header
-     *
-     * This method writes the buffer file header and sets the
+     * This method writes the bucket file header and sets the
      * position of the bucket size and that of the data in the
      * file.
      * @param archive is a reference to the output archive
@@ -365,18 +420,18 @@ class Bucket
     Archive::Binary::Out& write_header(Archive::Binary::Out& archive)
     {
         if (!archive.is_open()) {
-            archive.open(filepath);
+            archive.open(this->filepath);
         }
 
         Archive::Binary::Out::write_header(archive, "RACES Bucket", 0);
 
-        size_pos = archive.tellg();
-        archive & num_of_values;
-        data_pos = archive.tellg();
+        this->size_pos = archive.tellg();
+        archive & this->num_of_values;
+        this->data_pos = archive.tellg();
 
         archive.flush();
 
-        file_size = data_pos;
+        this->final_pos = this->data_pos;
 
         return archive;
     }
@@ -390,7 +445,7 @@ class Bucket
      */
     inline void write_header()
     {
-        Archive::Binary::Out archive(filepath);
+        Archive::Binary::Out archive(this->filepath);
 
         write_header(archive);
     }
@@ -403,178 +458,142 @@ class Bucket
      */
     void init_bucket()
     {
-        if (std::filesystem::exists(filepath)) {
-            if (!std::filesystem::is_regular_file(filepath)) {
+        if (std::filesystem::exists(this->filepath)) {
+            if (!std::filesystem::is_regular_file(this->filepath)) {
                 std::ostringstream oss;
 
-                oss << "\"" << to_string(filepath) << "\" is not a block file.";
+                oss << "\"" << to_string(this->filepath)
+                    << "\" is not a block file.";
                 throw std::domain_error(oss.str());
             }
 
-            read_header();
+            this->read_header();
         } else {
             write_header();
         }
     }
-protected:
-    /**
-     * @brief Get the position of values in bucket file
-     *
-     * @return the position of values in bucket file
-     */
-    inline std::streampos get_data_pos() const
-    {
-        return data_pos;
-    }
 
     /**
-     * @brief Compute the position of the i-th value in the bucket file
+     * @brief Shuffle the bucket values in memory
      *
-     * @param[in] i is the index of the aimed value in the bucket file
-     * @return the position of the `i`-th value in the bucket file or,
-     *      whenever the bucket file contains less than i values, the
-     *      end file position
+     * This method shuffles the bucket’s values randomly, ensuring a
+     * uniform distribution. The values are shuffled in memory and,
+     * then, saved into the bucket.
+     *
+     * @tparam RANDOM_GENERATOR is a random number generator type
+     * @param[in, out] random_generator is a random number generator
+     * @param[in, out] progress_bar is a progress bar
      */
-    template<typename VALUE2=VALUE, std::enable_if_t<std::is_same_v<VALUE2, VALUE>
-                && uses_constant_space_on_disk<VALUE>::value, bool> = true>
-    std::streampos get_value_pos(const size_t& i) const
+    template<typename RANDOM_GENERATOR>
+    void shuffle_in_memory(RANDOM_GENERATOR& random_generator,
+                           UI::ProgressBar& progress_bar)
     {
-        const size_t values_in_disks = num_of_values-write_cache.size();
+        flush();
 
-        if (i<values_in_disks) {
-            const std::streamoff offset = i*(file_size-data_pos)/values_in_disks;
-            return data_pos + offset;
+        if (this->size() == 0) {
+            return;
         }
 
-        return file_size;
+        // temporary remove cache
+        const size_t cacheable_values = cache.size();
+
+        cache = std::vector<VALUE>(this->size());
+
+        // load the values
+        BucketBase<VALUE>::load_buffer(cache, this->data_pos);
+
+        // shuffle the values
+        std::shuffle(cache.begin(), cache.end(), random_generator);
+
+        progress_bar.update_elapsed_time();
+
+        std::filesystem::remove(this->filepath);
+
+        // save the values
+        Archive::Binary::Out archive{this->filepath};
+        write_header(archive);
+        for (const auto& value: cache) {
+            archive & value;
+        }
+        this->final_pos = archive.tellg();
+
+        progress_bar.update_elapsed_time();
+
+        // restore cache
+        cache = std::vector<VALUE>(cacheable_values);
     }
 
+
+    /**
+     * @brief Shuffle the bucket values on disk
+     *
+     * This method shuffles the bucket’s values randomly, ensuring a
+     * uniform distribution. At any moment, the number of values held
+     * in memory does not exceed the specified cache size. To ensure
+     * this memory constraint, copies of the bucket values are
+     * temporarily stored in a set of disk-based files.
+     *
+     * @tparam RANDOM_GENERATOR is a random number generator type
+     * @param[in, out] random_generator is a random number generator
+     * @param[in] buffer_size is the buffer size in bytes
+     * @param[in] tmp_dir is the path of the temporary files
+     * @param[in, out] progress_bar is a progress bar
+     */
+    template<typename RANDOM_GENERATOR>
+    void shuffle_on_disk(RANDOM_GENERATOR& random_generator,
+                         size_t buffer_size,
+                         const std::filesystem::path tmp_dir,
+                         UI::ProgressBar& progress_bar)
+    {
+        flush();
+
+        if (this->size() == 0) {
+            return;
+        }
+
+        // temporary remove cache
+        const size_t cacheable_values = cache.size();
+
+        // split buffer size between reader and writer
+        const size_t buff_values = (buffer_size / 2)/sizeof(VALUE);
+
+        if (buff_values == 0) {
+            throw std::domain_error("BucketWriter::shuffle_on_disk(): the minimum "
+                                    "buffer size is " + std::to_string(2*sizeof(VALUE))
+                                    + ". It has been set to "
+                                    + std::to_string(buffer_size) + ".");
+        }
+
+        const auto chunk_paths = split_in_random_chunks(random_generator, buff_values,
+                                                        "tmp_chunk", tmp_dir,
+                                                        progress_bar);
+
+        cache = std::vector<VALUE>(buff_values);
+
+        std::filesystem::remove(this->filepath);
+
+        Archive::Binary::Out archive(this->filepath);
+        write_header(archive);
+
+        for (const auto& chunk_path: chunk_paths) {
+            const auto end_of_buffer = load_buffer(cache, chunk_path);
+
+            std::filesystem::remove(chunk_path);
+
+            std::shuffle(cache.begin(), end_of_buffer, random_generator);
+
+            for (auto buffer_it=cache.begin(); buffer_it != end_of_buffer; ++buffer_it) {
+                archive & *buffer_it;
+            }
+            this->final_pos = archive.tellg();
+
+            progress_bar.update_elapsed_time();
+        }
+
+        // restore cache
+        cache = std::vector<VALUE>(cacheable_values);
+    }
 public:
-    /**
-     * @brief The type of stored values
-     */
-    using value_type = VALUE;
-
-    /**
-     * @brief A constant iterator for the values in the bucket
-     */
-    class const_iterator
-    {
-        Bucket<VALUE> const* bucket;    //!< a pointer to the bucket
-
-        std::vector<VALUE> cache;   //!< the read cache
-        std::streampos read_pos;    //!< the next position to be read in the bucket file
-        size_t index;       //!< the position of the next value to be read in the cache
-        size_t available_in_cache;  //!< the number of cached values
-
-        /**
-         * @brief A constructor
-         *
-         * @param[in] bucket is a pointer to the bucket over which iterate
-         */
-        explicit const_iterator(Bucket<VALUE> const *bucket):
-            bucket{bucket}, cache{bucket->cacheable_values}, read_pos{0},
-            index{0}, available_in_cache{0}
-        {
-            available_in_cache = bucket->load_buffer(cache, this->read_pos);
-        }
-
-    public:
-        /**
-         * @brief The empty constructor
-         */
-        const_iterator():
-            bucket{nullptr}, cache{0}, read_pos{0},
-            index{0}, available_in_cache{0}
-        {}
-
-        /**
-         * @brief Move to the next value
-         *
-         * @return a reference to the updated object
-         */
-        const_iterator& operator++()
-        {
-            if (is_end() || bucket != nullptr) {
-                ++index;
-
-                if (index>=available_in_cache) {
-                    index = 0;
-
-                    available_in_cache = bucket->load_buffer(cache, read_pos);
-                }
-            }
-
-            return *this;
-        }
-
-        /**
-         * @brief Dereference the iterator
-         *
-         * @return a constant reference to the referenced value
-         */
-        inline const VALUE& operator*() const
-        {
-            if (is_end()) {
-                throw std::runtime_error("No value is available.");
-            }
-            return cache[index];
-        }
-
-        /**
-         * @brief Get the pointer to the object referenced by the iterator
-         *
-         * @return a constant pointer to the referenced value
-         */
-        inline const VALUE* operator->() const
-        {
-            return &(this->operator*());
-        }
-
-        /**
-         * @brief Check whether the end of the iteration has been reached
-         *
-         * @return `true` if and only if the end of the iteration has
-         *      been reached
-         */
-        bool is_end() const
-        {
-            return index == 0 && available_in_cache == 0;
-        }
-
-        /**
-         * @brief Check whether two iterator refer to the same position
-         *
-         * @param[in] other is a constant iterator over a bucket
-         * @return `true` if and only if the current iterator and `other`
-         *           are referring to the same position in the bucket
-         */
-        bool operator==(const const_iterator& other) const
-        {
-            if (is_end() || other.is_end()) {
-                return is_end() && other.is_end();
-            }
-
-            return bucket->path() == other.bucket->path()
-                && read_pos == other.read_pos
-                && index == other.index
-                && available_in_cache == other.available_in_cache;
-        }
-
-        /**
-         * @brief Check whether two iterator refer to different positions
-         *
-         * @param[in] other is a constant iterator over a bucket
-         * @return `false` if and only if the current iterator and `other`
-         *           are referring to the same position in the bucket
-         */
-        inline bool operator!=(const const_iterator& other) const
-        {
-            return !(*this == other);
-        }
-
-        friend class Bucket<VALUE>;
-    };
 
     /**
      * @brief A bucket constructor
@@ -588,12 +607,11 @@ public:
      * @param[in] filepath is the path of the associated bucket file
      * @param[in] cache_size is the write cache size in bytes
      */
-    Bucket(const std::filesystem::path filepath,
-           const size_t cache_size=sizeof(VALUE)):
-        filepath{filepath}, size_pos{0}, data_pos{0}, file_size{0},
-        num_of_values{0}
+    BucketWriter(const std::filesystem::path filepath,
+                 const size_t cache_size=1000*sizeof(VALUE)):
+        BucketBase<VALUE>{filepath}
     {
-        set_max_cache_size(cache_size);
+        set_cache_size(cache_size);
 
         init_bucket();
     }
@@ -605,11 +623,11 @@ public:
      *
      * @param[in, out] orig is the original version of the bucket object
      */
-    Bucket(const Bucket& orig):
-        filepath{orig.filepath}, size_pos{0}, data_pos{0}, file_size{0},
-        num_of_values{0}, cacheable_values{orig.cacheable_values}, write_cache{}
+    BucketWriter(const BucketWriter<VALUE>& orig):
+        BucketBase<VALUE>{orig.filepath}
     {
-        const_cast<Bucket&>(orig).flush();
+        const_cast<BucketWriter&>(orig).flush();
+        cache.reserve(orig.cache.capacity());
 
         init_bucket();
     }
@@ -622,12 +640,12 @@ public:
      * @param[in, out] orig is the original version of the bucket object
      * @return A reference to the updated object
      */
-    Bucket& operator=(const Bucket& orig)
+    BucketWriter<VALUE>& operator=(const BucketWriter<VALUE>& orig)
     {
-        const_cast<Bucket&>(orig).flush();
+        const_cast<BucketWriter&>(orig).flush();
 
-        filepath = orig.filepath;
-        cacheable_values = orig.cacheable_values;
+        this->filepath = orig.filepath;
+        cache.reserve(orig.cache.capacity());
 
         init_bucket();
 
@@ -640,17 +658,12 @@ public:
      * @param[in] orig is the original version of the bucket object
      * @return A reference to the updated object
      */
-    Bucket& operator=(Bucket&& orig)
+    BucketWriter<VALUE>& operator=(BucketWriter<VALUE>&& orig)
     {
         flush();
 
-        std::swap(filepath, orig.filepath);
-        std::swap(size_pos, orig.size_pos);
-        std::swap(data_pos, orig.data_pos);
-        std::swap(file_size, orig.file_size);
-        std::swap(num_of_values, orig.num_of_values);
-        std::swap(cacheable_values, orig.cacheable_values);
-        std::swap(write_cache, orig.write_cache);
+        std::swap(cache, orig.cache);
+        static_cast<BucketBase<VALUE> *>(this)->operator=(std::move(orig));
 
         return *this;
     }
@@ -662,12 +675,7 @@ public:
      */
     void push_back(VALUE&& value)
     {
-        if (write_cache.size()>=cacheable_values) {
-            flush();
-        }
-
-        write_cache.push_back(std::move(value));
-        ++num_of_values;
+        push_back(value);
     }
 
     /**
@@ -677,12 +685,13 @@ public:
      */
     void push_back(const VALUE& value)
     {
-        if (write_cache.size()>=cacheable_values) {
+        if (cache.size()==cache.capacity()) {
             flush();
         }
 
-        write_cache.push_back(value);
-        ++num_of_values;
+        cache.push_back(value);
+
+        ++this->num_of_values;
     }
 
     /**
@@ -788,69 +797,377 @@ public:
      * @param[in, out] progress_bar is a progress bar
      */
     template<typename RANDOM_GENERATOR>
-    void shuffle(RANDOM_GENERATOR& random_generator, size_t buffer_size,
+    void shuffle(RANDOM_GENERATOR& random_generator,
+                 const size_t buffer_size,
                  const std::filesystem::path tmp_dir,
                  UI::ProgressBar& progress_bar)
     {
-        flush();
+        const size_t buff_values = buffer_size/sizeof(VALUE);
+        if (buff_values >= this->size()) {
+            shuffle_in_memory(random_generator, progress_bar);
+        } else {
+            shuffle_on_disk(random_generator, buffer_size,
+                            tmp_dir, progress_bar);
+        }
+    }
 
-        if (size() == 0) {
-            return;
+    /**
+     * @brief Set the maximum bucket's read cache size
+     *
+     * @param[in] cache_size is the new maximum read cache size in bytes
+     */
+    void set_cache_size(const size_t& cache_size)
+    {
+        if (cache_size<sizeof(VALUE)) {
+            std::ostringstream oss;
+
+            oss << "BucketWriter: the minimum cache size is "
+                << sizeof(VALUE) << ".";
+            throw std::domain_error(oss.str());
         }
 
-        size_t buff_values = buffer_size/sizeof(VALUE);
-        if (buff_values >= size()) {
-            std::vector<VALUE> buffer(size());
-
-            load_buffer(buffer, data_pos);
-
-            std::shuffle(buffer.begin(), buffer.end(), random_generator);
-
-            std::filesystem::remove(filepath);
-
-            Archive::Binary::Out archive;
-            write_header(archive);
-            for (const auto& value: buffer) {
-                archive & value;
-            }
-            file_size = archive.tellg();
-
+        const size_t cacheable_values = cache_size/sizeof(VALUE);
+        if (cache.size() > cacheable_values) {
             flush();
+        }
 
-            progress_bar.update_elapsed_time();
+        cache.reserve(cacheable_values);
+    }
 
+    /**
+     * @brief Get the bucket's cache size
+     *
+     * This method returns the cache size in bytes. The values
+     * returned by this method may differ from those set by either
+     * the constructor or `set_cache_size()`. As a matter of
+     * the fact, the returned value is evaluated as the number
+     * of cacheable values multiplied by the value size.
+     *
+     * @return the cache size in bytes
+     */
+    inline size_t get_cache_size() const
+    {
+        return cache.capacity()*sizeof(VALUE);
+    }
+
+    /**
+     * @brief Flush the write cache
+     *
+     * This method writes the values in the cache into the bucket
+     * file on the disk.
+     */
+    void flush()
+    {
+        {
+            Archive::Binary::Out archive(this->filepath, std::ios::in);
+
+            archive.seekp(this->size_pos);
+
+            archive & this->num_of_values;
+        }
+
+        if (cache.size()==0) {
             return;
         }
 
-        // split buffer size between reader and writer
-        buffer_size /= 2;
-        buff_values = buffer_size/sizeof(VALUE);
+        Archive::Binary::Out archive(this->filepath, std::ios::in | std::ios::app);
 
-        const auto chunk_paths = split_in_random_chunks(random_generator, buff_values,
-                                                        "tmp_chunk", tmp_dir,
-                                                        progress_bar);
+        archive.seekp(0, std::ios::end);
 
-        std::vector<VALUE> buffer(buff_values);
-
-        std::filesystem::remove(filepath);
-
-        Archive::Binary::Out archive(filepath);
-        write_header(archive);
-
-        for (const auto& chunk_path: chunk_paths) {
-            const auto end_of_buffer = load_buffer(buffer, chunk_path);
-
-            std::filesystem::remove(chunk_path);
-
-            std::shuffle(buffer.begin(), end_of_buffer, random_generator);
-
-            for (auto buffer_it=buffer.begin(); buffer_it != end_of_buffer; ++buffer_it) {
-                archive & *buffer_it;
-            }
-            file_size = archive.tellg();
-
-            progress_bar.update_elapsed_time();
+        for (const auto& value : cache) {
+            archive & value;
         }
+
+        this->final_pos = archive.tellg();
+
+        cache.resize(0);
+
+        archive.flush();
+    }
+
+    /**
+     * @brief Destroy the bucket object
+     */
+    ~BucketWriter()
+    {
+        flush();
+    }
+};
+
+/**
+ * @brief A bucket reader
+ *
+ * @tparam VALUE is the type of the values contained in the bucket
+ */
+template<typename VALUE>
+class BucketReader : public BucketBase<VALUE>
+{
+    size_t cacheable_values;  //!< The number of values in the cache
+
+    /**
+     * @brief The method that initializes Bucket objects
+     *
+     * This method is used to initialize Bucket objects during the construction
+     * and the copy.
+     */
+    void init_bucket()
+    {
+        if (!(std::filesystem::exists(this->filepath)
+              &&std::filesystem::is_regular_file(this->filepath))) {
+            std::ostringstream oss;
+
+            oss << "BucketReader: \"" << to_string(this->filepath)
+                << "\" is not a block file.";
+            throw std::domain_error(oss.str());
+        }
+
+        this->read_header();
+    }
+
+    /**
+     * @brief Load values into a buffer
+     *
+     * This method wraps `BucketBase<VALUE>::load_buffer()` to make it available to
+     * `BucketReader::const_iterator`.
+     *
+     * @param[in, out] buffer is the buffer that will store the read values
+     * @param[in, out] read_pos is the position in the bucket file from which values
+     *      are load
+     * @return the number of values read from the bucket file
+     */
+    inline size_t load_buffer(std::vector<VALUE>& buffer, std::streampos& read_pos) const
+    {
+        return BucketBase<VALUE>::load_buffer(buffer, read_pos);
+    }
+
+    /**
+     * @brief Load values into a buffer
+     *
+     * This method loads a set of values from a specified position of the bucket
+     * file into a buffer and returns the number of values loaded into the buffer.
+     * When the final position of the bucket file is reached the read position is
+     * updated to read the first value in the file. The method stops to read
+     * values from the bucket file when either the buffer has been filled or the
+     * a specified final position has been reached. A Boolean flag allows the
+     * method to proceed the first time the final position is reached.
+     *
+     * @param[in, out] buffer is the buffer that will store the read values
+     * @param[in, out] read_pos is the position in the bucket file from which values
+     *      are load
+     * @param[in] final_pos is the reading final position
+     * @param[in] init is a Boolean flag that must be set to `true` during the
+     *      first buffer load
+     * @return the number of values read from the bucket file
+     */
+    size_t load_buffer(std::vector<VALUE>& buffer, std::streampos& read_pos,
+                       std::streampos final_pos, bool init=false) const
+    {
+        Archive::Binary::In archive(this->filepath);
+
+        if (read_pos < this->data_pos) {
+            read_pos = this->data_pos;
+        }
+        if (final_pos < this->data_pos) {
+            final_pos = read_pos;
+        }
+        archive.seekg(read_pos);
+
+        size_t read_values{0};
+        for (auto& value: buffer) {
+            if (archive.eof()) {
+                read_pos = this->data_pos;
+                archive.seekg(read_pos);
+            }
+            if (final_pos==read_pos) {
+                if (!init) {
+                    return read_values;
+                }
+                init = false;
+            }
+            archive & value;
+
+            read_pos = archive.tellg();
+            ++read_values;
+        }
+
+        return read_values;
+    }
+
+public:
+        /**
+     * @brief The type of stored values
+     */
+    using value_type = VALUE;
+
+    /**
+     * @brief A constant iterator for the values in the bucket
+     */
+    class const_iterator
+    {
+        BucketReader<VALUE> const* bucket_reader;    //!< a pointer to the bucket reader
+
+        std::vector<VALUE> cache;   //!< the read cache
+        std::streampos read_pos;    //!< the next position to be read in the bucket file
+        size_t index;       //!< the position of the next value to be read in the cache
+        size_t available_in_cache;  //!< the number of cached values
+
+        /**
+         * @brief A constructor
+         *
+         * @param[in] bucket_reader is a pointer to the bucket over which iterate
+         */
+        explicit const_iterator(BucketReader<VALUE> const *bucket_reader):
+            bucket_reader{bucket_reader}, cache{bucket_reader->cacheable_values},
+            read_pos{0}, index{0}, available_in_cache{0}
+        {
+            available_in_cache = bucket_reader->load_buffer(cache, this->read_pos);
+        }
+
+    public:
+        /**
+         * @brief The empty constructor
+         */
+        const_iterator():
+            bucket_reader{nullptr}, cache{0}, read_pos{0},
+            index{0}, available_in_cache{0}
+        {}
+
+        /**
+         * @brief Move to the next value
+         *
+         * @return a reference to the updated object
+         */
+        const_iterator& operator++()
+        {
+            if (is_end() || bucket_reader != nullptr) {
+                ++index;
+
+                if (index>=available_in_cache) {
+                    index = 0;
+
+                    available_in_cache = bucket_reader->load_buffer(cache, read_pos);
+                }
+            }
+
+            return *this;
+        }
+
+        /**
+         * @brief Dereference the iterator
+         *
+         * @return a constant reference to the referenced value
+         */
+        inline const VALUE& operator*() const
+        {
+            if (is_end()) {
+                throw std::runtime_error("No value is available.");
+            }
+            return cache[index];
+        }
+
+        /**
+         * @brief Get the pointer to the object referenced by the iterator
+         *
+         * @return a constant pointer to the referenced value
+         */
+        inline const VALUE* operator->() const
+        {
+            return &(this->operator*());
+        }
+
+        /**
+         * @brief Check whether the end of the iteration has been reached
+         *
+         * @return `true` if and only if the end of the iteration has
+         *      been reached
+         */
+        bool is_end() const
+        {
+            return index == 0 && available_in_cache == 0;
+        }
+
+        /**
+         * @brief Check whether two iterator refer to the same position
+         *
+         * @param[in] other is a constant iterator over a bucket
+         * @return `true` if and only if the current iterator and `other`
+         *           are referring to the same position in the bucket
+         */
+        bool operator==(const const_iterator& other) const
+        {
+            if (is_end() || other.is_end()) {
+                return is_end() && other.is_end();
+            }
+
+            return bucket_reader->get_path() == other.bucket_reader->get_path()
+                && read_pos == other.read_pos
+                && index == other.index
+                && available_in_cache == other.available_in_cache;
+        }
+
+        /**
+         * @brief Check whether two iterator refer to different positions
+         *
+         * @param[in] other is a constant iterator over a bucket
+         * @return `false` if and only if the current iterator and `other`
+         *           are referring to the same position in the bucket
+         */
+        inline bool operator!=(const const_iterator& other) const
+        {
+            return !(*this == other);
+        }
+
+        friend class BucketReader<VALUE>;
+    };
+
+    /**
+     * @brief A bucket reader constructor
+     *
+     * This constructor creates a bucket reader object associated
+     * with a file. If the specified file already exists, it loads
+     * the bucket’s data --such as the number of stored values--
+     * from the file. If the file does not exist, an
+     * `std::domain_error` exception is thrown.
+     *
+     * @param[in] filepath is the path of the associated bucket file
+     * @param[in] cache_size is the size of the read cache
+     */
+    explicit BucketReader(const std::filesystem::path filepath,
+                          const size_t cache_size=1000 * sizeof(VALUE)):
+        BucketBase<VALUE>{filepath},
+        cacheable_values{cache_size/sizeof(VALUE)}
+    {
+        if (cacheable_values==0) {
+            std::ostringstream oss;
+
+            oss << "BucketReader: the minimum cache size is "
+                << sizeof(VALUE) << ".";
+            throw std::domain_error(oss.str());
+        }
+
+        init_bucket();
+    }
+
+    /**
+     * @brief The copy constructor
+     *
+     * @param[in, out] orig is the original version of the bucket reader object
+     */
+    BucketReader(const BucketReader<VALUE>& orig):
+        BucketBase<VALUE>{static_cast<const BucketBase<VALUE>&>(orig)},
+        cacheable_values{orig.cacheable_values}
+    {}
+
+    /**
+     * @brief The copy operator
+     *
+     * @param[in, out] orig is the original version of the bucket object
+     * @return A reference to the updated object
+     */
+    BucketReader<VALUE>& operator=(const BucketReader<VALUE>& orig)
+    {
+        const_cast<BucketBase<VALUE> *>(this)->operator=(orig);
+        cacheable_values = orig.cacheable_values;
     }
 
     /**
@@ -860,11 +1177,9 @@ public:
      *
      * @return A constant iterator referring to the bucket initial position
      */
-    inline Bucket<VALUE>::const_iterator begin() const
+    inline BucketReader<VALUE>::const_iterator begin() const
     {
-        const_cast<Bucket<VALUE>*>(this)->flush();
-
-        return Bucket<VALUE>::const_iterator(this);
+        return BucketReader<VALUE>::const_iterator(this);
     }
 
     /**
@@ -872,9 +1187,9 @@ public:
      *
      * @return A constant iterator referring to the bucket final position
      */
-    inline Bucket<VALUE>::const_iterator end() const
+    inline BucketReader<VALUE>::const_iterator end() const
     {
-        return Bucket<VALUE>::const_iterator();
+        return BucketReader<VALUE>::const_iterator();
     }
 
     /**
@@ -886,51 +1201,9 @@ public:
      */
     void rename(const std::filesystem::path& new_filepath)
     {
-        std::filesystem::rename(filepath, new_filepath);
+        std::filesystem::rename(this->filepath, new_filepath);
 
-        filepath = new_filepath;
-    }
-
-    /**
-     * @brief Set the maximum bucket's read cache size
-     *
-     * @param[in] cache_size is the new maximum read cache size in bytes
-     */
-    void set_max_cache_size(const size_t& cache_size)
-    {
-        if (cache_size<sizeof(VALUE)) {
-            std::ostringstream oss;
-
-            oss << "Bucket: the minimum cache size is "
-                << sizeof(VALUE) << ".";
-            throw std::domain_error(oss.str());
-        }
-
-        this->cacheable_values = cache_size/sizeof(VALUE);
-    }
-
-    /**
-     * @brief Get the bucket's read cache size
-     *
-     * This method returns the read cache size in bytes. The values
-     * returned by this method may differ from those set by either
-     * the constructor or `set_max_cache_size()`.
-     *
-     * @return the read cache size in bytes
-     */
-    inline size_t get_cache_size() const
-    {
-        return this->cacheable_values*sizeof(VALUE);
-    }
-
-    /**
-     * @brief Get the number of values in the bucket
-     *
-     * @return the number of values in the bucket
-     */
-    inline const size_t& size() const
-    {
-        return num_of_values;
+        this->filepath = new_filepath;
     }
 
     /**
@@ -947,29 +1220,22 @@ public:
                 && uses_constant_space_on_disk<VALUE>::value, bool> = true>
     VALUE operator[](const size_t& i) const
     {
-        if (i>= size()) {
+        if (i>= this->size()) {
             throw std::out_of_range("The index is out of the bucket's boundaries.");
         }
-        std::streamoff value_pos = get_value_pos(i);
 
-        if (value_pos < file_size) {
-            Binary::In archive(filepath);
+        const std::streamoff value_pos = this->get_value_pos(i);
 
-            archive.seekg(value_pos);
+        Binary::In archive(this->filepath);
 
-            VALUE value;
+        archive.seekg(value_pos);
 
-            archive & value;
+        VALUE value;
 
-            return value;
-        }
+        archive & value;
 
-        auto it = write_cache.begin();
-        std::advance(it, i-(num_of_values-write_cache.size()));
-
-        return *it;
+        return value;
     }
-
 
     /**
      * @brief The random access operator
@@ -1024,8 +1290,9 @@ public:
      * @return a random tour for the buffer
      */
     template<typename RANDOM_GENERATOR>
-    BucketRandomTour<VALUE, RANDOM_GENERATOR> random_tour(const RANDOM_GENERATOR& random_generator,
-                                                          const size_t cache_size) const
+    BucketRandomTour<VALUE, RANDOM_GENERATOR>
+    random_tour(const RANDOM_GENERATOR& random_generator,
+                const size_t cache_size) const
     {
         return {*this, random_generator, cache_size};
     }
@@ -1041,65 +1308,13 @@ public:
      * @return a random tour for the buffer
      */
     template<typename RANDOM_GENERATOR>
-    inline BucketRandomTour<VALUE, RANDOM_GENERATOR> random_tour(const RANDOM_GENERATOR& random_generator) const
+    inline BucketRandomTour<VALUE, RANDOM_GENERATOR>
+    random_tour(const RANDOM_GENERATOR& random_generator) const
     {
-        return random_tour(random_generator, get_cache_size());
+        return random_tour(random_generator, cacheable_values*sizeof(VALUE));
     }
 
-    /**
-     * @brief Get the bucket file path
-     *
-     * @return the bucket file path
-     */
-    inline std::filesystem::path path() const
-    {
-        return filepath;
-    }
-
-    /**
-     * @brief Flush the write cache
-     *
-     * This method writes the values in the cache into the bucket
-     * file on the disk.
-     */
-    void flush()
-    {
-        if (write_cache.empty()) {
-            return;
-        }
-
-        {
-            Archive::Binary::Out archive(filepath, std::ios::in);
-
-            archive.seekp(size_pos);
-
-            archive & num_of_values;
-        }
-
-        Archive::Binary::Out archive(filepath, std::ios::in | std::ios::app);
-
-        archive.seekp(0, std::ios::end);
-
-        for (const auto& value: write_cache) {
-            archive & value;
-        }
-
-        file_size = archive.tellg();
-
-        write_cache.clear();
-
-        archive.flush();
-    }
-
-    /**
-     * @brief Destroy the bucket object
-     */
-    ~Bucket()
-    {
-        flush();
-    }
-
-    friend class Bucket<VALUE>::const_iterator;
+    friend class BucketReader<VALUE>::const_iterator;
 
     template<typename VALUE2, typename RANDOM_GENERATOR>
     friend class BucketRandomTour;
@@ -1133,7 +1348,7 @@ public:
 template<typename VALUE, typename RANDOM_GENERATOR>
 class BucketRandomTour
 {
-    Bucket<VALUE> const& bucket;    //!< the bucket to be toured
+    BucketReader<VALUE> const& bucket_reader;    //!< the bucket reader to be toured
 
     RANDOM_GENERATOR random_generator; //!< the random number generator
 
@@ -1154,7 +1369,7 @@ public:
      */
     class const_iterator
     {
-        Bucket<VALUE> const* bucket; //!< a pointer to the bucket
+        BucketReader<VALUE> const* bucket_reader; //!< a pointer to the bucket reader
 
         RANDOM_GENERATOR random_generator;  //!< the random number generator
 
@@ -1186,17 +1401,17 @@ public:
         /**
          * @brief A constructor
          *
-         * @param[in, out] bucket is a pointer to the bucket whose values must be iterated
+         * @param[in, out] bucket_reader is a pointer to the bucket reader whose values must be iterated
          * @param[in] initial_pos is the first position to be read from the bucket file
          * @param[in] cacheable_values is the maximum number of cached values
          */
-        const_iterator(Bucket<VALUE> const* bucket, const std::streampos initial_pos,
+        const_iterator(BucketReader<VALUE> const* bucket_reader, const std::streampos initial_pos,
                        const size_t cacheable_values):
-            bucket{bucket}, cache{cacheable_values}, initial_pos{initial_pos},
+            bucket_reader{bucket_reader}, cache{cacheable_values}, initial_pos{initial_pos},
             read_pos{initial_pos}, iterated{0}
         {
-            available_in_cache = bucket->load_buffer(cache, this->read_pos,
-                                                     this->initial_pos, true);
+            available_in_cache = bucket_reader->load_buffer(cache, this->read_pos,
+                                                            this->initial_pos, true);
 
             select_a_value_in_cache();
         }
@@ -1206,7 +1421,7 @@ public:
          * @brief The empty constructor
          */
         const_iterator():
-            bucket{nullptr}, cache{0}, initial_pos{0}, read_pos{0}, available_in_cache{0},
+            bucket_reader{nullptr}, cache{0}, initial_pos{0}, read_pos{0}, available_in_cache{0},
             iterated{0}
         {}
 
@@ -1217,12 +1432,12 @@ public:
          */
         const_iterator& operator++()
         {
-            if (bucket != nullptr && !is_end()) {
+            if (bucket_reader != nullptr && !is_end()) {
                 if (available_in_cache>0) {
                     --available_in_cache;
                 }
                 if (available_in_cache==0 && read_pos != initial_pos) {
-                    available_in_cache = bucket->load_buffer(cache, read_pos, initial_pos);
+                    available_in_cache = bucket_reader->load_buffer(cache, read_pos, initial_pos);
                 }
 
                 if (is_end()) {
@@ -1288,7 +1503,7 @@ public:
          */
         inline size_t remaining_values() const
         {
-            return (bucket->size()+1)-reached_values();
+            return (bucket_reader->size()+1)-reached_values();
         }
 
         /**
@@ -1304,7 +1519,7 @@ public:
                 return is_end() && other.is_end();
             }
 
-            return bucket->path() == other.bucket->path()
+            return bucket_reader->get_path() == other.bucket_reader->get_path()
                 && read_pos == other.read_pos
                 && initial_pos == other.initial_pos
                 && available_in_cache == other.available_in_cache;
@@ -1331,18 +1546,18 @@ public:
      * This constructor maintains a copy of a random number generator
      * passed as parameter.
      *
-     * @param[in] bucket is bucket for which the random tour is
+     * @param[in] bucket_reader is bucket for which the random tour is
      *      requested
      * @param[in] random_generator is the random number generator that
      *      randomizes the tour
      * @param cache_size is the cache size in bytes
      */
-    BucketRandomTour(const Bucket<VALUE>& bucket,
+    BucketRandomTour(const BucketReader<VALUE>& bucket_reader,
                      const RANDOM_GENERATOR& random_generator,
                      const size_t cache_size=sizeof(VALUE)):
-        bucket{bucket}, random_generator{random_generator}
+        bucket_reader{bucket_reader}, random_generator{random_generator}
     {
-        this->set_max_cache_size(cache_size);
+        this->set_cache_size(cache_size);
     }
 
     /**
@@ -1354,22 +1569,20 @@ public:
      */
     inline BucketRandomTour<VALUE, RANDOM_GENERATOR>::const_iterator begin() const
     {
-        const_cast<Bucket<VALUE>&>(bucket).flush();
-
-        std::streampos begin_pos{bucket.get_data_pos()};
+        std::streampos begin_pos{bucket_reader.data_pos};
         if constexpr(uses_constant_space_on_disk<VALUE>::value) {
-            if (bucket.size()>0) {
-                std::uniform_int_distribution<size_t> dist(0, bucket.size()-1);
+            if (bucket_reader.size()>0) {
+                std::uniform_int_distribution<size_t> dist(0, bucket_reader.size()-1);
 
                 RANDOM_GENERATOR random_gen_copy(random_generator);
 
                 const size_t first_index = dist(random_gen_copy);
 
-                begin_pos = bucket.get_value_pos(first_index);
+                begin_pos = bucket_reader.get_value_pos(first_index);
             }
         }
 
-        return const_iterator(&bucket, begin_pos, cacheable_values);
+        return const_iterator(&bucket_reader, begin_pos, cacheable_values);
     }
 
     /**
@@ -1387,7 +1600,7 @@ public:
      *
      * @param[in] cache_size is the new maximum read cache size in bytes
      */
-    void set_max_cache_size(const size_t& cache_size)
+    void set_cache_size(const size_t& cache_size)
     {
         if (cache_size<sizeof(VALUE)) {
             std::ostringstream oss;
@@ -1405,7 +1618,7 @@ public:
      *
      * This method returns the read cache size in bytes. The values
      * returned by this method may differ from those set by either
-     * the constructor or `set_max_cache_size()`.
+     * the constructor or `set_cache_size()`.
      *
      * @return the read cache size in bytes
      */
@@ -1419,9 +1632,9 @@ public:
      *
      * @return a constant reference to the bucket
      */
-    inline const Bucket<VALUE>& get_bucket() const
+    inline const BucketReader<VALUE>& get_bucket_reader() const
     {
-        return bucket;
+        return bucket_reader;
     }
 
     /**
@@ -1459,7 +1672,7 @@ public:
         return this->random_generator;
     }
 
-    friend class Bucket<VALUE>;
+    friend class BucketReader<VALUE>;
     friend class BucketRandomTour<VALUE, RANDOM_GENERATOR>::const_iterator;
 };
 
