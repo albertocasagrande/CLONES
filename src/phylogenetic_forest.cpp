@@ -2,10 +2,10 @@
  * @file phylogenetic_forest.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements classes and function for phylogenetic forests
- * @version 1.8
- * @date 2024-11-05
+ * @version 1.9
+ * @date 2026-01-12
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -134,14 +134,24 @@ PhylogeneticForest::get_subforest_for(const std::vector<std::string>& sample_nam
     static_cast<Mutants::DescendantsForest&>(forest) = Mutants::DescendantsForest::get_subforest_for(sample_names);
 
     for (const auto& [cell_id, cell]: forest.get_cells()) {
-        forest.novel_mutations[cell_id] = novel_mutations.at(cell_id);
+        const auto novel_found = novel_mutations.find(cell_id);
+        if (novel_found != novel_mutations.end()) {
+            forest.novel_mutations.emplace(cell_id, novel_found->second);
+        }
+
         if (forest.is_leaf(cell_id)) {
-            forest.leaves_mutations[cell_id] = leaves_mutations.at(cell_id);
+            const auto leaves_found = leaves_mutations.find(cell_id);
+            if (leaves_found != leaves_mutations.end()) {
+                forest.leaves_mutations.emplace(cell_id, leaves_found->second);
+            }
         }
     }
 
     forest.SID_first_cells = filter_by_cells_in(SID_first_cells, forest);
     forest.CNA_first_cells = filter_by_cells_in(CNA_first_cells, forest);
+
+    forest.germline_mutations = germline_mutations;
+    forest.mutational_properties = mutational_properties;
 
     return forest;
 }
