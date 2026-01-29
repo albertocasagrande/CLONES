@@ -2,10 +2,10 @@
  * @file descendant_forest.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements classes and function for descendant forests
- * @version 1.0
- * @date 2024-06-10
+ * @version 1.1
+ * @date 2026-01-29
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -199,6 +199,34 @@ std::list<std::list<CellId>> DescendantsForest::get_sticks(const double birth_ti
     }
 
     return sticks;
+}
+
+std::map<CellId, size_t> DescendantsForest::get_node_depths() const
+{
+    std::map<CellId, size_t> depths;
+    std::list<CellId> next{roots.begin(), roots.end()};
+
+    for (const auto& root: roots) {
+        depths[root] = 0;
+        next.push_back(root);
+    }
+
+    while (!next.empty()) {
+        auto found = branches.find(next.front());
+
+        if (found != branches.end()) {
+            const auto front_depth = depths.at(next.front());
+            for (const auto& child: found->second) {
+                next.push_back(child);
+
+                depths.emplace(child, front_depth+1);
+            }
+        }
+
+        next.pop_front();
+    }
+
+    return depths;
 }
 
 std::map<CellId, size_t>
