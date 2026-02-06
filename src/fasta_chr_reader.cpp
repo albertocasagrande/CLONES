@@ -2,10 +2,10 @@
  * @file fasta_chr_reader.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements classes to read chromosomes from FASTA streams
- * @version 1.1
- * @date 2025-10-11
+ * @version 1.2
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -32,7 +32,7 @@
 
 #include "fasta_chr_reader.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace IO
@@ -43,7 +43,7 @@ namespace FASTA
 
 template<>
 bool Reader<ChromosomeData<SequenceInfo>>::read(ChromosomeData<SequenceInfo>& chr_info,
-                                                RACES::UI::ProgressBar& progress_bar)
+                                                CLONES::UI::ProgressBar& progress_bar)
 {
     std::string header;
 
@@ -58,7 +58,7 @@ bool Reader<ChromosomeData<SequenceInfo>>::read(ChromosomeData<SequenceInfo>& ch
 
 template<>
 bool Reader<ChromosomeData<Sequence>>::read(ChromosomeData<Sequence>& chr,
-                                            RACES::UI::ProgressBar& progress_bar)
+                                            CLONES::UI::ProgressBar& progress_bar)
 {
     std::string header;
 
@@ -117,7 +117,7 @@ Index<ChromosomeData<Sequence>>::load(std::istream& input_stream)
 template<>
 bool IndexedReader<ChromosomeData<Sequence>>::read(ChromosomeData<Sequence>& chr,
                                                    const std::string& chr_name,
-                                                   RACES::UI::ProgressBar& progress_bar)
+                                                   CLONES::UI::ProgressBar& progress_bar)
 {
     if (!_index.has_key(chr_name)) {
         return false;
@@ -148,4 +148,4 @@ get_chromosome_regions(const Index<ChromosomeData<Sequence>>& chr_index)
 
 }   // IO
 
-}   // RACES
+}   // CLONES

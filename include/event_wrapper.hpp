@@ -2,10 +2,10 @@
  * @file event_wrapper.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a simulation event wrapper
- * @version 1.0
- * @date 2024-06-10
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_EVENT_WRAPPER__
-#define __RACES_EVENT_WRAPPER__
+#ifndef __CLONES_EVENT_WRAPPER__
+#define __CLONES_EVENT_WRAPPER__
 
 #include <memory>
 
@@ -38,7 +38,7 @@
 #include "rate_update.hpp"
 #include "sampling.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutants
@@ -171,7 +171,7 @@ struct SimulationEventWrapper
 
 }   // Mutants
 
-}   // RACES
+}   // CLONES
 
 /**
  * @brief Test the equivalence between two event wrappers
@@ -181,7 +181,7 @@ struct SimulationEventWrapper
  * @return `true` if and only if the two wrappers represent
  *      the same event
  */
-bool operator==(const RACES::Mutants::Evolutions::SimulationEventWrapper& lhs,
-                const RACES::Mutants::Evolutions::SimulationEventWrapper& rhs);
+bool operator==(const CLONES::Mutants::Evolutions::SimulationEventWrapper& lhs,
+                const CLONES::Mutants::Evolutions::SimulationEventWrapper& rhs);
 
-#endif // __RACES_EVENT_WRAPPER__
+#endif // __CLONES_EVENT_WRAPPER__

@@ -2,10 +2,10 @@
  * @file id_context_index.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements a ID context indices
- * @version 1.3
- * @date 2025-11-14
+ * @version 1.4
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -37,7 +37,7 @@
 #include "genomic_sequence.hpp"
 
 
-namespace RACES
+namespace CLONES
 {
 
 std::list<Mutations::IDContext>
@@ -525,11 +525,11 @@ IDContextIndexBuilder::IDContextIndexBuilder(const std::filesystem::path index_p
 
 }   // Mutations
 
-}   // RACES
+}   // CLONES
 
 namespace std
 {
-    std::ostream& operator<<(std::ostream& os, const RACES::Mutations::RepetitionReference& rep_ref)
+    std::ostream& operator<<(std::ostream& os, const CLONES::Mutations::RepetitionReference& rep_ref)
     {
         os << rep_ref.unit_size << " (" << rep_ref.position << ")";
 

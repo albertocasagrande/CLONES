@@ -2,10 +2,10 @@
  * @file phylogenetic_forest.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines classes and function for phylogenetic forests
- * @version 1.14
- * @date 2025-10-12
+ * @version 1.15
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_PHYLOGENETIC_FOREST__
-#define __RACES_PHYLOGENETIC_FOREST__
+#ifndef __CLONES_PHYLOGENETIC_FOREST__
+#define __CLONES_PHYLOGENETIC_FOREST__
 
 #include <map>
 #include <memory>
@@ -43,7 +43,7 @@
 
 #include "label_tour.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutations
@@ -512,7 +512,7 @@ public:
     template<typename ARCHIVE, std::enable_if_t<std::is_base_of_v<Archive::Basic::Out, ARCHIVE>, bool> = true>
     inline void save(ARCHIVE& archive) const
     {
-        ARCHIVE::write_header(archive, "RACES Phylogenetic Forest", 4);
+        ARCHIVE::write_header(archive, "CLONES Phylogenetic Forest", 4);
 
         archive & static_cast<const Mutants::DescendantForest&>(*this)
                 & pre_neoplastic_mutations
@@ -534,7 +534,7 @@ public:
     template<typename ARCHIVE, std::enable_if_t<std::is_base_of_v<Archive::Basic::In, ARCHIVE>, bool> = true>
     static PhylogeneticForest load(ARCHIVE& archive)
     {
-        ARCHIVE::read_header(archive, "RACES Phylogenetic Forest", 4);
+        ARCHIVE::read_header(archive, "CLONES Phylogenetic Forest", 4);
 
         PhylogeneticForest forest;
 
@@ -649,6 +649,6 @@ get_leaf_mutation_tour(const PhylogeneticForest& forest,
 
 }   // Mutations
 
-}   // RACES
+}   // CLONES
 
-#endif // __RACES_PHYLOGENETIC_TREE__
+#endif // __CLONES_PHYLOGENETIC_TREE__

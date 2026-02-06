@@ -2,10 +2,10 @@
  * @file id_signature.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Some ID example
- * @version 1.0
- * @date 2025-11-14
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -45,7 +45,7 @@
 
 BOOST_AUTO_TEST_CASE(ID_type_create)
 {
-    using namespace RACES::Mutations;
+    using namespace CLONES::Mutations;
 
     BOOST_CHECK_NO_THROW(IDType());
 
@@ -75,7 +75,7 @@ BOOST_AUTO_TEST_CASE(ID_type_create)
 
 BOOST_AUTO_TEST_CASE(ID_type_read)
 {
-    using namespace RACES::Mutations;
+    using namespace CLONES::Mutations;
 
     struct IDTypeData
     {
@@ -112,7 +112,7 @@ BOOST_AUTO_TEST_CASE(ID_type_read)
 
 BOOST_AUTO_TEST_CASE(ID_type_read_error)
 {
-    using namespace RACES::Mutations;
+    using namespace CLONES::Mutations;
 
     std::list<std::string> errors{
         "2:Del:R:0:", "2:Dela:R:0", "-2:Del:R:0", "2:Del:R:-10",
@@ -152,7 +152,7 @@ std::ostream& operator<<(std::ostream& out, const std::set<T>& S)
 
 BOOST_AUTO_TEST_CASE(ID_signature_load)
 {
-    using namespace RACES::Mutations;
+    using namespace CLONES::Mutations;
 
     std::set<std::string> signature_names;
 
@@ -179,7 +179,7 @@ BOOST_AUTO_TEST_CASE(ID_signature_load)
 
 BOOST_AUTO_TEST_CASE(selective_ID_signature_load)
 {
-    using namespace RACES::Mutations;
+    using namespace CLONES::Mutations;
 
     std::set<std::string> signature_names{"ID3","ID20","ID1"};
 
@@ -198,7 +198,7 @@ BOOST_AUTO_TEST_CASE(selective_ID_signature_load)
 
 BOOST_AUTO_TEST_CASE(ID_signature_expression)
 {
-    using namespace RACES::Mutations;
+    using namespace CLONES::Mutations;
 
     std::map<std::string, IDSignature> signatures;
     {

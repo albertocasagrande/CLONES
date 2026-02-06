@@ -2,10 +2,10 @@
  * @file time.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines time type
- * @version 1.0
- * @date 2024-06-10
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,12 +28,12 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_TIME__
-#define __RACES_TIME__
+#ifndef __CLONES_TIME__
+#define __CLONES_TIME__
 
 #include <string>
 
-namespace RACES
+namespace CLONES
 {
 
 /**
@@ -41,6 +41,6 @@ namespace RACES
  */
 using Time = long double;
 
-}  // RACES
+}  // CLONES
 
-#endif // __RACES_TIME__
+#endif // __CLONES_TIME__

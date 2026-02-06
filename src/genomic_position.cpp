@@ -2,10 +2,10 @@
  * @file genomic_position.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements genomic position and related functions
- * @version 1.1
- * @date 2025-07-11
+ * @version 1.2
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -32,7 +32,7 @@
 
 #include "genomic_position.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutations
@@ -84,14 +84,14 @@ std::string GenomicPosition::chrtos(const ChromosomeId& chr_id)
 
 }   // Mutations
 
-}   // RACES
+}   // CLONES
 
 namespace std
 {
 
-std::ostream& operator<<(std::ostream& out, const RACES::Mutations::GenomicPosition& genomic_position)
+std::ostream& operator<<(std::ostream& out, const CLONES::Mutations::GenomicPosition& genomic_position)
 {
-    out << "chr" <<  RACES::Mutations::GenomicPosition::chrtos(genomic_position.chr_id) << "("
+    out << "chr" <<  CLONES::Mutations::GenomicPosition::chrtos(genomic_position.chr_id) << "("
         << genomic_position.position << ")";
 
     return out;

@@ -2,10 +2,10 @@
  * @file plot_2D.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements a 2D plot window
- * @version 1.0
- * @date 2024-06-10
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -30,7 +30,7 @@
 
 #include "plot_2D.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace UI
@@ -46,4 +46,4 @@ Plot2DWindow::Plot2DWindow(const unsigned int width, const unsigned int height, 
 
 }  // UI
 
-}  // RACES
+}  // CLONES

@@ -2,10 +2,10 @@
  * @file rate_update.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines liveness rate updates
- * @version 1.0
- * @date 2024-06-10
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,14 +28,14 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_RATE_UPDATE__
-#define __RACES_RATE_UPDATE__
+#ifndef __CLONES_RATE_UPDATE__
+#define __CLONES_RATE_UPDATE__
 
 #include "mutant_properties.hpp"
 #include "cell_event.hpp"
 #include "simulation_event.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutants
@@ -119,7 +119,7 @@ struct RateUpdate : public SimulationEvent
 
 }   // Mutants
 
-}   // RACES
+}   // CLONES
 
 
 /**
@@ -130,12 +130,12 @@ struct RateUpdate : public SimulationEvent
  * @return `true` if and only if the two liveness rate updates represent
  *      the same event
  */
-inline bool operator==(const RACES::Mutants::Evolutions::RateUpdate& lhs,
-                       const RACES::Mutants::Evolutions::RateUpdate& rhs)
+inline bool operator==(const CLONES::Mutants::Evolutions::RateUpdate& lhs,
+                       const CLONES::Mutants::Evolutions::RateUpdate& rhs)
 {
     return (lhs.species_id == rhs.species_id)
             && (lhs.event_type == rhs.event_type)
             && (lhs.new_rate == rhs.new_rate);
 }
 
-#endif // __RACES_RATE_UPDATE__
+#endif // __CLONES_RATE_UPDATE__

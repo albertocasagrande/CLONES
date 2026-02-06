@@ -2,10 +2,10 @@
  * @file genomic_region.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements genomic region
- * @version 1.1
- * @date 2025-11-14
+ * @version 1.2
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -34,7 +34,7 @@
 
 #include "sid.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutations
@@ -122,7 +122,7 @@ bool GenomicRegion::strictly_contains(const SID& mutation) const
 std::map<ChromosomeId, std::set<GenomicRegion>>
 split_by_chromosome_id(const std::set<GenomicRegion>& genomic_regions)
 {
-    using namespace RACES::Mutations;
+    using namespace CLONES::Mutations;
 
     std::map<ChromosomeId, std::set<GenomicRegion> > split;
 
@@ -135,16 +135,16 @@ split_by_chromosome_id(const std::set<GenomicRegion>& genomic_regions)
 
 }   // Mutations
 
-}   // RACES
+}   // CLONES
 
 namespace std
 {
 
-std::ostream& operator<<(std::ostream& out, const RACES::Mutations::GenomicRegion& genomic_region)
+std::ostream& operator<<(std::ostream& out, const CLONES::Mutations::GenomicRegion& genomic_region)
 {
     auto begin_pos = genomic_region.get_initial_position();
 
-    out << "GenomicRegion(chr: " << RACES::Mutations::GenomicPosition::chrtos(begin_pos.chr_id)
+    out << "GenomicRegion(chr: " << CLONES::Mutations::GenomicPosition::chrtos(begin_pos.chr_id)
         << ", begin: " << begin_pos.position
         << ", length: " << genomic_region.size() << ")";
 

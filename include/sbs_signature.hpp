@@ -2,10 +2,10 @@
  * @file sbs_signature.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines SBS signature
- * @version 1.1
- * @date 2025-07-07
+ * @version 1.2
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_SBS_SIGNATURE__
-#define __RACES_SBS_SIGNATURE__
+#ifndef __CLONES_SBS_SIGNATURE__
+#define __CLONES_SBS_SIGNATURE__
 
 #include <string>
 #include <functional> // std::less
@@ -41,7 +41,7 @@
 #include "mutation.hpp"
 #include "signature.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutations
@@ -175,17 +175,17 @@ public:
 
 }   // Mutations
 
-}   // RACES
+}   // CLONES
 
 
 namespace std
 {
 
 template<>
-struct less<RACES::Mutations::SBSType>
+struct less<CLONES::Mutations::SBSType>
 {
-    bool operator()(const RACES::Mutations::SBSType &lhs,
-                    const RACES::Mutations::SBSType &rhs) const;
+    bool operator()(const CLONES::Mutations::SBSType &lhs,
+                    const CLONES::Mutations::SBSType &rhs) const;
 };
 
 /**
@@ -195,7 +195,7 @@ struct less<RACES::Mutations::SBSType>
  * @param type is the SBS type to stream
  * @return a reference to the output stream
  */
-std::ostream& operator<<(std::ostream& out, const RACES::Mutations::SBSType& type);
+std::ostream& operator<<(std::ostream& out, const CLONES::Mutations::SBSType& type);
 
 /**
  * @brief Stream the SBS type from a stream
@@ -204,11 +204,11 @@ std::ostream& operator<<(std::ostream& out, const RACES::Mutations::SBSType& typ
  * @param type is the object where the streamed SBS type will be placed
  * @return a reference to the input stream
  */
-std::istream& operator>>(std::istream& in, RACES::Mutations::SBSType& type);
+std::istream& operator>>(std::istream& in, CLONES::Mutations::SBSType& type);
 
 }  // std
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutations
@@ -218,7 +218,7 @@ using SBSSignature = Signature<SBSType>;
 
 }   // Mutations
 
-}   // RACES
+}   // CLONES
 
 
-#endif // __RACES_SBS_SIGNATURE__
+#endif // __CLONES_SBS_SIGNATURE__

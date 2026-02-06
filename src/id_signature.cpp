@@ -2,10 +2,10 @@
  * @file id_signature.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements SBS signature
- * @version 1.1
- * @date 2025-11-14
+ * @version 1.2
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -33,7 +33,7 @@
 #include "id_signature.hpp"
 
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutations
@@ -134,15 +134,15 @@ IDType::IDType(const std::string& type):
 
 }  // Mutations
 
-}  // RACES
+}  // CLONES
 
 namespace std
 {
 
-bool less<RACES::Mutations::IDType>::operator()(const RACES::Mutations::IDType &lhs,
-                                                const RACES::Mutations::IDType &rhs) const
+bool less<CLONES::Mutations::IDType>::operator()(const CLONES::Mutations::IDType &lhs,
+                                                const CLONES::Mutations::IDType &rhs) const
 {
-    using namespace RACES::Mutations;
+    using namespace CLONES::Mutations;
 
     if (lhs.is_deletion() && rhs.is_insertion()) {
         return true;
@@ -152,15 +152,15 @@ bool less<RACES::Mutations::IDType>::operator()(const RACES::Mutations::IDType &
         return false;
     }
 
-    std::less<RACES::Mutations::IDContext> less_context;
+    std::less<CLONES::Mutations::IDContext> less_context;
 
     return less_context(lhs, rhs);
 }
 
 
-std::ostream& operator<<(std::ostream& out, const RACES::Mutations::IDType& type)
+std::ostream& operator<<(std::ostream& out, const CLONES::Mutations::IDType& type)
 {
-    using namespace RACES::Mutations;
+    using namespace CLONES::Mutations;
     using FragmentType = IDType::FragmentType;
 
     if (type.fragment_type() == FragmentType::HOMOPOLYMER) {
@@ -177,13 +177,13 @@ std::ostream& operator<<(std::ostream& out, const RACES::Mutations::IDType& type
     return out;
 }
 
-std::istream& operator>>(std::istream& in, RACES::Mutations::IDType& type)
+std::istream& operator>>(std::istream& in, CLONES::Mutations::IDType& type)
 {
     std::string str_type;
 
     in >> str_type;
 
-    type = RACES::Mutations::IDType(str_type);
+    type = CLONES::Mutations::IDType(str_type);
 
     return in;
 }

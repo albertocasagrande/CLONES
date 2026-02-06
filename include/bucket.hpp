@@ -2,10 +2,10 @@
  * @file bucket.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines bucket
- * @version 1.5
- * @date 2025-11-27
+ * @version 1.6
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_BUCKET__
-#define __RACES_BUCKET__
+#ifndef __CLONES_BUCKET__
+#define __CLONES_BUCKET__
 
 #include <vector>
 #include <random>
@@ -44,7 +44,7 @@
 #include "utils.hpp"
 #include "progress_bar.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Archive
@@ -90,7 +90,7 @@ protected:
             archive.open(filepath);
         }
 
-        Archive::Binary::In::read_header(archive, "RACES Bucket", 0);
+        Archive::Binary::In::read_header(archive, "CLONES Bucket", 0);
 
         size_pos = archive.tellg();
         archive & num_of_values;
@@ -423,7 +423,7 @@ class BucketWriter : public BucketBase<VALUE>
             archive.open(this->filepath);
         }
 
-        Archive::Binary::Out::write_header(archive, "RACES Bucket", 0);
+        Archive::Binary::Out::write_header(archive, "CLONES Bucket", 0);
 
         this->size_pos = archive.tellg();
         archive & this->num_of_values;
@@ -1678,6 +1678,6 @@ public:
 
 }   // Archive
 
-}   // RACES
+}   // CLONES
 
-#endif // __RACES_BUCKET__
+#endif // __CLONES_BUCKET__

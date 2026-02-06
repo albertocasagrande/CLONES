@@ -1,14 +1,14 @@
-# RACES
-RACES is an Advanced Cancer Evolution Simulator.
+# CLONES
+CLONES is a C++ Library fOr Neoplastic Evolution Simulations.
 
-RACES is framework for simulating cancer genomic evolution. It supports:
+CLONES simulates cancer genomic evolution. It supports:
 -   cell strand competition and spacial simulations
 -   epigenetic switches
 -   copy-number variations
 -   SBS and indel signature support
 -   sequencing simulation
 
-RACES consists in a library `libRACES` and 6 main CLI tools:
+CLONES also provides 6 CLI tools:
 -   `species_sim` performs cell spacial simulation by using species evolutionary information. It supports epigenetic switching.
 -   `build_SBS_context_index` creates an index for the SBS mutational contexts (i.e., consecutive triplets of nucleotides) in a genome. 
     This index is used to place passenger SNVs according to SBS signatures. In normal conditions, the context index for a
@@ -42,19 +42,19 @@ RACES consists in a library `libRACES` and 6 main CLI tools:
 Once the [required packages](#required-packages) have been installed, use the following commands in a shell
 
 ```bash
-git clone https://github.com/albertocasagrande/RACES.git
-cd RACES
+git clone https://github.com/albertocasagrande/CLONES.git
+cd CLONES
 cmake .
 make -j
 ```
 
 ## Wrapper
 
--  [ProCESS](https://caravagnalab.github.io/ProCESS/index.html) is an R wrapper for RACES.
+-  [ProCESS](https://caravagnalab.github.io/ProCESS/index.html) is an R wrapper for CLONES.
 
 ## License
 
-Copyright (c) 2023-2025
+Copyright (c) 2023-2026
 Alberto Casagrande <[alberto.casagrande@uniud.it](mailto:alberto.casagrande@uniud.it)>
 
 MIT License

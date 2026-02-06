@@ -2,10 +2,10 @@
  * @file germline.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines the functions to generate and load germline mutations
- * @version 1.1
- * @date 2025-10-11
+ * @version 1.2
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_GERMLINE__
-#define __RACES_GERMLINE__
+#ifndef __CLONES_GERMLINE__
+#define __CLONES_GERMLINE__
 
 #include <map>
 #include <string>
@@ -43,7 +43,7 @@
 
 #include "progress_bar.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutations
@@ -55,7 +55,7 @@ namespace Mutations
  */
 class GermlineMutations
 {
-    using Chromosome = RACES::IO::FASTA::ChromosomeData<RACES::IO::FASTA::Sequence>;
+    using Chromosome = CLONES::IO::FASTA::ChromosomeData<CLONES::IO::FASTA::Sequence>;
 
     const std::vector<char> bases;  //!< the base vector
     std::map<char, uint8_t> bases_pos;  //!< the position of the bases in the base vector
@@ -151,6 +151,6 @@ public:
 
 }   // Mutations
 
-}   // RACES
+}   // CLONES
 
-#endif // __RACES_GERMLINE__
+#endif // __CLONES_GERMLINE__

@@ -2,10 +2,10 @@
  * @file genome_mutations.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines genome and chromosome data structures
- * @version 1.16
- * @date 2025-10-11
+ * @version 1.17
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_GENOME_MUTATIONS__
-#define __RACES_GENOME_MUTATIONS__
+#ifndef __CLONES_GENOME_MUTATIONS__
+#define __CLONES_GENOME_MUTATIONS__
 
 #include <map>
 #include <list>
@@ -48,7 +48,7 @@
 
 #include "progress_bar.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 /**
@@ -589,7 +589,7 @@ public:
     template<typename ARCHIVE, std::enable_if_t<std::is_base_of_v<Archive::Basic::Out, ARCHIVE>, bool> = true>
     inline void save(ARCHIVE& archive) const
     {
-        ARCHIVE::write_header(archive, "RACES Genome Mutations", 1);
+        ARCHIVE::write_header(archive, "CLONES Genome Mutations", 1);
 
         archive & _data;
     }
@@ -606,7 +606,7 @@ public:
     {
         ChromosomeMutations chr_mutations;
 
-        ARCHIVE::read_header(archive, "RACES Genome Mutations", 1);
+        ARCHIVE::read_header(archive, "CLONES Genome Mutations", 1);
 
         archive & chr_mutations._data;
 
@@ -623,8 +623,8 @@ public:
  *      chromosome, i.e., have the same alleles, contain the same
  *      mutations, and have the same length and chromosome id
  */
-inline bool operator==(const RACES::Mutations::ChromosomeMutations& lhs,
-                       const RACES::Mutations::ChromosomeMutations& rhs)
+inline bool operator==(const CLONES::Mutations::ChromosomeMutations& lhs,
+                       const CLONES::Mutations::ChromosomeMutations& rhs)
 {
     return (lhs.id() == rhs.id()) && (lhs.size() == rhs.size())
             && (lhs.allelic_size() == rhs.allelic_size())
@@ -640,8 +640,8 @@ inline bool operator==(const RACES::Mutations::ChromosomeMutations& lhs,
  *      chromosome, i.e., have the same alleles, contain the same
  *      mutations, and have the same length and chromosome id
  */
-inline bool operator!=(const RACES::Mutations::ChromosomeMutations& lhs,
-                       const RACES::Mutations::ChromosomeMutations& rhs)
+inline bool operator!=(const CLONES::Mutations::ChromosomeMutations& lhs,
+                       const CLONES::Mutations::ChromosomeMutations& rhs)
 {
     return (lhs.id() != rhs.id()) || (lhs.size() != rhs.size())
             || (lhs.allelic_size() != rhs.allelic_size())
@@ -1087,7 +1087,7 @@ public:
     template<typename ARCHIVE, std::enable_if_t<std::is_base_of_v<Archive::Basic::Out, ARCHIVE>, bool> = true>
     inline void save(ARCHIVE& archive) const
     {
-        ARCHIVE::write_header(archive, "RACES GenomeMutations", 0);
+        ARCHIVE::write_header(archive, "CLONES GenomeMutations", 0);
 
         archive & chromosomes;
     }
@@ -1102,7 +1102,7 @@ public:
     template<typename ARCHIVE, std::enable_if_t<std::is_base_of_v<Archive::Basic::In, ARCHIVE>, bool> = true>
     inline static GenomeMutations load(ARCHIVE& archive)
     {
-        ARCHIVE::read_header(archive, "RACES GenomeMutations", 0);
+        ARCHIVE::read_header(archive, "CLONES GenomeMutations", 0);
 
         GenomeMutations g_mutations;
 
@@ -1183,8 +1183,8 @@ struct CellGenomeMutations : public Mutants::Cell, public GenomeMutations
  *      genome, i.e., have the same chromosomes and contain the same
  *      mutations
  */
-inline bool operator==(const RACES::Mutations::GenomeMutations& lhs,
-                       const RACES::Mutations::GenomeMutations& rhs)
+inline bool operator==(const CLONES::Mutations::GenomeMutations& lhs,
+                       const CLONES::Mutations::GenomeMutations& rhs)
 {
     return (lhs.get_chromosomes() == rhs.get_chromosomes());
 }
@@ -1198,15 +1198,15 @@ inline bool operator==(const RACES::Mutations::GenomeMutations& lhs,
  *      genome, i.e., have the same chromosomes and contain the same
  *      mutations
  */
-inline bool operator!=(const RACES::Mutations::GenomeMutations& lhs,
-                       const RACES::Mutations::GenomeMutations& rhs)
+inline bool operator!=(const CLONES::Mutations::GenomeMutations& lhs,
+                       const CLONES::Mutations::GenomeMutations& rhs)
 {
     return (lhs.get_chromosomes() != rhs.get_chromosomes());
 }
 
 }   // Mutations
 
-}   // RACES
+}   // CLONES
 
 
 namespace std
@@ -1219,7 +1219,7 @@ namespace std
  * @param chromosome_mutations is a chromosome mutations
  * @return a reference to output stream
  */
-std::ostream& operator<<(std::ostream& os, const RACES::Mutations::ChromosomeMutations& chromosome_mutations);
+std::ostream& operator<<(std::ostream& os, const CLONES::Mutations::ChromosomeMutations& chromosome_mutations);
 
 /**
  * @brief Write genome mutations data in a stream
@@ -1228,8 +1228,8 @@ std::ostream& operator<<(std::ostream& os, const RACES::Mutations::ChromosomeMut
  * @param genome_mutations is a genome mutations
  * @return a reference to output stream
  */
-std::ostream& operator<<(std::ostream& os, const RACES::Mutations::GenomeMutations& genome_mutations);
+std::ostream& operator<<(std::ostream& os, const CLONES::Mutations::GenomeMutations& genome_mutations);
 
 }   // std
 
-#endif // __RACES_GENOME_MUTATIONS__
+#endif // __CLONES_GENOME_MUTATIONS__

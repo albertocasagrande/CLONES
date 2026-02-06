@@ -2,10 +2,10 @@
  * @file species.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements species representation methods
- * @version 1.1
- * @date 2024-10-22
+ * @version 1.2
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -32,7 +32,7 @@
 
 #include "species.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutants
@@ -264,14 +264,14 @@ void swap(Species& a, Species& b)
 
 }   // Mutants
 
-}   // RACES
+}   // CLONES
 
 namespace std
 {
 
-std::ostream& operator<<(std::ostream& out, const RACES::Mutants::Evolutions::Species& species)
+std::ostream& operator<<(std::ostream& out, const CLONES::Mutants::Evolutions::Species& species)
 {
-    out << "{species_properties: " << static_cast<RACES::Mutants::SpeciesProperties>(species)
+    out << "{species_properties: " << static_cast<CLONES::Mutants::SpeciesProperties>(species)
         << ", cells: {";
     std::string sep{""};
     for (const auto& cell: species) {

@@ -2,10 +2,10 @@
  * @file driver_storage.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines class to load and store driver mutations
- * @version 1.2
- * @date 2025-07-13
+ * @version 1.3
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_DRIVER_STORAGE__
-#define __RACES_DRIVER_STORAGE__
+#ifndef __CLONES_DRIVER_STORAGE__
+#define __CLONES_DRIVER_STORAGE__
 
 #include <map>
 #include <set>
@@ -39,7 +39,7 @@
 
 #include "sid.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutations
@@ -117,6 +117,6 @@ private:
 
 }   // Mutations
 
-}   // RACES
+}   // CLONES
 
-#endif // __RACES_DRIVER_MUTATION_STORAGE__
+#endif // __CLONES_DRIVER_MUTATION_STORAGE__

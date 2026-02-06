@@ -2,10 +2,10 @@
  * @file binary_logger.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a binary simulation logger
- * @version 1.2
- * @date 2025-09-23
+ * @version 1.3
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_BINARY_LOGGER__
-#define __RACES_BINARY_LOGGER__
+#ifndef __CLONES_BINARY_LOGGER__
+#define __CLONES_BINARY_LOGGER__
 
 #include <fstream>
 #include <filesystem>
@@ -37,7 +37,7 @@
 
 #include "logger.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutants
@@ -335,6 +335,6 @@ public:
 
 }   // Mutants
 
-}   // RACES
+}   // CLONES
 
-#endif // __RACES_BINARY_LOGGER__
+#endif // __CLONES_BINARY_LOGGER__

@@ -2,10 +2,10 @@
  * @file build_ID_context_index.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Builds the ID context index
- * @version 1.0
- * @date 2025-10-31
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -54,8 +54,8 @@ class IDContextIndexBuilder : public BasicExecutable
 
     void build_and_save_context_index() const
     {
-        using namespace RACES;
-        using namespace RACES::Mutations;
+        using namespace CLONES;
+        using namespace CLONES::Mutations;
 
         std::set<GenomicRegion> regions_to_avoid;
 
@@ -164,7 +164,7 @@ public:
 
     void run() const
     {
-        using namespace RACES::IO::FASTA;
+        using namespace CLONES::IO::FASTA;
 
         build_and_save_context_index();
     }

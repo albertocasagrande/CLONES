@@ -2,10 +2,10 @@
  * @file palette.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines colors and a palette
- * @version 1.0
- * @date 2024-06-10
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,17 +28,17 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_PALETTE__
-#define __RACES_PALETTE__
+#ifndef __CLONES_PALETTE__
+#define __CLONES_PALETTE__
 
 #include <vector>
 #include <cstdint>
 
-namespace RACES
+namespace CLONES
 {
 
 /**
- * @brief The namespace of RACES UI
+ * @brief The namespace of CLONES UI
  */
 namespace UI
 {
@@ -86,5 +86,5 @@ extern std::vector<Color> palette;
 
 } // UI
 
-} // RACES
-#endif // __RACES_PALETTE__
+} // CLONES
+#endif // __CLONES_PALETTE__

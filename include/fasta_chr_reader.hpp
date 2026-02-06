@@ -2,10 +2,10 @@
  * @file fasta_chr_reader.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines classes to read chromosomes from FASTA streams
- * @version 1.2
- * @date 2025-10-11
+ * @version 1.3
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_FASTA_CHR_READER__
-#define __RACES_FASTA_CHR_READER__
+#ifndef __CLONES_FASTA_CHR_READER__
+#define __CLONES_FASTA_CHR_READER__
 
 #include <string>
 #include <istream>
@@ -41,7 +41,7 @@
 #include "fasta_reader.hpp"
 #include "fasta_utils.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace IO
@@ -56,13 +56,13 @@ namespace FASTA
  * This template represents chromosome data. The objects of this class store
  * chromosome information, i.e., name, header, size, and chromosome identifier,
  * and, depending on the parameter, which must be in the hierarchy of the class
- * `RACES::IO::FASTA::SequenceInfo`, may also maintain the chromosome nucleic
+ * `CLONES::IO::FASTA::SequenceInfo`, may also maintain the chromosome nucleic
  * sequence.
  *
  * @tparam DATA_TYPE is the base type of the template. It must be a inherited
- *      from `RACES::IO::FASTA::SequenceInfo`
+ *      from `CLONES::IO::FASTA::SequenceInfo`
  */
-template<typename DATA_TYPE, std::enable_if_t<std::is_base_of_v<RACES::IO::FASTA::SequenceInfo, DATA_TYPE>, bool> = true>
+template<typename DATA_TYPE, std::enable_if_t<std::is_base_of_v<CLONES::IO::FASTA::SequenceInfo, DATA_TYPE>, bool> = true>
 struct ChromosomeData : public DATA_TYPE
 {
     Mutations::ChromosomeId chr_id;    //!< the chromosome id
@@ -101,11 +101,11 @@ struct ChromosomeData : public DATA_TYPE
 
 template<>
 bool Reader<ChromosomeData<SequenceInfo>>::read(ChromosomeData<SequenceInfo>& chr_info,
-                                                RACES::UI::ProgressBar& progress_bar);
+                                                CLONES::UI::ProgressBar& progress_bar);
 
 template<>
 bool Reader<ChromosomeData<Sequence>>::read(ChromosomeData<Sequence>& chr,
-                                            RACES::UI::ProgressBar& progress_bar);
+                                            CLONES::UI::ProgressBar& progress_bar);
 
 template<>
 inline const char* Index<ChromosomeData<Sequence>>::index_extension()
@@ -123,7 +123,7 @@ Index<ChromosomeData<Sequence>>::load(std::istream& input_stream);
 template<>
 bool IndexedReader<ChromosomeData<Sequence>>::read(ChromosomeData<Sequence>& chr,
                                                    const std::string& chr_name,
-                                                   RACES::UI::ProgressBar& progress_bar);
+                                                   CLONES::UI::ProgressBar& progress_bar);
 
 /**
  * @brief Get the chromosome regions from a FASTA index
@@ -153,6 +153,6 @@ get_chromosome_regions(const IndexedReader<ChromosomeData<Sequence>>& idx_reader
 
 }   // IO
 
-}   // RACES
+}   // CLONES
 
-#endif // __RACES_FASTA_CHR_READER__
+#endif // __CLONES_FASTA_CHR_READER__

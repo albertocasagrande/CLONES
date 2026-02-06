@@ -2,10 +2,10 @@
  * @file label_tour.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines the label tour class
- * @version 1.0
- * @date 2025-11-21
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_LABEL_TOUR__
-#define __RACES_LABEL_TOUR__
+#ifndef __CLONES_LABEL_TOUR__
+#define __CLONES_LABEL_TOUR__
 
 #include <vector>
 
@@ -38,7 +38,7 @@
 
 #include "cell.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutations
@@ -392,4 +392,4 @@ public:
 
 }
 
-#endif // __RACES_LABEL_TOUR__
+#endif // __CLONES_LABEL_TOUR__

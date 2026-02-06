@@ -2,10 +2,10 @@
  * @file mutation_engine.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a class to place mutations on a descendant forest
- * @version 1.34
- * @date 2025-11-14
+ * @version 1.35
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_MUTATION_ENGINE__
-#define __RACES_MUTATION_ENGINE__
+#ifndef __CLONES_MUTATION_ENGINE__
+#define __CLONES_MUTATION_ENGINE__
 
 #include <map>
 #include <random>
@@ -54,7 +54,7 @@
 #include "warning.hpp"
 
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutations
@@ -282,7 +282,7 @@ class MutationEngine
      */
     MutationSpec<SID> select_SID(const SBSType& m_type)
     {
-        using namespace RACES::Mutations;
+        using namespace CLONES::Mutations;
 
         SBSContext context = m_type.get_context();
         SBSContext extracted;
@@ -354,7 +354,7 @@ class MutationEngine
      */
     MutationSpec<SID> select_SID(const IDType& id_type)
     {
-        using namespace RACES::Mutations;
+        using namespace CLONES::Mutations;
 
         IDContext extracted;
 
@@ -1030,7 +1030,7 @@ class MutationEngine
                          std::map<Mutants::MutantId, DriverMutations>& driver_mutations,
                          size_t& visited_nodes, UI::ProgressBar& progress_bar)
     {
-        using namespace RACES::Mutations;
+        using namespace CLONES::Mutations;
 
         node.arising_mutations() = MutationList();
 
@@ -1086,7 +1086,7 @@ class MutationEngine
     std::map<Mutants::SpeciesId, Timed<PassengerRates>>
     get_species_rate_map(const Mutants::DescendantForest& descendant_forest) const
     {
-        using namespace RACES::Mutants;
+        using namespace CLONES::Mutants;
 
         std::map<SpeciesId, Timed<PassengerRates>> species_rates;
 
@@ -1113,7 +1113,7 @@ class MutationEngine
     std::map<Mutants::MutantId, DriverMutations>
     get_driver_mutation_map(const Mutants::DescendantForest& descendant_forest) const
     {
-        using namespace RACES::Mutants;
+        using namespace CLONES::Mutants;
 
         std::map<MutantId, DriverMutations> driver_mutations;
 
@@ -1403,7 +1403,7 @@ public:
      */
     MutationEngine():
         genome_reader{nullptr},
-        driver_CNA_min_distance(0), warning(RACES::warning),
+        driver_CNA_min_distance(0), warning(CLONES::warning),
         infinite_sites_model(true), avoid_homozygous_losses(true)
     {}
 
@@ -1435,7 +1435,7 @@ public:
                    const size_t id_context_index_cache_size = 1000000000,
                    const std::vector<CNA>& passenger_CNAs={},
                    const unsigned int& driver_CNA_min_distance=10000,
-                   WarningFunction warning=RACES::warning):
+                   WarningFunction warning=CLONES::warning):
         MutationEngine(genome_path, sbs_context_index_path, id_context_index_path,
                        SBS_signatures, ID_signatures, MutationalProperties(),
                        germline_mutations, driver_storage,
@@ -1473,7 +1473,7 @@ public:
                    const size_t id_context_index_cache_size = 1000000000,
                    const std::vector<CNA>& passenger_CNAs={},
                    const unsigned int& driver_CNA_min_distance=10000,
-                   WarningFunction warning=RACES::warning):
+                   WarningFunction warning=CLONES::warning):
         generator(), genome_reader{std::make_shared<GenomeReader>(genome_path)},
         sbs_context_index{sbs_context_index_path, sbs_context_index_cache_size},
         id_context_index{id_context_index_path, id_context_index_cache_size},
@@ -1648,9 +1648,9 @@ public:
                     const std::string& pre_neoplastic_SNV_signature_name="SBS1",
                     const std::string& pre_neoplastic_indel_signature_name="ID1")
     {
-        using namespace RACES::Mutants;
-        using namespace RACES::Mutants::Evolutions;
-        using namespace RACES::Mutations;
+        using namespace CLONES::Mutants;
+        using namespace CLONES::Mutants::Evolutions;
+        using namespace CLONES::Mutations;
 
         for (const auto& [name, type]:
                 std::map<std::string, MutationType::Type>({{"SBS", MutationType::Type::SBS},
@@ -1812,6 +1812,6 @@ public:
 
 }   // Mutations
 
-}   // RACES
+}   // CLONES
 
-#endif // __RACES_MUTATION_ENGINE__
+#endif // __CLONES_MUTATION_ENGINE__

@@ -2,10 +2,10 @@
  * @file id_context.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements ID context
- * @version 1.0
- * @date 2025-11-14
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -32,7 +32,7 @@
 
 #include "genomic_sequence.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutations
@@ -123,13 +123,13 @@ char IDContext::unit_base() const
 
 }  // Mutations
 
-}  // RACES
+}  // CLONES
 
 namespace std
 {
 
-bool less<RACES::Mutations::IDContext>::operator()(const RACES::Mutations::IDContext &lhs,
-                                                   const RACES::Mutations::IDContext &rhs) const
+bool less<CLONES::Mutations::IDContext>::operator()(const CLONES::Mutations::IDContext &lhs,
+                                                   const CLONES::Mutations::IDContext &rhs) const
 {
     if (lhs.fragment_type() > rhs.fragment_type()) {
         return false;
@@ -151,9 +151,9 @@ bool less<RACES::Mutations::IDContext>::operator()(const RACES::Mutations::IDCon
 }
 
 
-std::ostream& operator<<(std::ostream& out, const RACES::Mutations::IDContext& context)
+std::ostream& operator<<(std::ostream& out, const CLONES::Mutations::IDContext& context)
 {
-    using namespace RACES::Mutations;
+    using namespace CLONES::Mutations;
     using FragmentType = IDContext::FragmentType;
 
     if (context.fragment_type() == FragmentType::HOMOPOLYMER) {
@@ -168,13 +168,13 @@ std::ostream& operator<<(std::ostream& out, const RACES::Mutations::IDContext& c
     return out;
 }
 
-std::istream& operator>>(std::istream& in, RACES::Mutations::IDContext& type)
+std::istream& operator>>(std::istream& in, CLONES::Mutations::IDContext& type)
 {
     std::string str_type;
 
     in >> str_type;
 
-    type = RACES::Mutations::IDContext(str_type);
+    type = CLONES::Mutations::IDContext(str_type);
 
     return in;
 }

@@ -2,10 +2,10 @@
  * @file index.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines index
- * @version 1.3
- * @date 2025-11-27
+ * @version 1.4
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_INDEX__
-#define __RACES_INDEX__
+#ifndef __CLONES_INDEX__
+#define __CLONES_INDEX__
 
 #include <map>
 #include <memory>
@@ -38,7 +38,7 @@
 #include "bucket.hpp"
 #include "progress_bar.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 /**
@@ -114,7 +114,7 @@ protected:
      */
     static constexpr std::string index_file_descr()
     {
-        return "RACES index";
+        return "CLONES index";
     }
 
     /**
@@ -1045,6 +1045,6 @@ public:
 
 }   // Archive
 
-}   // RACES
+}   // CLONES
 
-#endif // __RACES_INDEX__
+#endif // __CLONES_INDEX__

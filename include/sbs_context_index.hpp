@@ -2,10 +2,10 @@
  * @file sbs_context_index.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements SBS context index and its builder
- * @version 1.2
- * @date 2025-11-14
+ * @version 1.3
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_SBS_CONTEXT_INDEX__
-#define __RACES_SBS_CONTEXT_INDEX__
+#ifndef __CLONES_SBS_CONTEXT_INDEX__
+#define __CLONES_SBS_CONTEXT_INDEX__
 
 #include <filesystem>
 #include <limits>
@@ -48,7 +48,7 @@
 
 #include "progress_bar.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 /**
@@ -312,7 +312,7 @@ public:
 
         auto regions_to_avoid_by_chr = split_by_chromosome_id(regions_to_avoid);
 
-        const auto streamsize = static_cast<size_t>(RACES::IO::get_stream_size(genome_stream));
+        const auto streamsize = static_cast<size_t>(CLONES::IO::get_stream_size(genome_stream));
 
         skip_to_next_seq(genome_stream);
 
@@ -701,4 +701,4 @@ public:
 }
 
 }
-#endif // __RACES_SBS_CONTEXT_INDEX__
+#endif // __CLONES_SBS_CONTEXT_INDEX__

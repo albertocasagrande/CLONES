@@ -2,10 +2,10 @@
  * @file genomic_sequence.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements a structure to handle genomic sequence
- * @version 1.2
- * @date 2025-07-12
+ * @version 1.3
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -32,7 +32,7 @@
 
 #include "genomic_sequence.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 std::vector<char> GenomicSequence::DNA_bases = {'A', 'C', 'G', 'T'};
@@ -138,4 +138,4 @@ std::string GenomicSequence::get_reverse_complement(const std::string& sequence)
     return new_seq;
 }
 
-}   // RACES
+}   // CLONES

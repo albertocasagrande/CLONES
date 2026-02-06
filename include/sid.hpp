@@ -2,10 +2,10 @@
  * @file sid.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines SNV, Insertion, and Deletion mutations
- * @version 1.2
- * @date 2025-07-13
+ * @version 1.3
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_SID__
-#define __RACES_SID__
+#ifndef __CLONES_SID__
+#define __CLONES_SID__
 
 #include <ostream>
 #include <algorithm>
@@ -37,7 +37,7 @@
 #include "mutation.hpp"
 #include "genomic_region.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutations
@@ -250,16 +250,16 @@ struct SID : public Mutation
 
 }   // Mutations
 
-}   // RACES
+}   // CLONES
 
 namespace std
 {
 
 template<>
-struct less<RACES::Mutations::SID>
+struct less<CLONES::Mutations::SID>
 {
-    bool operator()(const RACES::Mutations::SID &lhs,
-                    const RACES::Mutations::SID &rhs) const;
+    bool operator()(const CLONES::Mutations::SID &lhs,
+                    const CLONES::Mutations::SID &rhs) const;
 };
 
 /**
@@ -269,8 +269,8 @@ struct less<RACES::Mutations::SID>
  * @param rhs is the right hand side of the comparison
  * @return true iff `lhs` and `rhs` are the same mutation
  */
-bool operator==(const RACES::Mutations::SID &lhs,
-                const RACES::Mutations::SID &rhs);
+bool operator==(const CLONES::Mutations::SID &lhs,
+                const CLONES::Mutations::SID &rhs);
 
 /**
  * @brief Test if two SIDs differ
@@ -279,8 +279,8 @@ bool operator==(const RACES::Mutations::SID &lhs,
  * @param rhs is the right hand side of the comparison
  * @return true iff `lhs` and `rhs` are not the same mutation
  */
-inline bool operator!=(const RACES::Mutations::SID &lhs,
-                       const RACES::Mutations::SID &rhs)
+inline bool operator!=(const CLONES::Mutations::SID &lhs,
+                       const CLONES::Mutations::SID &rhs)
 {
     return !(lhs==rhs);
 }
@@ -292,9 +292,9 @@ inline bool operator!=(const RACES::Mutations::SID &lhs,
  * @param sid is the SID to stream
  * @return a reference of the updated stream
  */
-std::ostream& operator<<(std::ostream& out, const RACES::Mutations::SID& sid);
+std::ostream& operator<<(std::ostream& out, const CLONES::Mutations::SID& sid);
 
 }   // std
 
 
-#endif // __RACES_SID__
+#endif // __CLONES_SID__

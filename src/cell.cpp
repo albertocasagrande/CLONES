@@ -2,10 +2,10 @@
  * @file cell.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements cell representation
- * @version 1.1
- * @date 2025-09-23
+ * @version 1.2
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -33,7 +33,7 @@
 #include "tissue.hpp"
 #include "mutant_properties.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutants
@@ -112,12 +112,12 @@ CellInTissue& CellInTissue::operator=(const PositionInTissue& position)
 
 }   // Mutants
 
-}   // RACES
+}   // CLONES
 
 namespace std
 {
 
-std::ostream& operator<<(std::ostream& os, const RACES::Mutants::Cell& cell)
+std::ostream& operator<<(std::ostream& os, const CLONES::Mutants::Cell& cell)
 {
     os << "Cell{id: "<< cell.get_id()
        << ", parent_id: "<< cell.get_parent_id()
@@ -128,13 +128,13 @@ std::ostream& operator<<(std::ostream& os, const RACES::Mutants::Cell& cell)
     return os;
 }
 
-std::ostream& operator<<(std::ostream& os, const RACES::Mutants::Evolutions::CellInTissue& cell)
+std::ostream& operator<<(std::ostream& os, const CLONES::Mutants::Evolutions::CellInTissue& cell)
 {
     os << "Cell{id: "<< cell.get_id()
        << ", parent_id: "<< cell.get_parent_id()
        << ", birth_time: "<< cell.get_birth_time()
        << ", species_id: " << cell.get_species_id()
-       << ", position: " << static_cast<RACES::Mutants::Evolutions::PositionInTissue>(cell)
+       << ", position: " << static_cast<CLONES::Mutants::Evolutions::PositionInTissue>(cell)
        << "}";
 
     return os;

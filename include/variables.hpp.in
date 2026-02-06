@@ -2,8 +2,8 @@
  * @file variables.hpp.in
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines compilation variables
- * @version 0.1
- * @date 2023-10-26
+ * @version 1.0
+ * @date 2026-02-06
  *
  * @copyright Copyright (c) 2023
  *
@@ -28,10 +28,10 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_VARIABLES_IN__
-#define __RACES_VARIABLES_IN__
+#ifndef __CLONES_VARIABLES_IN__
+#define __CLONES_VARIABLES_IN__
 
 #define WITH_MATPLOT @WITH_MATPLOT@
 #define WITH_INDICATORS @WITH_INDICATORS@
 
-#endif // __RACES_VARIABLES_IN__
+#endif // __CLONES_VARIABLES_IN__

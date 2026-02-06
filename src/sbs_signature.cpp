@@ -2,10 +2,10 @@
  * @file sbs_signature.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements SBS signature
- * @version 1.2
- * @date 2025-07-07
+ * @version 1.3
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -37,7 +37,7 @@
 #include "sbs_signature.hpp"
 
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutations
@@ -156,13 +156,13 @@ SBSType::SBSType(const std::string& type)
 
 }  // Mutations
 
-}  // RACES
+}  // CLONES
 
 namespace std
 {
 
-bool less<RACES::Mutations::SBSType>::operator()(const RACES::Mutations::SBSType &lhs,
-                                                         const RACES::Mutations::SBSType &rhs) const
+bool less<CLONES::Mutations::SBSType>::operator()(const CLONES::Mutations::SBSType &lhs,
+                                                         const CLONES::Mutations::SBSType &rhs) const
 {
     const auto& lhs_code = lhs.get_context().get_code();
     const auto& rhs_code = rhs.get_context().get_code();
@@ -171,7 +171,7 @@ bool less<RACES::Mutations::SBSType>::operator()(const RACES::Mutations::SBSType
             ((lhs_code == rhs_code) && (lhs.get_replace_base()<rhs.get_replace_base())));
 }
 
-std::ostream& operator<<(std::ostream& out, const RACES::Mutations::SBSType& type)
+std::ostream& operator<<(std::ostream& out, const CLONES::Mutations::SBSType& type)
 {
     std::string type_sequence = type.get_context().get_sequence();
 
@@ -182,9 +182,9 @@ std::ostream& operator<<(std::ostream& out, const RACES::Mutations::SBSType& typ
     return out;
 }
 
-std::istream& operator>>(std::istream& in, RACES::Mutations::SBSType& type)
+std::istream& operator>>(std::istream& in, CLONES::Mutations::SBSType& type)
 {
-    using namespace RACES::Mutations;
+    using namespace CLONES::Mutations;
 
     std::string seq;
     char replace_base;

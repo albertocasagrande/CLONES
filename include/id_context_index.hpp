@@ -2,10 +2,10 @@
  * @file id_context_index.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines ID context index
- * @version 1.0
- * @date 2025-11-14
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_ID_CONTEXT_INDEX__
-#define __RACES_ID_CONTEXT_INDEX__
+#ifndef __CLONES_ID_CONTEXT_INDEX__
+#define __CLONES_ID_CONTEXT_INDEX__
 
 #include <vector>
 #include <random>
@@ -48,7 +48,7 @@
 #include "id_context.hpp"
 #include "fasta_chr_reader.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 /**
@@ -139,15 +139,15 @@ struct RepetitionReference
 
 }   // Mutations
 
-}   //  RACES
+}   //  CLONES
 
 
 namespace std
 {
-    std::ostream& operator<<(std::ostream& os, const RACES::Mutations::RepetitionReference& repetition);
+    std::ostream& operator<<(std::ostream& os, const CLONES::Mutations::RepetitionReference& repetition);
 }
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutations
@@ -432,7 +432,7 @@ public:
      *          order to record a repeated sequence in the index
      * @param[in,out] progress_bar is the progress bar
      * @return the index of the repetitions that lay in the sequences corresponding
-     *          to a chromosome according to `RACES::IO::FASTA::seq_name_decoders`
+     *          to a chromosome according to `CLONES::IO::FASTA::seq_name_decoders`
      */
     template<typename RANDOM_GENERATOR>
     static inline IDContextIndex<RANDOM_GENERATOR>
@@ -461,7 +461,7 @@ public:
      *          order to record a repeated sequence in the index
      * @param[in,out] progress_bar is the progress bar
      * @return the index of the repetitions that lay in the sequences corresponding
-     *          to a chromosome according to `RACES::IO::FASTA::seq_name_decoders`,
+     *          to a chromosome according to `CLONES::IO::FASTA::seq_name_decoders`,
      *          but that are located outside the regions in `regions_to_avoid`
      */
     template<typename RANDOM_GENERATOR>
@@ -635,7 +635,7 @@ public:
      *          order to record a repeated sequence in the index
      * @param[in,out] progress_bar is the progress bar
      * @return the index of the repetitions that lay in the sequences corresponding
-     *          to a chromosome according to `RACES::IO::FASTA::seq_name_decoders`
+     *          to a chromosome according to `CLONES::IO::FASTA::seq_name_decoders`
      */
     static inline IDContextIndex<RANDOM_GENERATOR>
     build(RANDOM_GENERATOR& random_generator, const std::filesystem::path& index_path,
@@ -663,7 +663,7 @@ public:
      *          order to record a repeated sequence in the index
      * @param[in,out] progress_bar is the progress bar
      * @return the index of the repetitions that lay in the sequences corresponding
-     *          to a chromosome according to `RACES::IO::FASTA::seq_name_decoders`,
+     *          to a chromosome according to `CLONES::IO::FASTA::seq_name_decoders`,
      *          but that are located outside the regions in `regions_to_avoid`
      */
     static IDContextIndex<RANDOM_GENERATOR>
@@ -690,7 +690,7 @@ public:
      * @param[in] max_unit_size is the maximum considered size of the repetition unit
      * @param[in,out] progress_bar is the progress bar
      * @return the index of the repetitions that lay in the sequences corresponding
-     *          to a chromosome according to `RACES::IO::FASTA::seq_name_decoders`
+     *          to a chromosome according to `CLONES::IO::FASTA::seq_name_decoders`
      */
     static inline IDContextIndex<RANDOM_GENERATOR>
     build(RANDOM_GENERATOR& random_generator, const std::filesystem::path& index_path,
@@ -713,7 +713,7 @@ public:
      * @param[in] cache_size is the size of the cache used to build the sample
      * @param[in,out] progress_bar is the progress bar
      * @return the index of the repetitions that lay in the sequences corresponding
-     *          to a chromosome according to `RACES::IO::FASTA::seq_name_decoders`,
+     *          to a chromosome according to `CLONES::IO::FASTA::seq_name_decoders`,
      *          but that are located outside the regions in `regions_to_avoid`
      */
     static inline IDContextIndex<RANDOM_GENERATOR>
@@ -743,7 +743,7 @@ public:
      * @param[in] cache_size is the size of the cache used to build the sample
      * @param[in,out] progress_bar is the progress bar
      * @return the index of the repetitions that lay in the sequences corresponding
-     *          to a chromosome according to `RACES::IO::FASTA::seq_name_decoders`,
+     *          to a chromosome according to `CLONES::IO::FASTA::seq_name_decoders`,
      *          but that are located outside the regions in `regions_to_avoid`
      */
     static inline IDContextIndex<RANDOM_GENERATOR>
@@ -771,6 +771,6 @@ public:
 
 }   // Mutations
 
-}   // RACES
+}   // CLONES
 
-#endif // __RACES_RS_INDEX__
+#endif // __CLONES_RS_INDEX__

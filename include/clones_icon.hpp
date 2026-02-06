@@ -1,11 +1,11 @@
 /**
- * @file races_icon.hpp
+ * @file clones_icon.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
- * @brief Defines the RACES icon
- * @version 1.0
- * @date 2024-06-10
+ * @brief Defines the CLONES icon
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -29,10 +29,10 @@
  */
 
 
-#ifndef __RACES_ICON__
-#define __RACES_ICON__
+#ifndef __CLONES_ICON__
+#define __CLONES_ICON__
 
-unsigned char RACES_icon[] = {
+unsigned char CLONES_icon[] = {
   0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d,
   0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00, 0x00, 0x40,
   0x10, 0x06, 0x00, 0x00, 0x00, 0xfa, 0xf9, 0xad, 0x9d, 0x00, 0x00, 0x1e,
@@ -2095,4 +2095,4 @@ unsigned char RACES_icon[] = {
   0x4e, 0x44, 0xae, 0x42, 0x60, 0x82
 };
 
-#endif // __RACES_ICON__
+#endif // __CLONES_ICON__

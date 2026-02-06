@@ -2,10 +2,10 @@
  * @file progress_bar.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements a progress bar
- * @version 1.1
- * @date 2025-10-11
+ * @version 1.2
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -30,7 +30,7 @@
 
 #include "progress_bar.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace UI
@@ -223,4 +223,4 @@ ProgressBar::~ProgressBar()
 
 }  // UI
 
-} // RACES
+} // CLONES

@@ -2,10 +2,10 @@
  * @file sequencer.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines sequencer models
- * @version 1.8
- * @date 2025-11-24
+ * @version 1.9
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_SEQUENCER__
-#define __RACES_SEQUENCER__
+#ifndef __CLONES_SEQUENCER__
+#define __CLONES_SEQUENCER__
 
 #include <string>
 #include <random>
@@ -40,7 +40,7 @@
 #include "genomic_sequence.hpp"
 #include "read.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 /**
@@ -407,7 +407,7 @@ namespace Illumina
  * @tparam QUALITY_CODEC is the type of the quality score codec
  */
 template<typename QUALITY_CODEC = SangerQualityCodec>
-class ErrorLessSequencer : public RACES::Sequencers::BasicSequencer
+class ErrorLessSequencer : public CLONES::Sequencers::BasicSequencer
 {
 public:
     using QualityScoreCodec = QUALITY_CODEC;
@@ -700,6 +700,6 @@ public:
 
 }   // Sequencers
 
-}   // RACES
+}   // CLONES
 
-#endif // __RACES_SEQUENCER__
+#endif // __CLONES_SEQUENCER__

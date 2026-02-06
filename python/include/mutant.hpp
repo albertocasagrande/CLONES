@@ -2,10 +2,10 @@
  * @file mutant.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Define the Python wrapper class and functions for `MutantProperties`
- * @version 0.2
- * @date 2024-06-10
+ * @version 1.0
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_PYTHON_MUTANT__
-#define __RACES_PYTHON_MUTANT__
+#ifndef __CLONES_PYTHON_MUTANT__
+#define __CLONES_PYTHON_MUTANT__
 
 #include <memory>
 
@@ -58,7 +58,7 @@ struct CloneWrapper
      *         `EpigeneticRates`
      * @return a shared pointer of the newly created object
      */
-    static std::shared_ptr<RACES::Mutants::MutantProperties>
+    static std::shared_ptr<CLONES::Mutants::MutantProperties>
     create(std::string const& name, boost::python::list const& epigenetic_rates);
 
     /**
@@ -76,7 +76,7 @@ struct CloneWrapper
      * @param rates are the new rates
      */
     static
-    void set_rates(RACES::Mutants::MutantProperties *mutant, const std::string& methylation_signature,
+    void set_rates(CLONES::Mutants::MutantProperties *mutant, const std::string& methylation_signature,
                 boost::python::dict const& rates);
 
     /**
@@ -94,13 +94,13 @@ struct CloneWrapper
      * @param
      */
     inline static
-    double get_rate(const RACES::Mutants::MutantProperties *mutant,
+    double get_rate(const CLONES::Mutants::MutantProperties *mutant,
                     const std::string& methylation_signature,
-                    const RACES::Mutants::CellEventType event_type)
+                    const CLONES::Mutants::CellEventType event_type)
     {
         return (*mutant)[methylation_signature].get_rate(event_type);
     }
 
 };
 
-#endif // __RACES_PYTHON_MUTANT__
+#endif // __CLONES_PYTHON_MUTANT__

@@ -2,10 +2,10 @@
  * @file read_simulator.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements classes to simulate sequencing
- * @version 1.5
- * @date 2025-10-20
+ * @version 1.6
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -38,7 +38,7 @@
 
 #include "utils.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutations
@@ -101,7 +101,7 @@ ChrCoverage::ChrCoverage(const ChromosomeId& chromosome_id, const GenomicRegion:
 void ChrCoverage::increase_coverage(const ChrPosition& begin_pos, const size_t& read_size)
 {
     if (begin_pos+read_size-2 > coverage.size()) {
-        using namespace RACES::Mutants;
+        using namespace CLONES::Mutants;
 
         throw std::runtime_error("The chromosome " + GenomicPosition::chrtos(chr_id) + " has length "
                                  + std::to_string(coverage.size())+". Coverage cannot be increased "
@@ -119,7 +119,7 @@ void ChrCoverage::increase_coverage(const ChrPosition& begin_pos, const size_t& 
 void check_in(const GenomicPosition& pos, const ChromosomeId& chr_id)
 {
     if (pos.chr_id != chr_id) {
-        using namespace RACES::Mutants;
+        using namespace CLONES::Mutants;
 
         std::ostringstream oss;
 
@@ -148,7 +148,7 @@ const BaseCoverage& ChrCoverage::get_coverage(const GenomicPosition& position) c
 void check_same_chr(const ChrCoverage& a, const ChrCoverage& b)
 {
     if (a.get_chr_id() != b.get_chr_id()) {
-        using namespace RACES::Mutants;
+        using namespace CLONES::Mutants;
 
         std::ostringstream oss;
 
@@ -160,7 +160,7 @@ void check_same_chr(const ChrCoverage& a, const ChrCoverage& b)
     }
 
     if (a.size() != b.size()) {
-        using namespace RACES::Mutants;
+        using namespace CLONES::Mutants;
 
         std::ostringstream oss;
 
@@ -307,7 +307,7 @@ void ChrSampleStatistics::account_for(const ChromosomeMutations& chromosome)
 void check_in(const SID& mutation, const ChromosomeId& chr_id)
 {
     if (mutation.chr_id != chr_id) {
-        using namespace RACES::Mutants;
+        using namespace CLONES::Mutants;
 
         std::ostringstream oss;
 
@@ -447,7 +447,7 @@ void SampleStatistics::add_coverage(const ChrSampleStatistics& chr_stats)
     const auto& chr_id = chr_stats.get_chr_id();
 
     if (chr_ids.count(chr_id)>0) {
-        using namespace RACES::Mutants;
+        using namespace CLONES::Mutants;
 
         throw std::runtime_error("SampleStatistics " + sample_name + " already "
                                  + "includes statistics about chromosome "
@@ -492,7 +492,7 @@ ChrCoverage SampleStatistics::get_chr_coverage(const ChromosomeId& chr_id) const
     }
 
     if (chr_ids.count(chr_id)==0) {
-        using namespace RACES::Mutants;
+        using namespace CLONES::Mutants;
 
         throw std::runtime_error("SampleStatistics " + sample_name + " does not "
                                  + "include statistics about chromosome "
@@ -710,7 +710,7 @@ void SampleSetStatistics::save_VAF_CSVs(const std::string& base_name,
                                         std::ostream& progress_bar_stream,
                                         const bool& quiet) const
 {
-    RACES::UI::ProgressBar progress_bar(progress_bar_stream, quiet);
+    CLONES::UI::ProgressBar progress_bar(progress_bar_stream, quiet);
 
     size_t chr_processes{0};
     for (const auto& chr_id : chr_ids) {
@@ -894,7 +894,7 @@ void SampleSetStatistics::save_coverage_images(const std::string& base_name,
                                                std::ostream& progress_bar_stream,
                                                const bool& quiet) const
 {
-    RACES::UI::ProgressBar progress_bar(progress_bar_stream, quiet);
+    CLONES::UI::ProgressBar progress_bar(progress_bar_stream, quiet);
 
     size_t chr_processes{0};
     for (const auto& chr_id : chr_ids) {
@@ -1026,7 +1026,7 @@ void SampleSetStatistics::save_SID_histograms(const std::string& base_name,
                                               std::ostream& progress_bar_stream,
                                               const bool& quiet) const
 {
-    RACES::UI::ProgressBar progress_bar(progress_bar_stream, quiet);
+    CLONES::UI::ProgressBar progress_bar(progress_bar_stream, quiet);
 
     size_t chr_processes{0};
     for (const auto& chr_id : chr_ids) {
@@ -1115,4 +1115,4 @@ void SampleSetStatistics::save_SID_histogram(const std::filesystem::path& filena
 
 } // Mutations
 
-} // RACES
+} // CLONES

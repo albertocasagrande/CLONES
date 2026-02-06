@@ -2,10 +2,10 @@
  * @file genomic_region.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines genomic regions
- * @version 1.4
- * @date 2025-11-14
+ * @version 1.5
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,14 +28,14 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_GENOMIC_REGION__
-#define __RACES_GENOMIC_REGION__
+#ifndef __CLONES_GENOMIC_REGION__
+#define __CLONES_GENOMIC_REGION__
 
 #include <ostream>
 
 #include "genomic_position.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutations
@@ -525,8 +525,8 @@ public:
  * @return `true` is and only if `lhs` and `rhs` represent the same
  *      allele fragment, i.e., have the same allele fragments and allele history
  */
-inline bool operator==(const RACES::Mutations::GenomicRegion& lhs,
-                       const RACES::Mutations::GenomicRegion& rhs)
+inline bool operator==(const CLONES::Mutations::GenomicRegion& lhs,
+                       const CLONES::Mutations::GenomicRegion& rhs)
 {
     return (lhs.get_initial_position() == rhs.get_initial_position())
             && (lhs.size() == rhs.size());
@@ -540,8 +540,8 @@ inline bool operator==(const RACES::Mutations::GenomicRegion& lhs,
  * @return `false` is and only if `lhs` and `rhs` represent the same
  *      allele fragment, i.e., have the same allele fragments and allele history
  */
-inline bool operator!=(const RACES::Mutations::GenomicRegion& lhs,
-                       const RACES::Mutations::GenomicRegion& rhs)
+inline bool operator!=(const CLONES::Mutations::GenomicRegion& lhs,
+                       const CLONES::Mutations::GenomicRegion& rhs)
 {
     return !(lhs == rhs);
 }
@@ -558,16 +558,16 @@ split_by_chromosome_id(const std::set<GenomicRegion>& genomic_regions);
 
 }   // Mutations
 
-}   // RACES
+}   // CLONES
 
 namespace std
 {
 
 template<>
-struct less<RACES::Mutations::GenomicRegion>
+struct less<CLONES::Mutations::GenomicRegion>
 {
-    inline bool operator()(const RACES::Mutations::GenomicRegion &lhs,
-                           const RACES::Mutations::GenomicRegion &rhs) const
+    inline bool operator()(const CLONES::Mutations::GenomicRegion &lhs,
+                           const CLONES::Mutations::GenomicRegion &rhs) const
     {
         return ((lhs.get_chromosome_id()<rhs.get_chromosome_id())
                 || ((lhs.get_chromosome_id()==rhs.get_chromosome_id())
@@ -585,8 +585,8 @@ struct less<RACES::Mutations::GenomicRegion>
  * @param genomic_region is the genomic region to stream
  * @return a reference of the updated stream
  */
-std::ostream& operator<<(std::ostream& out, const RACES::Mutations::GenomicRegion& genomic_region);
+std::ostream& operator<<(std::ostream& out, const CLONES::Mutations::GenomicRegion& genomic_region);
 
 }
 
-#endif // __RACES_GENOMIC_REGION__
+#endif // __CLONES_GENOMIC_REGION__

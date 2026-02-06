@@ -2,10 +2,10 @@
  * @file cell_event.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines cell events
- * @version 1.0
- * @date 2024-06-10
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_CELL_EVENT__
-#define __RACES_CELL_EVENT__
+#ifndef __CLONES_CELL_EVENT__
+#define __CLONES_CELL_EVENT__
 
 #include <string>
 #include <map>
@@ -38,7 +38,7 @@
 #include "position.hpp"
 #include "time.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutants
@@ -93,6 +93,6 @@ struct CellEvent
 
 }   // Mutants
 
-}   // RACES
+}   // CLONES
 
-#endif // __RACES_CELL_EVENT__
+#endif // __CLONES_CELL_EVENT__

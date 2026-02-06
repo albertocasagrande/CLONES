@@ -2,10 +2,10 @@
  * @file progress_bar.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a progress bar
- * @version 1.1
- * @date 2025-10-11
+ * @version 1.2
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_PROGRESS_BAR__
-#define __RACES_PROGRESS_BAR__
+#ifndef __CLONES_PROGRESS_BAR__
+#define __CLONES_PROGRESS_BAR__
 
 #include <chrono>
 #include <string>
@@ -49,7 +49,7 @@
 #pragma GCC diagnostic pop
 #endif // WITH_INDICATORS
 
-namespace RACES
+namespace CLONES
 {
 
 namespace UI
@@ -185,6 +185,6 @@ public:
 
 }  // UI
 
-} // RACES
+} // CLONES
 
-#endif // __RACES_PROGRESS_BAR__
+#endif // __CLONES_PROGRESS_BAR__

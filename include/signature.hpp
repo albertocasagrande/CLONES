@@ -2,10 +2,10 @@
  * @file signature.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines mutational signatures
- * @version 1.2
- * @date 2025-10-02
+ * @version 1.3
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_SIGNATURE__
-#define __RACES_SIGNATURE__
+#ifndef __CLONES_SIGNATURE__
+#define __CLONES_SIGNATURE__
 
 #include <string>
 #include <vector>
@@ -42,7 +42,7 @@
 #include <istream>
 #include <sstream>
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutations
@@ -500,6 +500,6 @@ inline SignatureExprResult<MUTATION_TYPE> operator*(const T& value, const Signat
 
 }   // Mutations
 
-}   // RACES
+}   // CLONES
 
-#endif // __RACES_SIGNATURE__
+#endif // __CLONES_SIGNATURE__

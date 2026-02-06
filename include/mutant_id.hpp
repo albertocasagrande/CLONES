@@ -2,10 +2,10 @@
  * @file mutant_id.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines mutant ans species identifiers
- * @version 1.0
- * @date 2024-06-10
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,13 +28,13 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_MUTANT_ID__
-#define __RACES_MUTANT_ID__
+#ifndef __CLONES_MUTANT_ID__
+#define __CLONES_MUTANT_ID__
 
 #include <limits>
 #include <cstdint>
 
-namespace RACES
+namespace CLONES
 {
 
 /**
@@ -56,13 +56,13 @@ using SpeciesId = uint16_t;
 
 }   // Mutants
 
-}   // RACES
+}   // CLONES
 
 /**
  * @brief An identifier for wild-type species
  *
  * This macro represents the species identifier of the wild-type cells.
  */
-#define WILD_TYPE_SPECIES std::numeric_limits<RACES::Mutants::SpeciesId>::max()
+#define WILD_TYPE_SPECIES std::numeric_limits<CLONES::Mutants::SpeciesId>::max()
 
-#endif // __RACES_MUTANT_ID__
+#endif // __CLONES_MUTANT_ID__

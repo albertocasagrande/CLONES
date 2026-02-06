@@ -2,10 +2,10 @@
  * @file statistics.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines simulation statistics
- * @version 1.0
- * @date 2024-06-10
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_STATISTICS__
-#define __RACES_STATISTICS__
+#ifndef __CLONES_STATISTICS__
+#define __CLONES_STATISTICS__
 
 #include <list>
 
@@ -37,7 +37,7 @@
 #include "cell_event.hpp"
 
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutants
@@ -532,7 +532,7 @@ public:
 
 }   // Mutants
 
-}   // RACES
+}   // CLONES
 
 
-#endif // __RACES_STATISTICS__
+#endif // __CLONES_STATISTICS__

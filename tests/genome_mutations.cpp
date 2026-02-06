@@ -1,11 +1,11 @@
 /**
  * @file genome_mutations.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
- * @brief Testing RACES::Mutations::GenomeMutations class
- * @version 1.1
- * @date 2025-10-12
+ * @brief Testing CLONES::Mutations::GenomeMutations class
+ * @version 1.2
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -38,7 +38,7 @@
 
 BOOST_AUTO_TEST_CASE(chromosome_mutations_creation)
 {
-    using namespace RACES::Mutations;
+    using namespace CLONES::Mutations;
 
     BOOST_CHECK_NO_THROW(ChromosomeMutations());
     BOOST_CHECK_NO_THROW(ChromosomeMutations(1, 100, 3));
@@ -47,7 +47,7 @@ BOOST_AUTO_TEST_CASE(chromosome_mutations_creation)
 
 BOOST_AUTO_TEST_CASE(genome_mutations_creation)
 {
-    using namespace RACES::Mutations;
+    using namespace CLONES::Mutations;
 
     BOOST_CHECK_NO_THROW(GenomeMutations());
     BOOST_CHECK_NO_THROW(GenomeMutations({{1, 100, 3}, {2, 100, 2}}));
@@ -61,11 +61,11 @@ BOOST_AUTO_TEST_CASE(genome_mutations_creation)
 
 struct GenomeMutationsFixture
 {
-    RACES::Mutations::GenomeMutations genome_mutations;
+    CLONES::Mutations::GenomeMutations genome_mutations;
 
     GenomeMutationsFixture()
     {
-        using namespace RACES::Mutations;
+        using namespace CLONES::Mutations;
 
         std::list<GenomicRegion> chr_regions{{1, 219}, {2, 304}, {3, 14}};
 
@@ -82,7 +82,7 @@ BOOST_AUTO_TEST_CASE(genome_sizes)
 
 BOOST_AUTO_TEST_CASE(genome_applied_SNVs)
 {
-    using namespace RACES::Mutations;
+    using namespace CLONES::Mutations;
 
     SID snv0(1, 32, 'A', 'G');  // chromosome 1, position 32
 
@@ -145,7 +145,7 @@ BOOST_AUTO_TEST_CASE(genome_applied_SNVs)
 
 BOOST_AUTO_TEST_CASE(genome_delete_SNVs)
 {
-    using namespace RACES::Mutations;
+    using namespace CLONES::Mutations;
 
     SID snv0(1, 32, 'A', 'G');
 
@@ -196,7 +196,7 @@ BOOST_AUTO_TEST_CASE(genome_delete_SNVs)
 
 BOOST_AUTO_TEST_CASE(genome_amplify_region)
 {
-    using namespace RACES::Mutations;
+    using namespace CLONES::Mutations;
 
     SID snv0(1, 32, 'A', 'G');
 
@@ -271,7 +271,7 @@ BOOST_AUTO_TEST_CASE(genome_amplify_region)
 
 BOOST_AUTO_TEST_CASE(genome_remove_region)
 {
-    using namespace RACES::Mutations;
+    using namespace CLONES::Mutations;
 
     SID snv0(1, 32, 'A', 'G');
 

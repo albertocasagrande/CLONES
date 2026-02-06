@@ -2,10 +2,10 @@
  * @file position.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a position class in a tissue
- * @version 1.0
- * @date 2024-06-10
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_POSITION__
-#define __RACES_POSITION__
+#ifndef __CLONES_POSITION__
+#define __CLONES_POSITION__
 
 #include <iostream>
 #include <type_traits>
@@ -38,7 +38,7 @@
 
 
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutants
@@ -65,11 +65,11 @@ namespace std
  * @param direction is the direction to be streamed
  * @return a reference to the output stream
  */
-std::ostream& operator<<(std::ostream& os, const RACES::Mutants::Evolutions::Direction& direction);
+std::ostream& operator<<(std::ostream& os, const CLONES::Mutants::Evolutions::Direction& direction);
 
 };
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutants
@@ -602,7 +602,7 @@ struct Position : public PositionInTissue
 
 }   // Mutants
 
-}   // RACES
+}   // CLONES
 
 
 namespace std
@@ -615,7 +615,7 @@ namespace std
  * @param delta is the position delta to be streamed
  * @return a reference to the output stream
  */
-std::ostream& operator<<(std::ostream& os, const RACES::Mutants::Evolutions::PositionDelta& delta);
+std::ostream& operator<<(std::ostream& os, const CLONES::Mutants::Evolutions::PositionDelta& delta);
 
 /**
  * @brief Write a position in a tissue in an output stream
@@ -624,7 +624,7 @@ std::ostream& operator<<(std::ostream& os, const RACES::Mutants::Evolutions::Pos
  * @param position is the position in a tissue to be streamed
  * @return a reference to the output stream
  */
-std::ostream& operator<<(std::ostream& os, const RACES::Mutants::Evolutions::PositionInTissue& position);
+std::ostream& operator<<(std::ostream& os, const CLONES::Mutants::Evolutions::PositionInTissue& position);
 
 /**
  * @brief Write a position in an output stream
@@ -633,8 +633,8 @@ std::ostream& operator<<(std::ostream& os, const RACES::Mutants::Evolutions::Pos
  * @param position is the position to be streamed
  * @return a reference to the output stream
  */
-std::ostream& operator<<(std::ostream& os, const RACES::Mutants::Evolutions::Position& position);
+std::ostream& operator<<(std::ostream& os, const CLONES::Mutants::Evolutions::Position& position);
 
 }   // std
 
-#endif // __RACES_POSITION__
+#endif // __CLONES_POSITION__

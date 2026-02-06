@@ -2,10 +2,10 @@
  * @file basic_IO.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines basic IO functions
- * @version 1.0
- * @date 2024-06-10
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,12 +28,12 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_BASIC_IO___
-#define __RACES_BASIC_IO___
+#ifndef __CLONES_BASIC_IO___
+#define __CLONES_BASIC_IO___
 
 #include <istream>
 
-namespace RACES
+namespace CLONES
 {
 
 namespace IO {
@@ -48,6 +48,6 @@ std::streampos get_stream_size(std::istream& is);
 
 }   // IO
 
-}   // RACES
+}   // CLONES
 
-#endif // __RACES_BASIC_IO___
+#endif // __CLONES_BASIC_IO___

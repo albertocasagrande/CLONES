@@ -2,10 +2,10 @@
  * @file index.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Index tests
- * @version 1.1
- * @date 2025-11-14
+ * @version 1.2
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -52,7 +52,7 @@
 #define READ_CACHE_SIZE 9000
 #define NUM_OF_CHOICES 800
 
-using namespace RACES::Mutations;
+using namespace CLONES::Mutations;
 
 typedef boost::mpl::list<
     std::pair<GenomicPosition, GenomicPosition>,
@@ -68,9 +68,9 @@ inline TYPE create_data(const size_t& i)
 }
 
 template<>
-inline RACES::Mutations::GenomicPosition create_data(const size_t& i)
+inline CLONES::Mutations::GenomicPosition create_data(const size_t& i)
 {
-    return RACES::Mutations::GenomicPosition(i%22, static_cast<uint32_t>(i));
+    return CLONES::Mutations::GenomicPosition(i%22, static_cast<uint32_t>(i));
 }
 
 template<class PAIR>
@@ -79,7 +79,7 @@ struct IndexFixture
     using key_type  = typename PAIR::first_type;
     using value_type = typename PAIR::second_type;
 
-    using IndexBuilderType = RACES::Archive::IndexBuilder<key_type, value_type>;
+    using IndexBuilderType = CLONES::Archive::IndexBuilder<key_type, value_type>;
 
     std::filesystem::path index_path;
     std::map<key_type, std::set<value_type>> dataset;
@@ -118,7 +118,7 @@ struct IndexFixture
 template<class KEY, class VALUE>
 void create_index()
 {
-    using namespace RACES::Archive;
+    using namespace CLONES::Archive;
     namespace fs = std::filesystem;
 
     fs::path index_path = get_a_temporary_path();
@@ -162,7 +162,7 @@ void test_random_function(const std::filesystem::path& index_path,
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(create_bucket_T, T, test_types)
 {
-    using namespace RACES::Archive;
+    using namespace CLONES::Archive;
     namespace fs = std::filesystem;
 
     fs::path index_path = get_a_temporary_path();
@@ -191,7 +191,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(create_bucket_T, T, test_types)
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(load_index_T, T, test_types, IndexFixture<T>)
 {
-    using namespace RACES::Archive;
+    using namespace CLONES::Archive;
 
     using IndexType = IndexReader<typename T::first_type,
                                   typename T::second_type,
@@ -202,7 +202,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(load_index_T, T, test_types, IndexFixture<T>)
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(index_key_bucket_access_T, T, test_types, IndexFixture<T>)
 {
-    using namespace RACES::Archive;
+    using namespace CLONES::Archive;
 
     using IndexType = IndexReader<typename T::first_type,
                                   typename T::second_type,
@@ -223,7 +223,7 @@ void index_extract(std::mt19937_64& random_generator,
                    const std::filesystem::path& index_path,
                    const std::map<KEY, std::set<VALUE>>& dataset)
 {
-    using namespace RACES::Archive;
+    using namespace CLONES::Archive;
     std::map<KEY, std::set<VALUE>> local_dataset(dataset);
 
     IndexReader<KEY, VALUE, std::mt19937_64> index(index_path, READ_CACHE_SIZE);
@@ -262,7 +262,7 @@ void index_choose(std::mt19937_64& random_generator,
                   const std::filesystem::path& index_path,
                   const std::map<KEY, std::set<VALUE>>& dataset)
 {
-    using namespace RACES::Archive;
+    using namespace CLONES::Archive;
 
     IndexReader<KEY, VALUE, std::mt19937_64> index(index_path, READ_CACHE_SIZE);
 
@@ -294,7 +294,7 @@ void index_extract_class(std::mt19937_64& random_generator,
                          const std::filesystem::path& index_path,
                          const std::map<KEY, std::set<VALUE>>& dataset)
 {
-    using namespace RACES::Archive;
+    using namespace CLONES::Archive;
     std::map<KEY, std::set<VALUE>> local_dataset(dataset);
 
     IndexReader<KEY, VALUE, std::mt19937_64> index(index_path, READ_CACHE_SIZE);
@@ -303,7 +303,7 @@ void index_extract_class(std::mt19937_64& random_generator,
 
     for (const auto key : index.get_keys()) {
         if (!key_done.contains(key)) {
-            auto class_keys = RACES::partition<KEY>::get_class_of(key);
+            auto class_keys = CLONES::partition<KEY>::get_class_of(key);
             key_done.insert(class_keys.begin(), class_keys.end());
 
             std::set<KEY> class_set(class_keys.begin(), class_keys.end());
@@ -369,7 +369,7 @@ void index_choose_class(std::mt19937_64& random_generator,
                         const std::filesystem::path& index_path,
                         const std::map<KEY, std::set<VALUE>>& dataset)
 {
-    using namespace RACES::Archive;
+    using namespace CLONES::Archive;
     IndexReader<KEY, VALUE, std::mt19937_64> index(index_path, READ_CACHE_SIZE);
 
     std::set<KEY> key_done;
@@ -377,7 +377,7 @@ void index_choose_class(std::mt19937_64& random_generator,
     size_t total_available{0};
     for (const auto key : index.get_keys()) {
         if (!key_done.contains(key)) {
-            auto class_keys = RACES::partition<KEY>::get_class_of(key);
+            auto class_keys = CLONES::partition<KEY>::get_class_of(key);
             key_done.insert(class_keys.begin(), class_keys.end());
 
             std::set<KEY> class_set(class_keys.begin(), class_keys.end());

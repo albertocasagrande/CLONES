@@ -1,11 +1,11 @@
 /**
  * @file context_index.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
- * @brief Testing RACES::Mutations::ContextIndex class
- * @version 1.0
- * @date 2025-10-12
+ * @brief Testing CLONES::Mutations::ContextIndex class
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -39,7 +39,7 @@
 
 BOOST_AUTO_TEST_CASE(context_index_creation)
 {
-    using namespace RACES::Mutations;
+    using namespace CLONES::Mutations;
 
     BOOST_CHECK_NO_THROW(SBSContextIndex());
 
@@ -65,10 +65,10 @@ BOOST_AUTO_TEST_CASE(context_index_creation)
 }
 
 template<typename RANDOM_GENERATOR>
-std::set<RACES::Mutations::GenomicPosition> get_genomic_positions(const RACES::Mutations::SBSContextIndex<RANDOM_GENERATOR>& context_index,
-                                                                   const RACES::Mutations::SBSContext& mutational_context)
+std::set<CLONES::Mutations::GenomicPosition> get_genomic_positions(const CLONES::Mutations::SBSContextIndex<RANDOM_GENERATOR>& context_index,
+                                                                   const CLONES::Mutations::SBSContext& mutational_context)
 {
-    std::set<RACES::Mutations::GenomicPosition> positions;
+    std::set<CLONES::Mutations::GenomicPosition> positions;
 
     for (const auto& g_pos: context_index[mutational_context]) {
         positions.insert(g_pos);
@@ -79,8 +79,8 @@ std::set<RACES::Mutations::GenomicPosition> get_genomic_positions(const RACES::M
 
 struct ContextFixture
 {
-    using SBSContext = RACES::Mutations::SBSContext;
-    using GenomicPosition = RACES::Mutations::GenomicPosition;
+    using SBSContext = CLONES::Mutations::SBSContext;
+    using GenomicPosition = CLONES::Mutations::GenomicPosition;
 
     std::map<SBSContext, std::set<GenomicPosition> > test_positions;
 
@@ -101,7 +101,7 @@ BOOST_FIXTURE_TEST_SUITE( context_index_test, ContextFixture )
 
 BOOST_AUTO_TEST_CASE(context_index_whole_genome)
 {
-    using namespace RACES::Mutations;
+    using namespace CLONES::Mutations;
 
     std::mt19937_64 random_generator(0);
 
@@ -112,7 +112,7 @@ BOOST_AUTO_TEST_CASE(context_index_whole_genome)
                                                   FASTA_FILE);
 
     for (const auto& [context_test, positions_test]: test_positions) {
-        std::set<RACES::Mutations::GenomicPosition> positions;
+        std::set<CLONES::Mutations::GenomicPosition> positions;
 
         if (positions_test.size() != 0) {
             BOOST_CHECK_NO_THROW(positions = get_genomic_positions(context_index, context_test));
@@ -132,8 +132,8 @@ BOOST_AUTO_TEST_CASE(context_index_whole_genome)
     std::filesystem::remove_all(index_path);
 }
 
-bool in_regions(const std::set<RACES::Mutations::GenomicRegion>& genomic_regions,
-               const RACES::Mutations::GenomicPosition& genomic_position)
+bool in_regions(const std::set<CLONES::Mutations::GenomicRegion>& genomic_regions,
+               const CLONES::Mutations::GenomicPosition& genomic_position)
 {
     for (const auto& genomic_region: genomic_regions) {
         if (genomic_region.contains(genomic_position)) {
@@ -146,7 +146,7 @@ bool in_regions(const std::set<RACES::Mutations::GenomicRegion>& genomic_regions
 
 BOOST_AUTO_TEST_CASE(context_index_regions)
 {
-    using namespace RACES::Mutations;
+    using namespace CLONES::Mutations;
 
     const std::set<GenomicRegion> regions{{{2,115}, 20}, {{1,5}, 73},
                                           {{2,247}, 11}};
@@ -169,7 +169,7 @@ BOOST_AUTO_TEST_CASE(context_index_regions)
                                                   FASTA_FILE, regions);
 
     for (const auto& [context_test, positions_test]: in_context_positions) {
-        std::set<RACES::Mutations::GenomicPosition> positions;
+        std::set<CLONES::Mutations::GenomicPosition> positions;
 
         if (positions_test.size() != 0) {
             BOOST_CHECK_NO_THROW(positions = get_genomic_positions(context_index, context_test));
@@ -190,7 +190,7 @@ BOOST_AUTO_TEST_CASE(context_index_regions)
 
 BOOST_AUTO_TEST_CASE(context_index_remove_insert)
 {
-    using namespace RACES::Mutations;
+    using namespace CLONES::Mutations;
 
     std::mt19937_64 random_generator(0);
     const auto index_path = get_a_temporary_path("sbs_context_index_test",

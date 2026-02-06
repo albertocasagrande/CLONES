@@ -2,10 +2,10 @@
  * @file archive.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Some archive tests
- * @version 1.2
- * @date 2025-09-17
+ * @version 1.3
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -46,12 +46,12 @@
 struct ArchiveFixture {
     long double time_horizon;
 
-    RACES::Mutants::Evolutions::Simulation simulation;
+    CLONES::Mutants::Evolutions::Simulation simulation;
 
     ArchiveFixture():
         time_horizon(70), simulation()
     {
-        using namespace RACES::Mutants;
+        using namespace CLONES::Mutants;
 
         MutantProperties A("A",{{0.01,0.01}});
         A["-"].set_rates({{CellEventType::DEATH, 0.1},
@@ -74,7 +74,7 @@ struct ArchiveFixture {
         simulation.death_activation_level = 100;
         simulation.storage_enabled = false;
 
-        RACES::Mutants::Evolutions::TimeTest done(time_horizon);
+        CLONES::Mutants::Evolutions::TimeTest done(time_horizon);
 
         simulation.run(done);
     }
@@ -90,7 +90,7 @@ void basic_type_test(const std::vector<T>& to_save)
 {
     auto filename = get_a_temporary_path();
     {
-        RACES::Archive::Binary::Out o_archive(filename);
+        CLONES::Archive::Binary::Out o_archive(filename);
 
         for (const auto& value : to_save) {
             o_archive & value;
@@ -98,7 +98,7 @@ void basic_type_test(const std::vector<T>& to_save)
     }
 
     {
-        RACES::Archive::Binary::In i_archive(filename);
+        CLONES::Archive::Binary::In i_archive(filename);
 
         for (const auto& value : to_save) {
             T read_value;
@@ -146,22 +146,22 @@ bool operator==(const std::map<KEY,T>& a, const std::map<KEY,T>& b)
     return true;
 }
 
-bool operator==(const RACES::Mutants::Cell& a, const RACES::Mutants::Cell& b)
+bool operator==(const CLONES::Mutants::Cell& a, const CLONES::Mutants::Cell& b)
 {
     return (a.get_id()==b.get_id() &&
             a.get_parent_id()==b.get_parent_id() &&
             a.get_species_id()==b.get_species_id());
 }
 
-bool operator==(const RACES::Mutants::Evolutions::CellInTissue& a, const RACES::Mutants::Evolutions::CellInTissue& b)
+bool operator==(const CLONES::Mutants::Evolutions::CellInTissue& a, const CLONES::Mutants::Evolutions::CellInTissue& b)
 {
-    using namespace  RACES::Mutants;
+    using namespace  CLONES::Mutants;
 
     return (static_cast<const Cell&>(a)==static_cast<const Cell&>(b) &&
             static_cast<const Evolutions::PositionInTissue&>(a)==static_cast<const Evolutions::PositionInTissue&>(b));
 }
 
-bool operator==(const RACES::Mutants::SpeciesProperties& a, const RACES::Mutants::SpeciesProperties& b)
+bool operator==(const CLONES::Mutants::SpeciesProperties& a, const CLONES::Mutants::SpeciesProperties& b)
 {
     return (a.get_name()==b.get_name() &&
             a.get_id()==b.get_id() &&
@@ -170,14 +170,14 @@ bool operator==(const RACES::Mutants::SpeciesProperties& a, const RACES::Mutants
             a.get_epigenetic_switch_rates()==b.get_epigenetic_switch_rates());
 }
 
-inline bool operator!=(const RACES::Mutants::SpeciesProperties& a, const RACES::Mutants::SpeciesProperties& b)
+inline bool operator!=(const CLONES::Mutants::SpeciesProperties& a, const CLONES::Mutants::SpeciesProperties& b)
 {
     return !(a==b);
 }
 
-bool operator==(const RACES::Mutants::Evolutions::Species& a, const RACES::Mutants::Evolutions::Species& b)
+bool operator==(const CLONES::Mutants::Evolutions::Species& a, const CLONES::Mutants::Evolutions::Species& b)
 {
-    using namespace RACES::Mutants;
+    using namespace CLONES::Mutants;
 
     if (static_cast<const SpeciesProperties&>(a)!=static_cast<const SpeciesProperties&>(b)) {
         return false;
@@ -194,9 +194,9 @@ bool operator==(const RACES::Mutants::Evolutions::Species& a, const RACES::Mutan
     return true;
 }
 
-bool operator==(const RACES::Mutants::Evolutions::Tissue& a, const RACES::Mutants::Evolutions::Tissue& b)
+bool operator==(const CLONES::Mutants::Evolutions::Tissue& a, const CLONES::Mutants::Evolutions::Tissue& b)
 {
-    using namespace RACES::Mutants;
+    using namespace CLONES::Mutants;
 
     if (a.get_name()!=b.get_name()) {
         return false;
@@ -231,7 +231,7 @@ bool operator==(const RACES::Mutants::Evolutions::Tissue& a, const RACES::Mutant
     return true;
 }
 
-bool operator==(const RACES::Mutants::Evolutions::Simulation& a, const RACES::Mutants::Evolutions::Simulation& b)
+bool operator==(const CLONES::Mutants::Evolutions::Simulation& a, const CLONES::Mutants::Evolutions::Simulation& b)
 {
     return a.get_time()==b.get_time() &&
            a.tissue()==b.tissue() &&
@@ -277,7 +277,7 @@ struct TestData
         }
     }
 
-    template<typename ARCHIVE, std::enable_if_t<std::is_base_of_v<RACES::Archive::Basic::Out, ARCHIVE>, bool> = true>
+    template<typename ARCHIVE, std::enable_if_t<std::is_base_of_v<CLONES::Archive::Basic::Out, ARCHIVE>, bool> = true>
     inline void save(ARCHIVE& archive) const
     {
         for (size_t i=0; i<1000; ++i) {
@@ -285,7 +285,7 @@ struct TestData
         }
     }
 
-    template<typename ARCHIVE, std::enable_if_t<std::is_base_of_v<RACES::Archive::Basic::In, ARCHIVE>, bool> = true>
+    template<typename ARCHIVE, std::enable_if_t<std::is_base_of_v<CLONES::Archive::Basic::In, ARCHIVE>, bool> = true>
     inline static TestData load(ARCHIVE& archive)
     {
         TestData test_data;
@@ -325,7 +325,7 @@ BOOST_AUTO_TEST_CASE(binary_dynamic_memory_object)
     std::vector<std::shared_ptr<TestData>> v_struct{a_struct, std::make_shared<TestData>()};
     std::shared_ptr<std::vector<TestData>> sv_struct=std::make_shared<std::vector<TestData>>(10000);
     {
-        RACES::Archive::Binary::Out o_archive(filename);
+        CLONES::Archive::Binary::Out o_archive(filename);
 
         o_archive & a & a & a & a & a
                   & v & v & sv & sv
@@ -342,7 +342,7 @@ BOOST_AUTO_TEST_CASE(binary_dynamic_memory_object)
         std::vector<std::shared_ptr<TestData>> loaded_v_struct1, loaded_v_struct2;
         std::shared_ptr<std::vector<TestData>> loaded_sv_struct1, loaded_sv_struct2;
 
-        RACES::Archive::Binary::In i_archive(filename);
+        CLONES::Archive::Binary::In i_archive(filename);
 
         i_archive & loaded_a1 & loaded_a2 & loaded_a3
                   & loaded_a4 & loaded_a5 & loaded_v1
@@ -392,13 +392,13 @@ BOOST_AUTO_TEST_CASE(binary_map)
                                                                     {"ult\0imo", {{-3/7},{}}}};
     auto filename = get_a_temporary_path();
     {
-        RACES::Archive::Binary::Out o_archive(filename);
+        CLONES::Archive::Binary::Out o_archive(filename);
 
         o_archive & to_save;
     }
 
     {
-        RACES::Archive::Binary::In i_archive(filename);
+        CLONES::Archive::Binary::In i_archive(filename);
 
         std::map<std::string, std::vector<std::vector<double>>> read_value;
 
@@ -413,7 +413,7 @@ BOOST_AUTO_TEST_CASE(binary_map)
 
 BOOST_AUTO_TEST_CASE(binary_timed_mutation)
 {
-    using namespace RACES::Mutants::Evolutions;
+    using namespace CLONES::Mutants::Evolutions;
 
     std::vector<TimedEvent> to_save{{5,SimulationEventWrapper(Mutation(0,1))},
                                     {3.5,SimulationEventWrapper(Mutation(1,7))},
@@ -421,7 +421,7 @@ BOOST_AUTO_TEST_CASE(binary_timed_mutation)
 
     auto filename = get_a_temporary_path();
     {
-        RACES::Archive::Binary::Out o_archive(filename);
+        CLONES::Archive::Binary::Out o_archive(filename);
 
         for (const auto& value : to_save) {
             o_archive & value;
@@ -429,7 +429,7 @@ BOOST_AUTO_TEST_CASE(binary_timed_mutation)
     }
 
     {
-        RACES::Archive::Binary::In i_archive(filename);
+        CLONES::Archive::Binary::In i_archive(filename);
 
         for (auto& value : to_save) {
             TimedEvent read_value = TimedEvent::load(i_archive);
@@ -444,7 +444,7 @@ BOOST_AUTO_TEST_CASE(binary_timed_mutation)
 
 BOOST_AUTO_TEST_CASE(binary_timed_mutation_queue)
 {
-    using namespace RACES::Mutants::Evolutions;
+    using namespace CLONES::Mutants::Evolutions;
 
     std::vector<TimedEvent> to_save{{5,SimulationEventWrapper(Mutation(0,1))},
                                     {3.5,SimulationEventWrapper(Mutation(1,7))},
@@ -458,13 +458,13 @@ BOOST_AUTO_TEST_CASE(binary_timed_mutation_queue)
 
     auto filename = get_a_temporary_path();
     {
-        RACES::Archive::Binary::Out o_archive(filename);
+        CLONES::Archive::Binary::Out o_archive(filename);
 
         o_archive & queue;
     }
 
     {
-        RACES::Archive::Binary::In i_archive(filename);
+        CLONES::Archive::Binary::In i_archive(filename);
 
         PriorityQueue i_queue;
 
@@ -487,7 +487,7 @@ BOOST_AUTO_TEST_CASE(binary_timed_mutation_queue)
 
 BOOST_AUTO_TEST_CASE(binary_epigenetic_mutant)
 {
-    using namespace RACES::Mutants;
+    using namespace CLONES::Mutants;
 
     MutantProperties to_save("A",{{0.01,0.01},{0.01,0.01}});
     to_save["--"].set_rates({{CellEventType::DEATH, 0.1},
@@ -501,7 +501,7 @@ BOOST_AUTO_TEST_CASE(binary_epigenetic_mutant)
 
     auto filename = get_a_temporary_path();
     {
-        RACES::Archive::Binary::Out o_archive(filename);
+        CLONES::Archive::Binary::Out o_archive(filename);
 
         for (const auto& species : to_save.get_species()) {
             o_archive & species;
@@ -509,7 +509,7 @@ BOOST_AUTO_TEST_CASE(binary_epigenetic_mutant)
     }
 
     {
-        RACES::Archive::Binary::In i_archive(filename);
+        CLONES::Archive::Binary::In i_archive(filename);
 
         for (const auto& species : to_save.get_species()) {
             SpeciesProperties in_species =  SpeciesProperties::load(i_archive);
@@ -524,18 +524,18 @@ BOOST_FIXTURE_TEST_SUITE( simulatedData, ArchiveFixture )
 
 BOOST_AUTO_TEST_CASE(binary_tissue)
 {
-    using namespace RACES::Mutants::Evolutions;
+    using namespace CLONES::Mutants::Evolutions;
 
     auto filename = get_a_temporary_path();
 
     {
-        RACES::Archive::Binary::Out o_archive(filename);
+        CLONES::Archive::Binary::Out o_archive(filename);
 
         o_archive & simulation.tissue();
     }
 
     {
-        RACES::Archive::Binary::In i_archive(filename);
+        CLONES::Archive::Binary::In i_archive(filename);
 
         Tissue in_tissue = Tissue::load(i_archive);
 
@@ -547,18 +547,18 @@ BOOST_AUTO_TEST_CASE(binary_tissue)
 
 BOOST_AUTO_TEST_CASE(simulation_statistics)
 {
-    using namespace RACES::Mutants::Evolutions;
+    using namespace CLONES::Mutants::Evolutions;
 
     auto filename = get_a_temporary_path();
 
     {
-        RACES::Archive::Binary::Out o_archive(filename);
+        CLONES::Archive::Binary::Out o_archive(filename);
 
         o_archive & simulation.get_statistics();
     }
 
     {
-        RACES::Archive::Binary::In i_archive(filename);
+        CLONES::Archive::Binary::In i_archive(filename);
 
         TissueStatistics statistics = TissueStatistics::load(i_archive);
     }
@@ -568,18 +568,18 @@ BOOST_AUTO_TEST_CASE(simulation_statistics)
 
 BOOST_AUTO_TEST_CASE(simulation_tissue)
 {
-    using namespace RACES::Mutants::Evolutions;
+    using namespace CLONES::Mutants::Evolutions;
 
     auto filename = get_a_temporary_path();
 
     {
-        RACES::Archive::Binary::Out o_archive(filename);
+        CLONES::Archive::Binary::Out o_archive(filename);
 
         o_archive & simulation;
     }
 
     {
-        RACES::Archive::Binary::In i_archive(filename);
+        CLONES::Archive::Binary::In i_archive(filename);
 
         Simulation in_simulation = Simulation::load(i_archive);
 

@@ -2,10 +2,10 @@
  * @file utils.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines utility functions
- * @version 1.4
- * @date 2025-10-11
+ * @version 1.5
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_UTILS__
-#define __RACES_UTILS__
+#ifndef __CLONES_UTILS__
+#define __CLONES_UTILS__
 
 #include <string>
 #include <filesystem>
@@ -43,7 +43,7 @@
 #include<regex>
 #include<clocale>
 
-namespace RACES
+namespace CLONES
 {
 
 /**
@@ -78,7 +78,7 @@ template<typename T, typename... ARGS>
 concept last_is_not = requires { typename last_arg_type<ARGS...>::type; } &&
                         !std::same_as<std::remove_cvref_t<typename last_arg_type<ARGS...>::type>, T>;
 
-} // RACES
+} // CLONES
 
 /**
  * @brief Build a std::regex
@@ -163,7 +163,7 @@ inline static TYPE ceil_div(const TYPE& x, const TYPE& y)
  *      is `parent_dir`, and whose basename prefix is `prefix`
  */
 std::filesystem::path
-get_a_temporary_path(const std::string& prefix="RACES_tmp_",
+get_a_temporary_path(const std::string& prefix="CLONES_tmp_",
                      const std::filesystem::path parent_dir=std::filesystem::temp_directory_path());
 
 namespace std
@@ -225,4 +225,4 @@ std::ostream& operator<<(std::ostream& os, const std::map<KEYS, VALUES>& m)
 
 }   // std
 
-#endif // __RACES_UTILS__
+#endif // __CLONES_UTILS__

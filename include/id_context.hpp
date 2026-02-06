@@ -2,10 +2,10 @@
  * @file id_context.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines ID contexts
- * @version 1.0
- * @date 2025-11-14
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_ID_CONTEXT__
-#define __RACES_ID_CONTEXT__
+#ifndef __CLONES_ID_CONTEXT__
+#define __CLONES_ID_CONTEXT__
 
 #include <cstdint>
 #include <functional>   // std::less
@@ -39,7 +39,7 @@
 
 #include "archive.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutations
@@ -322,16 +322,16 @@ public:
 
 }   // Mutations
 
-}   // RACES
+}   // CLONES
 
 /**
  * @brief A specialization of `std::less` for `IDContext`
  */
 template<>
-struct std::less<RACES::Mutations::IDContext>
+struct std::less<CLONES::Mutations::IDContext>
 {
-    bool operator()(const RACES::Mutations::IDContext &lhs,
-                    const RACES::Mutations::IDContext &rhs) const;
+    bool operator()(const CLONES::Mutations::IDContext &lhs,
+                    const CLONES::Mutations::IDContext &rhs) const;
 };
 
 namespace std
@@ -356,7 +356,7 @@ namespace std
  * @param type is the ID context to stream
  * @return a reference to the output stream
  */
-std::ostream& operator<<(std::ostream& out, const RACES::Mutations::IDContext& type);
+std::ostream& operator<<(std::ostream& out, const CLONES::Mutations::IDContext& type);
 
 /**
  * @brief Stream the ID context from a stream
@@ -377,8 +377,8 @@ std::ostream& operator<<(std::ostream& out, const RACES::Mutations::IDContext& t
  * @param type is the object where the streamed ID context will be placed
  * @return a reference to the input stream
  */
-std::istream& operator>>(std::istream& in, RACES::Mutations::IDContext& type);
+std::istream& operator>>(std::istream& in, CLONES::Mutations::IDContext& type);
 
 }   // std
 
-#endif // __RACES_ID_CONTEXT__
+#endif // __CLONES_ID_CONTEXT__

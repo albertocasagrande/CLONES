@@ -2,10 +2,10 @@
  * @file phylogenetic_forest.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements classes and function for phylogenetic forests
- * @version 1.16
- * @date 2025-11-21
+ * @version 1.17
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -36,7 +36,7 @@
 
 #include "simulation.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutations
@@ -384,4 +384,4 @@ get_leaf_mutation_tour(const PhylogeneticForest& forest,
 
 }   // Mutants
 
-}   // RACES
+}   // CLONES

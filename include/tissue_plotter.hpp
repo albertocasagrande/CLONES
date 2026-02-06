@@ -2,10 +2,10 @@
  * @file tissue_plotter.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a UI window to plot a tissue
- * @version 1.0
- * @date 2024-06-10
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_TISSUE_PLOTTER__
-#define __RACES_TISSUE_PLOTTER__
+#ifndef __CLONES_TISSUE_PLOTTER__
+#define __CLONES_TISSUE_PLOTTER__
 
 #include <memory> // smart pointers
 #include <sstream>
@@ -40,7 +40,7 @@
 #include "tissue.hpp"
 #include "palette.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace UI
@@ -286,7 +286,7 @@ public:
 	 * @param frames_per_second is the number of frames per second
 	 */
 	explicit TissuePlotter(const Mutants::Evolutions::Tissue& tissue, const unsigned int frames_per_second=10):
-		TissuePlotter<PLOT_WINDOW>(tissue, "RACES Simulation"+((tissue.get_name()=="")?"":" - "+tissue.get_name()), frames_per_second)
+		TissuePlotter<PLOT_WINDOW>(tissue, "CLONES Simulation"+((tissue.get_name()=="")?"":" - "+tissue.get_name()), frames_per_second)
 	{
 	}
 
@@ -401,6 +401,6 @@ public:
 
 }	// UI
 
-}	// RACES
+}	// CLONES
 
-#endif // __RACES_TISSUE_PLOTTER__
+#endif // __CLONES_TISSUE_PLOTTER__
