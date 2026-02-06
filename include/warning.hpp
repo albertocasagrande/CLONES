@@ -2,8 +2,8 @@
  * @file warning.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines warning functions
- * @version 1.0
- * @date 2025-07-14
+ * @version 1.1
+ * @date 2026-02-06
  *
  * @copyright Copyright (c) 2025
  *
@@ -28,13 +28,13 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_WARNING__
-#define __RACES_WARNING__
+#ifndef __CLONES_WARNING__
+#define __CLONES_WARNING__
 
 #include <string>
 #include <functional>
 
-namespace RACES
+namespace CLONES
 {
 
     /**
@@ -60,4 +60,4 @@ namespace RACES
     void warning(const WarningType type, const std::string message);
 }
 
-#endif // __RACES_WARNING__
+#endif // __CLONES_WARNING__

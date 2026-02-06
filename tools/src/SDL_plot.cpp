@@ -2,10 +2,10 @@
  * @file SDL_plot.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements a 2D plot window by using SDL2
- * @version 1.0
- * @date 2024-06-10
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -32,9 +32,9 @@
 
 #include "SDL_plot.hpp"
 #include "roboto_regular.hpp"
-#include "races_icon.hpp"
+#include "clones_icon.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace UI
@@ -70,7 +70,7 @@ SDLWindow::SDLWindow(const unsigned int width, const unsigned int height, const 
 		throw std::runtime_error( "Window could not be created" );
 	}
 
-    SDL_RWops *iconMem = SDL_RWFromMem(RACES_icon, sizeof(RACES_icon));
+    SDL_RWops *iconMem = SDL_RWFromMem(CLONES_icon, sizeof(CLONES_icon));
 	SDL_Surface* icon = IMG_Load_RW(iconMem, 1);
 
 	SDL_SetWindowIcon(window, icon);

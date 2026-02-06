@@ -2,10 +2,10 @@
  * @file timed_event.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines timed events
- * @version 1.0
- * @date 2024-06-10
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_TIMED_EVENT__
-#define __RACES_TIMED_EVENT__
+#ifndef __CLONES_TIMED_EVENT__
+#define __CLONES_TIMED_EVENT__
 
 #include <map>
 #include <string>
@@ -39,7 +39,7 @@
 #include "archive.hpp"
 #include "event_wrapper.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutants
@@ -100,13 +100,13 @@ struct TimedEvent : public SimulationEventWrapper
 
 }   // Mutants
 
-}   // RACES
+}   // CLONES
 
 
 template<>
-struct std::greater<RACES::Mutants::Evolutions::TimedEvent> {
-    inline constexpr bool operator()(const RACES::Mutants::Evolutions::TimedEvent &lhs,
-                                     const RACES::Mutants::Evolutions::TimedEvent &rhs) const
+struct std::greater<CLONES::Mutants::Evolutions::TimedEvent> {
+    inline constexpr bool operator()(const CLONES::Mutants::Evolutions::TimedEvent &lhs,
+                                     const CLONES::Mutants::Evolutions::TimedEvent &rhs) const
     {
         return lhs.time > rhs.time;
     }
@@ -120,14 +120,14 @@ struct std::greater<RACES::Mutants::Evolutions::TimedEvent> {
  * @return `true` if and only if the two timed events represent
  *      the same event
  */
-inline bool operator==(const RACES::Mutants::Evolutions::TimedEvent& lhs,
-                       const RACES::Mutants::Evolutions::TimedEvent& rhs)
+inline bool operator==(const CLONES::Mutants::Evolutions::TimedEvent& lhs,
+                       const CLONES::Mutants::Evolutions::TimedEvent& rhs)
 {
-    using namespace RACES::Mutants::Evolutions;
+    using namespace CLONES::Mutants::Evolutions;
 
     return (lhs.time == rhs.time)
             && (static_cast<const SimulationEventWrapper&>(lhs)
                 ==static_cast<const SimulationEventWrapper&>(rhs));
 }
 
-#endif // __RACES_TIMED_EVENT__
+#endif // __CLONES_TIMED_EVENT__

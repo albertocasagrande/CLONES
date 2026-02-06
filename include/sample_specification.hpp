@@ -2,10 +2,10 @@
  * @file sample_specification.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines sample specification
- * @version 1.0
- * @date 2024-06-10
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,12 +28,12 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_SAMPLE_SPECIFICATION__
-#define __RACES_SAMPLE_SPECIFICATION__
+#ifndef __CLONES_SAMPLE_SPECIFICATION__
+#define __CLONES_SAMPLE_SPECIFICATION__
 
 #include "position_set.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutants
@@ -178,7 +178,7 @@ protected:
 
 }   // Mutants
 
-}   // RACES
+}   // CLONES
 
 
 /**
@@ -191,11 +191,11 @@ protected:
  *      of cells to be sampled
  */
 inline
-bool operator==(const RACES::Mutants::Evolutions::SampleSpecification& lhs,
-                const RACES::Mutants::Evolutions::SampleSpecification& rhs)
+bool operator==(const CLONES::Mutants::Evolutions::SampleSpecification& lhs,
+                const CLONES::Mutants::Evolutions::SampleSpecification& rhs)
 {
     return (lhs.get_name() == rhs.get_name() && lhs.get_bounding_box() == rhs.get_bounding_box()
                 && lhs.get_num_of_cells() == rhs.get_num_of_cells());
 }
 
-#endif // __RACES_RATE_UPDATE__
+#endif // __CLONES_RATE_UPDATE__

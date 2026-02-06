@@ -2,10 +2,10 @@
  * @file fasta_reader.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a FASTA file reader and support structures
- * @version 1.5
- * @date 2025-11-24
+ * @version 1.6
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_FASTA_READER__
-#define __RACES_FASTA_READER__
+#ifndef __CLONES_FASTA_READER__
+#define __CLONES_FASTA_READER__
 
 #include <string>
 #include <istream>
@@ -45,7 +45,7 @@
 
 #include "progress_bar.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace IO
@@ -118,7 +118,7 @@ protected:
      *
      * @param progress_bar is a progress bar
      */
-    void filter_remaining_sequence(RACES::UI::ProgressBar& progress_bar)
+    void filter_remaining_sequence(CLONES::UI::ProgressBar& progress_bar)
     {
         size_t counter{0};
         int c = fasta_stream.get();
@@ -148,7 +148,7 @@ protected:
      * @return The string of nucleotides up to the end of the stream or of the
      *          current sequence
      */
-    inline size_t read_nucleotides(std::string* nucleotides, RACES::UI::ProgressBar& progress_bar)
+    inline size_t read_nucleotides(std::string* nucleotides, CLONES::UI::ProgressBar& progress_bar)
     {
         return read_nucleotides(nucleotides, std::string().max_size(), progress_bar);
     }
@@ -164,7 +164,7 @@ protected:
      *          current sequence
      */
     size_t read_nucleotides(std::string* nucleotides, const size_t length,
-                            RACES::UI::ProgressBar& progress_bar)
+                            CLONES::UI::ProgressBar& progress_bar)
     {
         if (nucleotides != nullptr) {
             nucleotides->clear();
@@ -221,7 +221,7 @@ protected:
      *          `*hearer` are updated according to the read values
      */
     bool read(SequenceInfo& seq_info, std::string* nucleotides, std::string* header,
-              RACES::UI::ProgressBar& progress_bar)
+              CLONES::UI::ProgressBar& progress_bar)
     {
         int c = fasta_stream.get();
         while (c != EOF) {
@@ -311,7 +311,7 @@ public:
      *           If the method returns `true`, then `read_object` is updated
      *           according to the read values
      */
-    bool read(READ_TYPE& read_object, RACES::UI::ProgressBar& progress_bar)
+    bool read(READ_TYPE& read_object, CLONES::UI::ProgressBar& progress_bar)
     {
         return read(read_object, &(read_object.nucleotides), nullptr, progress_bar);
     }
@@ -329,7 +329,7 @@ public:
      */
     bool read(READ_TYPE& read_object, std::ostream& progress_bar_stream)
     {
-        RACES::UI::ProgressBar progress_bar(progress_bar_stream);
+        CLONES::UI::ProgressBar progress_bar(progress_bar_stream);
 
         return read(read_object, progress_bar);
     }
@@ -346,7 +346,7 @@ public:
      */
     bool read(READ_TYPE& read_object)
     {
-        RACES::UI::ProgressBar progress_bar(std::cout, true);
+        CLONES::UI::ProgressBar progress_bar(std::cout, true);
 
         return read(read_object, progress_bar);
     }
@@ -373,7 +373,7 @@ public:
 };
 
 template<>
-inline bool Reader<SequenceInfo>::read(SequenceInfo& sequence, RACES::UI::ProgressBar& progress_bar)
+inline bool Reader<SequenceInfo>::read(SequenceInfo& sequence, CLONES::UI::ProgressBar& progress_bar)
 {
     return read(sequence, nullptr, nullptr, progress_bar);
 }
@@ -530,7 +530,7 @@ public:
      * @return the FASTA index of `fasta_filename`
      */
     static Index build_index(const std::filesystem::path& fasta_filename,
-                             RACES::UI::ProgressBar& progress_bar)
+                             CLONES::UI::ProgressBar& progress_bar)
     {
         namespace fs = std::filesystem;
 
@@ -650,7 +650,7 @@ public:
     static Index build_index(const std::filesystem::path& fasta_filename,
                              std::ostream& progress_bar_stream)
     {
-        RACES::UI::ProgressBar progress_bar(progress_bar_stream);
+        CLONES::UI::ProgressBar progress_bar(progress_bar_stream);
 
         return Index::build_index(fasta_filename, progress_bar);
     }
@@ -663,7 +663,7 @@ public:
      */
     static Index build_index(const std::filesystem::path& fasta_filename)
     {
-        RACES::UI::ProgressBar progress_bar(std::cout, true);
+        CLONES::UI::ProgressBar progress_bar(std::cout, true);
 
         return Index::build_index(fasta_filename, progress_bar);
     }
@@ -785,7 +785,7 @@ class IndexedReader : public Reader<SEQUENCE_TYPE>
      *           then `read_object` is updated according to the read object
      */
     bool read(SEQUENCE_TYPE& sequence, const IndexEntry& entry,
-              RACES::UI::ProgressBar& progress_bar)
+              CLONES::UI::ProgressBar& progress_bar)
     {
         sequence.length = entry.length;
         sequence.name = entry.name;
@@ -821,7 +821,7 @@ public:
      * @param fasta_filename is the filename of the FASTA to read
      */
     IndexedReader(const std::filesystem::path& fasta_filename,
-                  RACES::UI::ProgressBar& progress_bar)
+                  CLONES::UI::ProgressBar& progress_bar)
     {
         open(fasta_filename, progress_bar);
     }
@@ -853,7 +853,7 @@ public:
      * @param progress_bar is the progress bar
      */
     void open(const std::filesystem::path& fasta_filename,
-              RACES::UI::ProgressBar& progress_bar)
+              CLONES::UI::ProgressBar& progress_bar)
     {
         const auto index_filename = _index.get_index_filename(fasta_filename);
 
@@ -880,7 +880,7 @@ public:
      */
     void open(const std::filesystem::path& fasta_filename)
     {
-        RACES::UI::ProgressBar progress_bar(std::cout, true);
+        CLONES::UI::ProgressBar progress_bar(std::cout, true);
 
         open(fasta_filename, progress_bar);
     }
@@ -897,7 +897,7 @@ public:
      *           then `read_object` is updated according to the read object
      */
     bool read(SEQUENCE_TYPE& sequence, const std::string& sequence_name,
-              RACES::UI::ProgressBar& progress_bar)
+              CLONES::UI::ProgressBar& progress_bar)
     {
         if (!_index.has_key(sequence_name)) {
             return false;
@@ -918,7 +918,7 @@ public:
      */
     bool read(SEQUENCE_TYPE& sequence, const std::string& sequence_name)
     {
-        RACES::UI::ProgressBar progress_bar(std::cout, true);
+        CLONES::UI::ProgressBar progress_bar(std::cout, true);
 
         const auto seq_read = read(sequence, sequence_name, progress_bar);
 
@@ -944,7 +944,7 @@ public:
      */
     bool read(std::string& nucleotides, const std::string& sequence_name,
               const size_t offset, const size_t length,
-              RACES::UI::ProgressBar& progress_bar)
+              CLONES::UI::ProgressBar& progress_bar)
     {
         if (!_index.has_key(sequence_name)) {
             return false;
@@ -977,7 +977,7 @@ public:
     bool read(std::string& nucleotides, const std::string& sequence_name,
               const size_t offset, const size_t length)
     {
-        RACES::UI::ProgressBar progress_bar(std::cout, true);
+        CLONES::UI::ProgressBar progress_bar(std::cout, true);
 
         return read(nucleotides, sequence_name, offset, length, progress_bar);
     }
@@ -987,6 +987,6 @@ public:
 
 }   // IO
 
-}   // RACES
+}   // CLONES
 
-#endif // __RACES_FASTA_READER__
+#endif // __CLONES_FASTA_READER__

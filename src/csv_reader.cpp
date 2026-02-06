@@ -2,10 +2,10 @@
  * @file csv_reader.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements a class to read CSV
- * @version 1.2
- * @date 2025-09-12
+ * @version 1.3
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -34,7 +34,7 @@
 
 #include "utils.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace IO
@@ -141,4 +141,4 @@ CSVReader::CSVReader(const std::filesystem::path& filename, const bool has_heade
 
 }   // IO
 
-}   // RACES
+}   // CLONES

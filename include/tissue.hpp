@@ -2,10 +2,10 @@
  * @file tissue.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines tissue class
- * @version 1.0
- * @date 2024-06-10
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_TISSUE__
-#define __RACES_TISSUE__
+#ifndef __CLONES_TISSUE__
+#define __CLONES_TISSUE__
 
 #include <vector>
 #include <list>
@@ -44,7 +44,7 @@
 #include "cell.hpp"
 #include "logics.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutants
@@ -954,6 +954,6 @@ inline bool operator!=(const Tissue::SpeciesView::const_iterator& a, const Tissu
 
 }   // Mutants
 
-}   // RACES
+}   // CLONES
 
-#endif // __RACES_TISSUE__
+#endif // __CLONES_TISSUE__

@@ -2,10 +2,10 @@
  * @file bucket.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Bucket tests
- * @version 1.2
- * @date 2025-09-17
+ * @version 1.3
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -49,7 +49,7 @@
 #define DEFAULT_WRITE_CACHE_SIZE 700
 #define DEFAULT_READ_CACHE_SIZE 900
 
-typedef boost::mpl::list<size_t, RACES::Mutations::GenomicPosition> test_types;
+typedef boost::mpl::list<size_t, CLONES::Mutations::GenomicPosition> test_types;
 
 template<typename TYPE>
 inline TYPE create_data(const size_t& i)
@@ -58,15 +58,15 @@ inline TYPE create_data(const size_t& i)
 }
 
 template<>
-inline RACES::Mutations::GenomicPosition create_data(const size_t& i)
+inline CLONES::Mutations::GenomicPosition create_data(const size_t& i)
 {
-    return RACES::Mutations::GenomicPosition(i%22, static_cast<uint32_t>(i));
+    return CLONES::Mutations::GenomicPosition(i%22, static_cast<uint32_t>(i));
 }
 
 template<typename TYPE>
 struct BucketFixture
 {
-    RACES::Archive::Bucket<TYPE> bucket;
+    CLONES::Archive::Bucket<TYPE> bucket;
     std::set<TYPE> dataset;
 
     BucketFixture():
@@ -91,7 +91,7 @@ struct BucketFixture
 
 template<typename TYPE, typename RANDOM_GENERATOR>
 TYPE
-test_random_tour_on(const RACES::Archive::BucketRandomTour<TYPE, RANDOM_GENERATOR>& tour,
+test_random_tour_on(const CLONES::Archive::BucketRandomTour<TYPE, RANDOM_GENERATOR>& tour,
                     const std::set<TYPE>& dataset)
 {
     std::set<TYPE> local_dataset(dataset.begin(), dataset.end());
@@ -113,11 +113,11 @@ test_random_tour_on(const RACES::Archive::BucketRandomTour<TYPE, RANDOM_GENERATO
 }
 
 template<typename TYPE>
-void shuffle_bucket(RACES::Archive::Bucket<TYPE>& bucket,
+void shuffle_bucket(CLONES::Archive::Bucket<TYPE>& bucket,
                     const std::set<TYPE>& dataset,
                     const size_t read_cache_size)
 {
-    using namespace RACES::Archive;
+    using namespace CLONES::Archive;
     namespace fs = std::filesystem;
 
     std::mt19937_64 gen(0);
@@ -148,7 +148,7 @@ void shuffle_bucket(RACES::Archive::Bucket<TYPE>& bucket,
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(create_bucket_T, T, test_types)
 {
-    using namespace RACES::Archive;
+    using namespace CLONES::Archive;
     namespace fs = std::filesystem;
 
     fs::path bucket_filepath = get_a_temporary_path();
@@ -171,7 +171,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(create_bucket_T, T, test_types)
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(load_bucket_T, T, test_types, BucketFixture<T>)
 {
-    using namespace RACES::Archive;
+    using namespace CLONES::Archive;
     
     Bucket<T> load_bucket(this->bucket.path());
     BOOST_CHECK(load_bucket.size()==DEFAULT_DATASET_SIZE);
@@ -179,7 +179,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(load_bucket_T, T, test_types, BucketFixture<T>)
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(sequential_bucket_T, T, test_types, BucketFixture<T>)
 {
-    using namespace RACES::Archive;
+    using namespace CLONES::Archive;
 
     Bucket<T> reading_bucket(this->bucket.path(), DEFAULT_READ_CACHE_SIZE);
 
@@ -194,7 +194,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(sequential_bucket_T, T, test_types, BucketFixtu
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(random_io_bucket_T, T, test_types, BucketFixture<T>)
 {
-    using namespace RACES::Archive;
+    using namespace CLONES::Archive;
 
     // create a list of indices and randomly shuffle them
     std::vector<size_t> indices(this->bucket.size());
@@ -213,7 +213,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(random_io_bucket_T, T, test_types, BucketFixtur
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(random_tour_T, T, test_types, BucketFixture<T>)
 {
-    using namespace RACES::Archive;
+    using namespace CLONES::Archive;
 
     std::mt19937_64 gen(0);
 
@@ -249,7 +249,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(random_tour_T, T, test_types, BucketFixture<T>)
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(copy_bucket_T, T, test_types, BucketFixture<T>)
 {
-    using namespace RACES::Archive;
+    using namespace CLONES::Archive;
 
     BOOST_CHECK_NO_THROW(Bucket<T> bucket2(this->bucket));
 

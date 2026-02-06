@@ -2,10 +2,10 @@
  * @file mutational_properties.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements a class to represent the mutational properties
- * @version 1.4
- * @date 2025-10-04
+ * @version 1.5
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -32,7 +32,7 @@
 
 #include "mutational_properties.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutations
@@ -113,4 +113,4 @@ void MutationalProperties::set_mutant_drivers(const DriverMutations& mutant_driv
 
 }   // Mutations
 
-}   // RACES
+}   // CLONES

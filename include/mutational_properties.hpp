@@ -2,10 +2,10 @@
  * @file mutational_properties.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a class to represent the mutational properties
- * @version 1.6
- * @date 2025-11-24
+ * @version 1.7
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_MUTATIONAL_PROPERTIES__
-#define __RACES_MUTATIONAL_PROPERTIES__
+#ifndef __CLONES_MUTATIONAL_PROPERTIES__
+#define __CLONES_MUTATIONAL_PROPERTIES__
 
 #include <map>
 #include <list>
@@ -40,7 +40,7 @@
 #include "mutation_spec.hpp"
 
 #include "mutation_list.hpp"
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutations
@@ -626,6 +626,6 @@ public:
 
 }   // Mutations
 
-}   // RACES
+}   // CLONES
 
-#endif // __RACES_MUTATIONAL_PROPERTIES__
+#endif // __CLONES_MUTATIONAL_PROPERTIES__

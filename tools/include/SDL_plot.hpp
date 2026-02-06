@@ -2,10 +2,10 @@
  * @file SDL_plot.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a 2D plot window by using SDL2
- * @version 1.0
- * @date 2024-06-10
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_SDL_PLOT__
-#define __RACES_SDL_PLOT__
+#ifndef __CLONES_SDL_PLOT__
+#define __CLONES_SDL_PLOT__
 
 #include <SDL.h>
 #include <SDL_image.h>
@@ -39,7 +39,7 @@
 
 #include "plot_2D.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace UI
@@ -191,6 +191,6 @@ public:
 
 }	// UI
 
-}	// RACES
+}	// CLONES
 
-#endif // __RACES_SDL_PLOT__
+#endif // __CLONES_SDL_PLOT__

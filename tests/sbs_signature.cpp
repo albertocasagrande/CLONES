@@ -2,10 +2,10 @@
  * @file sbs_signature.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Some SBS example
- * @version 0.12
- * @date 2025-09-12
+ * @version 1.0
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -45,7 +45,7 @@
 
 BOOST_AUTO_TEST_CASE(sbs_context_creation)
 {
-    using namespace RACES::Mutations;
+    using namespace CLONES::Mutations;
 
     BOOST_CHECK_NO_THROW(SBSContext());
     BOOST_CHECK_NO_THROW(SBSContext("AAA"));
@@ -57,7 +57,7 @@ BOOST_AUTO_TEST_CASE(sbs_context_creation)
 
 struct ContextFixture
 {
-    std::list<RACES::Mutations::SBSContext> contexts;
+    std::list<CLONES::Mutations::SBSContext> contexts;
 
     ContextFixture()
     {
@@ -79,7 +79,7 @@ BOOST_FIXTURE_TEST_SUITE( context_test, ContextFixture )
 
 BOOST_AUTO_TEST_CASE(sbs_context_lower_case)
 {
-    using namespace RACES::Mutations;
+    using namespace CLONES::Mutations;
     std::vector<char> bases{'a', 'c', 'g', 't'};
 
     auto it=contexts.cbegin();
@@ -99,7 +99,7 @@ BOOST_AUTO_TEST_CASE(sbs_context_lower_case)
 
 BOOST_AUTO_TEST_CASE(sbs_context_relation)
 {
-    using namespace RACES::Mutations;
+    using namespace CLONES::Mutations;
 
     for (const auto& context: contexts) {
         BOOST_CHECK_EQUAL(context, context);
@@ -120,7 +120,7 @@ BOOST_AUTO_TEST_CASE(sbs_context_relation)
 
 BOOST_AUTO_TEST_CASE(sbs_context_copy_by_sequence)
 {
-    using namespace RACES::Mutations;
+    using namespace CLONES::Mutations;
 
     for (const auto& context: contexts) {
         SBSContext copy(context.get_sequence());
@@ -131,7 +131,7 @@ BOOST_AUTO_TEST_CASE(sbs_context_copy_by_sequence)
 
 BOOST_AUTO_TEST_CASE(sbs_context_sequence)
 {
-    using namespace RACES::Mutations;
+    using namespace CLONES::Mutations;
 
     for (const auto& context: contexts) {
         SBSContext copy(context.get_sequence());
@@ -144,7 +144,7 @@ BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_CASE(sbs_context_complement)
 {
-    using namespace RACES::Mutations;
+    using namespace CLONES::Mutations;
 
     std::list<std::pair<std::string, std::string>> tests{
             {"AAA","TTT"},
@@ -175,7 +175,7 @@ BOOST_AUTO_TEST_CASE(sbs_context_complement)
 
 BOOST_AUTO_TEST_CASE(sbs_context_reverse_complement)
 {
-    using namespace RACES::Mutations;
+    using namespace CLONES::Mutations;
 
     std::list<std::pair<std::string, std::string>> tests{
             {"AAA","TTT"},
@@ -206,7 +206,7 @@ BOOST_AUTO_TEST_CASE(sbs_context_reverse_complement)
 
 BOOST_AUTO_TEST_CASE(SBS_type_create)
 {
-    using namespace RACES::Mutations;
+    using namespace CLONES::Mutations;
 
     BOOST_CHECK_NO_THROW(SBSType());
 
@@ -233,7 +233,7 @@ BOOST_AUTO_TEST_CASE(SBS_type_create)
 
 BOOST_AUTO_TEST_CASE(SBS_type_get_replace_base)
 {
-    using namespace RACES::Mutations;
+    using namespace CLONES::Mutations;
 
     for (const auto base: {'A', 'C', 'G', 'T', 'a', 'c', 'g', 't'}){
         for (const auto seq1: {'C', 'T', 'c', 't'}){
@@ -288,7 +288,7 @@ BOOST_AUTO_TEST_CASE(SBS_type_get_replace_base)
 
 BOOST_AUTO_TEST_CASE(SBS_type_get_complement_replace_base)
 {
-    using namespace RACES::Mutations;
+    using namespace CLONES::Mutations;
 
     for (const auto base: {'A', 'C', 'G', 'T', 'a', 'c', 'g', 't'}){
         for (const auto seq1: {'C', 'T', 'c', 't'}){
@@ -343,7 +343,7 @@ BOOST_AUTO_TEST_CASE(SBS_type_get_complement_replace_base)
 
 BOOST_AUTO_TEST_CASE(SBS_type_read)
 {
-    using namespace RACES::Mutations;
+    using namespace CLONES::Mutations;
 
     std::list<std::pair<std::string, std::pair<std::string, char>>> tests{
         {"A[A>C]C",{"GTT", 'G'}},
@@ -363,7 +363,7 @@ BOOST_AUTO_TEST_CASE(SBS_type_read)
 
 BOOST_AUTO_TEST_CASE(SBS_type_read_error)
 {
-    using namespace RACES::Mutations;
+    using namespace CLONES::Mutations;
 
     std::list<std::string> errors{
         "A[A>A]T", "A", "A[A<C]T", "A<A>C]T"
@@ -402,7 +402,7 @@ std::ostream& operator<<(std::ostream& out, const std::set<T>& S)
 
 BOOST_AUTO_TEST_CASE(SBS_signature_load)
 {
-    using namespace RACES::Mutations;
+    using namespace CLONES::Mutations;
 
     std::set<std::string> signature_names{"SBS3_GRCh37","SBS3_GRCh38","SBS3_mm9","SBS3_mm10","SBS3_rn6"};
 
@@ -422,7 +422,7 @@ BOOST_AUTO_TEST_CASE(SBS_signature_load)
 
 BOOST_AUTO_TEST_CASE(selective_SBS_signature_load)
 {
-    using namespace RACES::Mutations;
+    using namespace CLONES::Mutations;
 
     std::set<std::string> signature_names{"SBS3_GRCh38","SBS3_mm10","SBS3_rn6"};
 
@@ -441,7 +441,7 @@ BOOST_AUTO_TEST_CASE(selective_SBS_signature_load)
 
 BOOST_AUTO_TEST_CASE(SBS_signature_expression)
 {
-    using namespace RACES::Mutations;
+    using namespace CLONES::Mutations;
 
     std::map<std::string, SBSSignature> signatures;
     {

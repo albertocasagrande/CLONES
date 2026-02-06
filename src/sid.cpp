@@ -2,10 +2,10 @@
  * @file sid.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements SNV, Insertion, and Deletion mutations
- * @version 1.1
- * @date 2025-07-13
+ * @version 1.2
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -30,7 +30,7 @@
 
 #include "sid.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutations
@@ -117,16 +117,16 @@ SID::SID(GenomicPosition&& genomic_position,
 
 }   // Mutations
 
-}   // RACES
+}   // CLONES
 
 namespace std
 {
 
-bool less<RACES::Mutations::SID>::operator()(const RACES::Mutations::SID &lhs,
-                                             const RACES::Mutations::SID &rhs) const
+bool less<CLONES::Mutations::SID>::operator()(const CLONES::Mutations::SID &lhs,
+                                             const CLONES::Mutations::SID &rhs) const
 {
     {
-        less<RACES::Mutations::GenomicPosition> gp_op;
+        less<CLONES::Mutations::GenomicPosition> gp_op;
 
         if (gp_op(lhs, rhs)) {
             return true;
@@ -150,17 +150,17 @@ bool less<RACES::Mutations::SID>::operator()(const RACES::Mutations::SID &lhs,
     return lhs.alt.compare(rhs.alt) < 0;
 }
 
-bool operator==(const RACES::Mutations::SID &lhs,
-                const RACES::Mutations::SID &rhs)
+bool operator==(const CLONES::Mutations::SID &lhs,
+                const CLONES::Mutations::SID &rhs)
 {
     return lhs.chr_id==rhs.chr_id && lhs.position==rhs.position
             && lhs.nature==rhs.nature && lhs.cause==rhs.cause
             && lhs.ref==rhs.ref && lhs.alt==rhs.alt;
 }
 
-std::ostream& operator<<(std::ostream& out, const RACES::Mutations::SID& sid)
+std::ostream& operator<<(std::ostream& out, const CLONES::Mutations::SID& sid)
 {
-      out << static_cast<RACES::Mutations::GenomicPosition>(sid)
+      out << static_cast<CLONES::Mutations::GenomicPosition>(sid)
         << "[" << sid.ref << ">" <<  sid.alt << "]";
 
     return out;

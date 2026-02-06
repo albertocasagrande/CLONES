@@ -2,10 +2,10 @@
  * @file filter.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines filters
- * @version 1.0
- * @date 2024-06-10
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,13 +28,13 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_FILTER__
-#define __RACES_FILTER__
+#ifndef __CLONES_FILTER__
+#define __CLONES_FILTER__
 
 #include <set>
 #include <type_traits>
 
-namespace RACES
+namespace CLONES
 {
 
 /**
@@ -111,6 +111,6 @@ public:
     }
 };
 
-}   // RACES
+}   // CLONES
 
-#endif // __RACES_FILTER__
+#endif // __CLONES_FILTER__

@@ -2,10 +2,10 @@
  * @file cell.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines cell representation
- * @version 1.2
- * @date 2025-10-02
+ * @version 1.3
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_CELL__
-#define __RACES_CELL__
+#ifndef __CLONES_CELL__
+#define __CLONES_CELL__
 
 #include <cstdint>
 
@@ -38,7 +38,7 @@
 #include "position.hpp"
 #include "mutant_properties.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutants
@@ -434,7 +434,7 @@ public:
 
 }   // Mutants
 
-}   // RACES
+}   // CLONES
 
 namespace std
 {
@@ -446,7 +446,7 @@ namespace std
  * @param cell is the cell to be streamed
  * @return a reference to the updated stream
  */
-std::ostream& operator<<(std::ostream& os, const RACES::Mutants::Cell& cell);
+std::ostream& operator<<(std::ostream& os, const CLONES::Mutants::Cell& cell);
 
 /**
  * @brief Write a cell in a tissue in an output stream
@@ -455,8 +455,8 @@ std::ostream& operator<<(std::ostream& os, const RACES::Mutants::Cell& cell);
  * @param cell is the cell in the tissue to be streamed
  * @return a reference to the updated stream
  */
-std::ostream& operator<<(std::ostream& os, const RACES::Mutants::Evolutions::CellInTissue& cell);
+std::ostream& operator<<(std::ostream& os, const CLONES::Mutants::Evolutions::CellInTissue& cell);
 
 } // std
 
-#endif // __RACES_CELL__
+#endif // __CLONES_CELL__

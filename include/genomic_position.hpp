@@ -2,10 +2,10 @@
  * @file genomic_position.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines genomic position and related functions
- * @version 1.2
- * @date 2025-09-17
+ * @version 1.3
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_GENOMIC_POSITION__
-#define __RACES_GENOMIC_POSITION__
+#ifndef __CLONES_GENOMIC_POSITION__
+#define __CLONES_GENOMIC_POSITION__
 
 #include <cstdint>
 #include <functional>   // std::less
@@ -37,7 +37,7 @@
 
 #include "archive.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutations
@@ -177,17 +177,17 @@ struct GenomicPosition
 
 }   // Mutations
 
-}   // RACES
+}   // CLONES
 
 namespace std
 {
 
 
 template<>
-struct less<RACES::Mutations::GenomicPosition>
+struct less<CLONES::Mutations::GenomicPosition>
 {
-    inline bool operator()(const RACES::Mutations::GenomicPosition &lhs,
-                           const RACES::Mutations::GenomicPosition &rhs) const
+    inline bool operator()(const CLONES::Mutations::GenomicPosition &lhs,
+                           const CLONES::Mutations::GenomicPosition &rhs) const
     {
         return ((lhs.chr_id<rhs.chr_id) ||
                 ((lhs.chr_id==rhs.chr_id) && (lhs.position<rhs.position)));
@@ -201,9 +201,9 @@ struct less<RACES::Mutations::GenomicPosition>
  * @param genomic_position is the position to stream
  * @return a reference of the updated stream
  */
-std::ostream& operator<<(std::ostream& out, const RACES::Mutations::GenomicPosition& genomic_position);
+std::ostream& operator<<(std::ostream& out, const CLONES::Mutations::GenomicPosition& genomic_position);
 
 }   // std
 
 
-#endif // __RACES_GENOMIC_POSITION__
+#endif // __CLONES_GENOMIC_POSITION__

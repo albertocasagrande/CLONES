@@ -2,10 +2,10 @@
  * @file descendant_forest.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines classes and function for descendant forests
- * @version 1.6
- * @date 2025-11-21
+ * @version 1.7
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_DESCENDANT_FOREST__
-#define __RACES_DESCENDANT_FOREST__
+#ifndef __CLONES_DESCENDANT_FOREST__
+#define __CLONES_DESCENDANT_FOREST__
 
 #include <map>
 #include <set>
@@ -44,7 +44,7 @@
 #include "binary_logger.hpp"
 #include "tissue_sample.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutants
@@ -859,7 +859,7 @@ public:
     template<typename ARCHIVE, std::enable_if_t<std::is_base_of_v<Archive::Basic::Out, ARCHIVE>, bool> = true>
     inline void save(ARCHIVE& archive) const
     {
-        ARCHIVE::write_header(archive, "RACES Descendants Forest", 1);
+        ARCHIVE::write_header(archive, "CLONES Descendants Forest", 1);
 
         archive & roots
                 & cells
@@ -880,7 +880,7 @@ public:
     template<typename ARCHIVE, std::enable_if_t<std::is_base_of_v<Archive::Basic::In, ARCHIVE>, bool> = true>
     inline static DescendantForest load(ARCHIVE& archive)
     {
-        ARCHIVE::read_header(archive, "RACES Descendants Forest", 1);
+        ARCHIVE::read_header(archive, "CLONES Descendants Forest", 1);
 
         DescendantForest forest;
 
@@ -898,6 +898,6 @@ public:
 
 }   // Mutants
 
-}   // RACES
+}   // CLONES
 
-#endif // __RACES_DESCENDANT_FOREST__
+#endif // __CLONES_DESCENDANT_FOREST__

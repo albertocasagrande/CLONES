@@ -2,10 +2,10 @@
  * @file index.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines index
- * @version 1.0
- * @date 2025-09-17
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_INDEX__
-#define __RACES_INDEX__
+#ifndef __CLONES_INDEX__
+#define __CLONES_INDEX__
 
 #include <map>
 #include <memory>
@@ -38,14 +38,14 @@
 #include "bucket.hpp"
 #include "progress_bar.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Archive
 {
 
-#define RACES_INDEX_DESC "RACES index"
-#define RACES_INDEX_VERSION 0
+#define CLONES_INDEX_DESC "CLONES index"
+#define CLONES_INDEX_VERSION 0
 
 /**
  * @brief A structure to define the partitions of the values of a type
@@ -409,8 +409,8 @@ public:
 
         Binary::Out archive(this->get_map_path());
 
-        Binary::Out::write_header(archive, RACES_INDEX_DESC,
-                                  RACES_INDEX_VERSION);
+        Binary::Out::write_header(archive, CLONES_INDEX_DESC,
+                                  CLONES_INDEX_VERSION);
 
         archive & this->get_bucket_prefix()
                 & buckets.size();
@@ -573,8 +573,8 @@ public:
 
         Binary::In archive(map_path);
 
-        Binary::In::read_header(archive, RACES_INDEX_DESC,
-                                RACES_INDEX_VERSION);
+        Binary::In::read_header(archive, CLONES_INDEX_DESC,
+                                CLONES_INDEX_VERSION);
 
         {
             std::string buffer_prefix;
@@ -884,6 +884,6 @@ public:
 
 }   // Archive
 
-}   // RACES
+}   // CLONES
 
-#endif // __RACES_INDEX__
+#endif // __CLONES_INDEX__

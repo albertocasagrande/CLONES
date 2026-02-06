@@ -2,10 +2,10 @@
  * @file fasta_utils.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines support utilities for FASTA files
- * @version 1.0
- * @date 2024-06-10
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_FASTA_UTILS__
-#define __RACES_FASTA_UTILS__
+#ifndef __CLONES_FASTA_UTILS__
+#define __CLONES_FASTA_UTILS__
 
 #include <list>
 #include <string>
@@ -37,7 +37,7 @@
 
 #include "genomic_position.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 /**
@@ -106,7 +106,7 @@ struct NCBISeqNameDecoder : public SeqNameDecoder
  * @brief The list of sequence name decorders
  *
  * The elements in this list are used by the function
- * `RACES::IO::FASTA::is_chromosome_header(...)`.
+ * `CLONES::IO::FASTA::is_chromosome_header(...)`.
  */
 extern std::list<std::shared_ptr<SeqNameDecoder>> seq_name_decoders;
 
@@ -124,6 +124,6 @@ bool is_chromosome_header(const std::string& seq_name, Mutations::ChromosomeId& 
 
 }   // IO
 
-}   // RACES
+}   // CLONES
 
-#endif // __RACES_FASTA_UTILS__
+#endif // __CLONES_FASTA_UTILS__

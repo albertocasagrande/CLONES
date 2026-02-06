@@ -2,10 +2,10 @@
  * @file cell_event.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements cell events
- * @version 1.0
- * @date 2024-06-10
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -33,7 +33,7 @@
 
 #include "cell_event.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutants
@@ -55,7 +55,7 @@ CellEvent::CellEvent():
 
 CellEventType CellEvent::get_event_id(const std::string& event_name)
 {
-  for (const auto& [e_id, e_name]: RACES::Mutants::cell_event_names) {
+  for (const auto& [e_id, e_name]: CLONES::Mutants::cell_event_names) {
     if (e_name == event_name) {
       return e_id;
     }
@@ -68,4 +68,4 @@ CellEventType CellEvent::get_event_id(const std::string& event_name)
 
 }   // Mutants
 
-}   // RACES
+}   // CLONES

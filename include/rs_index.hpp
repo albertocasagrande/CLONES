@@ -2,10 +2,10 @@
  * @file rs_index.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a class to compute the repeated substring index
- * @version 1.3
- * @date 2025-11-24
+ * @version 1.4
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_RS_INDEX__
-#define __RACES_RS_INDEX__
+#ifndef __CLONES_RS_INDEX__
+#define __CLONES_RS_INDEX__
 
 #include <string>
 #include <vector>
@@ -46,7 +46,7 @@
 
 #include "id_signature.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutations
@@ -137,13 +137,13 @@ struct Repetition
 
 }   // Mutations
 
-}   //  RACES
+}   //  CLONES
 
 
 namespace std
 {
     template<typename RepetitionType>
-    std::ostream& operator<<(std::ostream& os, const RACES::Mutations::Repetition<RepetitionType>& repetition)
+    std::ostream& operator<<(std::ostream& os, const CLONES::Mutations::Repetition<RepetitionType>& repetition)
     {
         os << "[" << std::string(1, repetition.prev_base) << "]" << repetition.unit << " ("
             << repetition.begin << ":" << static_cast<size_t>(repetition.num_of_repetitions) << ")";
@@ -152,7 +152,7 @@ namespace std
     }
 }
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutations
@@ -861,7 +861,7 @@ public:
      * @param[in] max_stored_repetitions is the maximum number of stored repetitions
      * @param[in,out] progress_bar is the progress bar
      * @return the index of the repetitions that lay in the sequences corresponding
-     *          to a chromosome according to `RACES::IO::FASTA::seq_name_decoders`
+     *          to a chromosome according to `CLONES::IO::FASTA::seq_name_decoders`
      */
     static inline RSIndex build_index(const std::filesystem::path& genome_fasta,
                                       const size_t max_unit_size,
@@ -881,7 +881,7 @@ public:
      * @param[in] seed is the random generator seed
      * @param[in,out] progress_bar is the progress bar
      * @return the index of the repetitions that lay in the sequences corresponding
-     *          to a chromosome according to `RACES::IO::FASTA::seq_name_decoders`
+     *          to a chromosome according to `CLONES::IO::FASTA::seq_name_decoders`
      */
     static inline RSIndex build_index(const std::filesystem::path& genome_fasta,
                                       const size_t max_unit_size,
@@ -903,7 +903,7 @@ public:
      * @param[in] seed is the random generator seed
      * @param[in,out] progress_bar is the progress bar
      * @return the index of the repetitions that lay in the sequences corresponding
-     *          to a chromosome according to `RACES::IO::FASTA::seq_name_decoders`,
+     *          to a chromosome according to `CLONES::IO::FASTA::seq_name_decoders`,
      *          but that are located outside the regions in `regions_to_avoid`
      */
     static RSIndex build_index(const std::filesystem::path& genome_fasta,
@@ -926,7 +926,7 @@ public:
     template<typename ARCHIVE, std::enable_if_t<std::is_base_of_v<Archive::Basic::Out, ARCHIVE>, bool> = true>
     inline void save(ARCHIVE& archive) const
     {
-        ARCHIVE::write_header(archive, "RACES RS Index", 0);
+        ARCHIVE::write_header(archive, "CLONES RS Index", 0);
 
         archive & sizeof(RepetitionType)
                 & *hetero_map
@@ -946,7 +946,7 @@ public:
     template<typename ARCHIVE, std::enable_if_t<std::is_base_of_v<Archive::Basic::In, ARCHIVE>, bool> = true>
     inline static RSIndex load(ARCHIVE& archive)
     {
-        ARCHIVE::read_header(archive, "RACES RS Index", 0);
+        ARCHIVE::read_header(archive, "CLONES RS Index", 0);
 
         RSIndex rs_index;
 
@@ -975,6 +975,6 @@ public:
 
 }   // Mutations
 
-}   // RACES
+}   // CLONES
 
-#endif // __RACES_RS_INDEX__
+#endif // __CLONES_RS_INDEX__

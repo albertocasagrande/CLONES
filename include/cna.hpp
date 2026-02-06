@@ -2,10 +2,10 @@
  * @file cna.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a class for copy number alterations
- * @version 1.3
- * @date 2025-09-21
+ * @version 1.4
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,14 +28,14 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_CNA__
-#define __RACES_CNA__
+#ifndef __CLONES_CNA__
+#define __CLONES_CNA__
 
 #include "allele.hpp"
 #include "mutation.hpp"
 #include "genomic_region.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutations
@@ -280,16 +280,16 @@ struct CNA : public Mutation
 
 }   // Mutations
 
-}   // RACES
+}   // CLONES
 
 namespace std
 {
 
 template<>
-struct less<RACES::Mutations::CNA>
+struct less<CLONES::Mutations::CNA>
 {
-    bool operator()(const RACES::Mutations::CNA &lhs,
-                    const RACES::Mutations::CNA &rhs) const;
+    bool operator()(const CLONES::Mutations::CNA &lhs,
+                    const CLONES::Mutations::CNA &rhs) const;
 };
 
 /**
@@ -299,8 +299,8 @@ struct less<RACES::Mutations::CNA>
  * @param cna is the CNA to stream
  * @return a reference of the updated stream
  */
-std::ostream& operator<<(std::ostream& out, const RACES::Mutations::CNA& cna);
+std::ostream& operator<<(std::ostream& out, const CLONES::Mutations::CNA& cna);
 
 };
 
-#endif // __RACES_CNA__
+#endif // __CLONES_CNA__

@@ -1,11 +1,11 @@
 /**
  * @file simulation_wrapper.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
- * @brief Define the Python wrapper class and functions for `RACES::Simulation`
- * @version 0.16
- * @date 2024-06-10
+ * @brief Define the Python wrapper class and functions for `CLONES::Simulation`
+ * @version 1.0
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_PYTHON_SIMULATION_WRAPPER__
-#define __RACES_PYTHON_SIMULATION_WRAPPER__
+#ifndef __CLONES_PYTHON_SIMULATION_WRAPPER__
+#define __CLONES_PYTHON_SIMULATION_WRAPPER__
 
 #include <memory>
 #include <shared_mutex>
@@ -42,12 +42,12 @@
 using namespace boost::python;
 
 /**
- * @brief A wrapper structure for `RACES::Simulation`
+ * @brief A wrapper structure for `CLONES::Simulation`
  *
- * The `RACES::Simulation` class cannot be used directly
+ * The `CLONES::Simulation` class cannot be used directly
  * because it cannot be copied by design. This class
- * wraps `RACES::Simulation` by maintaining a shared
- * pointer to a `RACES::Simulation` object and
+ * wraps `CLONES::Simulation` by maintaining a shared
+ * pointer to a `CLONES::Simulation` object and
  * synchronizing all the accesses to it by using a
  * mutex.
  */
@@ -55,7 +55,7 @@ class SimulationWrapper
 {
     struct _SimulationWrapper
     {
-        using Simulation = RACES::Mutants::Evolutions::Simulation;
+        using Simulation = CLONES::Mutants::Evolutions::Simulation;
 
         Simulation simulation;         //!< the c++ simulation object
 
@@ -87,7 +87,7 @@ public:
      * @param plot is a flag to enable/disable plotting
      * @return a reference to the updated simulation
      */
-    void run_up_to(const RACES::Time& final_time, const bool quiet = false,
+    void run_up_to(const CLONES::Time& final_time, const bool quiet = false,
                    const bool plot = false);
 
     /**
@@ -95,7 +95,7 @@ public:
      *
      * @return a constant reference to the simulation time
      */
-    const RACES::Time& get_time() const;
+    const CLONES::Time& get_time() const;
 
     /**
      * @brief Add a timed mutation
@@ -105,9 +105,9 @@ public:
      * @param time is the mutation timing
      * @return a reference to the updated simulation
      */
-    void schedule_mutation(const RACES::Mutants::MutantProperties& src,
-                           const RACES::Mutants::MutantProperties& dst,
-                           const RACES::Time time);
+    void schedule_mutation(const CLONES::Mutants::MutantProperties& src,
+                           const CLONES::Mutants::MutantProperties& dst,
+                           const CLONES::Time time);
 
     /**
      * @brief Add a mutant to the tissue
@@ -115,7 +115,7 @@ public:
      * @param mutant_properties is the mutant properties of the mutant
      * @return a reference to the updated object
      */
-    void add_mutant(const RACES::Mutants::MutantProperties& mutant);
+    void add_mutant(const CLONES::Mutants::MutantProperties& mutant);
 
     /**
      * @brief Place a cell in the simulated tissue
@@ -125,7 +125,7 @@ public:
      * @param position is the cell position in the tissue
      * @return a reference to the updated object
      */
-    void place_cell(const RACES::Mutants::MutantProperties& mutant, const std::string& methylation_signature,
+    void place_cell(const CLONES::Mutants::MutantProperties& mutant, const std::string& methylation_signature,
                     boost::python::list const& position);
 
     /**
@@ -223,11 +223,11 @@ public:
      * @param quiet is a flag to enable/disable the progress bar
      * @param plot is a flag to enable/disable plotting
      */
-    inline static void static_run_up_to(SimulationWrapper *wrapper, const RACES::Time& final_time,
+    inline static void static_run_up_to(SimulationWrapper *wrapper, const CLONES::Time& final_time,
                                  const bool quiet = false, const bool plot = false)
     {
         wrapper->run_up_to(final_time, quiet, plot);
     }
 };
 
-#endif // __RACES_PYTHON_SIMULATION_WRAPPER__
+#endif // __CLONES_PYTHON_SIMULATION_WRAPPER__

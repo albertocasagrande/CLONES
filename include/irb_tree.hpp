@@ -2,8 +2,8 @@
  * @file irb_tree.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines indexed red-black trees
- * @version 1.2
- * @date 2025-08-21
+ * @version 1.3
+ * @date 2026-02-06
  *
  * @copyright Copyright (c) 2024-2025
  *
@@ -28,14 +28,14 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_IRB_TREE__
-#define __RACES_IRB_TREE__
+#ifndef __CLONES_IRB_TREE__
+#define __CLONES_IRB_TREE__
 
 #include <memory>
 #include <utility>
 #include <functional>
 
-namespace RACES
+namespace CLONES
 {
 
 /**
@@ -1825,6 +1825,6 @@ public:
     }
 };
 
-}   // RACES
+}   // CLONES
 
-#endif // __RACES_IRB_TREE__
+#endif // __CLONES_IRB_TREE__

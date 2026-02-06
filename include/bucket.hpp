@@ -2,10 +2,10 @@
  * @file bucket.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines bucket
- * @version 1.3
- * @date 2025-10-02
+ * @version 1.4
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_BUCKET__
-#define __RACES_BUCKET__
+#ifndef __CLONES_BUCKET__
+#define __CLONES_BUCKET__
 
 #include <vector>
 #include <random>
@@ -42,7 +42,7 @@
 #include "archive.hpp"
 #include "utils.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Archive
@@ -325,7 +325,7 @@ class Bucket
 
             Archive::Binary::In archive(filepath);
 
-            Archive::Binary::In::read_header(archive, "RACES Bucket", 0);
+            Archive::Binary::In::read_header(archive, "CLONES Bucket", 0);
 
             size_pos = archive.tellg();
             archive & num_of_values;
@@ -335,7 +335,7 @@ class Bucket
         } else {
             Archive::Binary::Out archive(filepath);
 
-            Archive::Binary::Out::write_header(archive, "RACES Bucket", 0);
+            Archive::Binary::Out::write_header(archive, "CLONES Bucket", 0);
 
             size_pos = archive.tellg();
             archive & num_of_values;
@@ -665,10 +665,10 @@ public:
 
             load_buffer(buffer, data_pos);
 
-            const auto shuffled_path(get_a_temporary_path("RACES_shuffled_tmp", tmp_dir));
+            const auto shuffled_path(get_a_temporary_path("CLONES_shuffled_tmp", tmp_dir));
 
             Binary::Out archive(shuffled_path);
-            Binary::Out::write_header(archive, "RACES Bucket", 0);
+            Binary::Out::write_header(archive, "CLONES Bucket", 0);
 
             archive & num_of_values;
             for (const auto& value: buffer) {
@@ -689,7 +689,7 @@ public:
 
         std::vector<VALUE> buffer(buff_values);
 
-        const auto shuffled_path(get_a_temporary_path("RACES_shuffled_tmp", tmp_dir));
+        const auto shuffled_path(get_a_temporary_path("CLONES_shuffled_tmp", tmp_dir));
         Bucket shuffled_bucket(shuffled_path, buffer_size);
 
         for (const auto& chunk_path: chunk_paths) {
@@ -1321,6 +1321,6 @@ public:
 
 }   // Archive
 
-}   // RACES
+}   // CLONES
 
-#endif // __RACES_BUCKET__
+#endif // __CLONES_BUCKET__

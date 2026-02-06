@@ -2,10 +2,10 @@
  * @file allele.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines allele representation
- * @version 1.6
- * @date 2025-10-02
+ * @version 1.7
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_ALLELE__
-#define __RACES_ALLELE__
+#ifndef __CLONES_ALLELE__
+#define __CLONES_ALLELE__
 
 #include <map>
 #include <limits>
@@ -37,7 +37,7 @@
 #include "sid.hpp"
 #include "genomic_region.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutations
@@ -54,7 +54,7 @@ using AlleleId = uint16_t;
 using AlleleCounter = uint16_t;
 
 // define a random allele identifier
-#define RANDOM_ALLELE std::numeric_limits<RACES::Mutations::AlleleId>::max()
+#define RANDOM_ALLELE std::numeric_limits<CLONES::Mutations::AlleleId>::max()
 
 /**
  * @brief A class to represent a fragment of an allele
@@ -316,8 +316,8 @@ public:
  * @return `true` is and only if `lhs` and `rhs` represent the same
  *      allele fragment, i.e., have the same allele fragments and allele history
  */
-bool operator==(const RACES::Mutations::AlleleFragment& lhs,
-                const RACES::Mutations::AlleleFragment& rhs);
+bool operator==(const CLONES::Mutations::AlleleFragment& lhs,
+                const CLONES::Mutations::AlleleFragment& rhs);
 
 /**
  * @brief Test whether two `AlleleFragment` objects differ
@@ -327,8 +327,8 @@ bool operator==(const RACES::Mutations::AlleleFragment& lhs,
  * @return `false` is and only if `lhs` and `rhs` represent the same
  *      allele fragment, i.e., have the same allele fragments and allele history
  */
-bool operator!=(const RACES::Mutations::AlleleFragment& lhs,
-                const RACES::Mutations::AlleleFragment& rhs);
+bool operator!=(const CLONES::Mutations::AlleleFragment& lhs,
+                const CLONES::Mutations::AlleleFragment& rhs);
 
 /**
  * @brief A possible representation for an allele
@@ -539,7 +539,7 @@ public:
      * @param allele_id is the allele identifier to be formatted
      * @return the string representation of `allele_id`
      */
-    static std::string format_id(const RACES::Mutations::AlleleId& allele_id);
+    static std::string format_id(const CLONES::Mutations::AlleleId& allele_id);
 
     /**
      * @brief Copy genomic structure
@@ -594,8 +594,8 @@ public:
  * @return `true` is and only if `lhs` and `rhs` represent the same
  *      allele, i.e., have the same allele fragments and allele history
  */
-inline bool operator==(const RACES::Mutations::Allele& lhs,
-                       const RACES::Mutations::Allele& rhs)
+inline bool operator==(const CLONES::Mutations::Allele& lhs,
+                       const CLONES::Mutations::Allele& rhs)
 {
     return (lhs.get_history() == rhs.get_history())
             && (lhs.get_fragments() == rhs.get_fragments());
@@ -609,8 +609,8 @@ inline bool operator==(const RACES::Mutations::Allele& lhs,
  * @return `false` is and only if `lhs` and `rhs` represent the same
  *      allele, i.e., have the same allele fragments and allele history
  */
-inline bool operator!=(const RACES::Mutations::Allele& lhs,
-                       const RACES::Mutations::Allele& rhs)
+inline bool operator!=(const CLONES::Mutations::Allele& lhs,
+                       const CLONES::Mutations::Allele& rhs)
 {
     return (lhs.get_history() != rhs.get_history())
             || (lhs.get_fragments() != rhs.get_fragments());
@@ -618,7 +618,7 @@ inline bool operator!=(const RACES::Mutations::Allele& lhs,
 
 }   // Mutations
 
-}   // RACES
+}   // CLONES
 
 namespace std
 {
@@ -631,7 +631,7 @@ namespace std
  * @return a reference to output stream
  */
 std::ostream& operator<<(std::ostream& os,
-                         const RACES::Mutations::AlleleFragment& allele_fragment);
+                         const CLONES::Mutations::AlleleFragment& allele_fragment);
 
 /**
  * @brief Write allele data in a stream
@@ -641,8 +641,8 @@ std::ostream& operator<<(std::ostream& os,
  * @return a reference to output stream
  */
 std::ostream& operator<<(std::ostream& os,
-                         const RACES::Mutations::Allele& allele);
+                         const CLONES::Mutations::Allele& allele);
 
 } // std
 
-#endif // __RACES_ALLELE__
+#endif // __CLONES_ALLELE__

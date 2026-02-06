@@ -2,10 +2,10 @@
  * @file position.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a position class in a tissue
- * @version 1.0
- * @date 2024-06-10
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -31,7 +31,7 @@
 #include "position.hpp"
 #include "tissue.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutants
@@ -463,12 +463,12 @@ Position::Position(Tissue& tissue, const PositionInTissue& pos):
 
 }   // Mutants
 
-}   // RACES
+}   // CLONES
 
 namespace std
 {
 
-std::ostream& operator<<(std::ostream& os, const RACES::Mutants::Evolutions::Direction& direction)
+std::ostream& operator<<(std::ostream& os, const CLONES::Mutants::Evolutions::Direction& direction)
 {
     for (size_t i=0; i<3; ++i) {
         switch(direction.get_delta(i)) {
@@ -489,24 +489,24 @@ std::ostream& operator<<(std::ostream& os, const RACES::Mutants::Evolutions::Dir
     return os;
 }
 
-std::ostream& operator<<(std::ostream& os, const RACES::Mutants::Evolutions::PositionDelta& delta)
+std::ostream& operator<<(std::ostream& os, const CLONES::Mutants::Evolutions::PositionDelta& delta)
 {
     os << "(" << delta.x << "," << delta.y << "," << delta.z << ")";
 
     return os;
 }
 
-std::ostream& operator<<(std::ostream& os, const RACES::Mutants::Evolutions::PositionInTissue& position)
+std::ostream& operator<<(std::ostream& os, const CLONES::Mutants::Evolutions::PositionInTissue& position)
 {
     os << "(" << position.x <<","<< position.y <<","<< position.z <<")";
 
     return os;
 }
 
-std::ostream& operator<<(std::ostream& os, const RACES::Mutants::Evolutions::Position& position)
+std::ostream& operator<<(std::ostream& os, const CLONES::Mutants::Evolutions::Position& position)
 {
     os << "\""<< position.tissue->get_name() << "\""
-       << static_cast<RACES::Mutants::Evolutions::PositionInTissue>(position);
+       << static_cast<CLONES::Mutants::Evolutions::PositionInTissue>(position);
 
     return os;
 }

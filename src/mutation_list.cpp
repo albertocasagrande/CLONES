@@ -2,10 +2,10 @@
  * @file mutation_list.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements a class to represent mutation lists
- * @version 1.1
- * @date 2025-03-11
+ * @version 1.2
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -32,7 +32,7 @@
 
 #include "mutation_list.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutations
@@ -237,4 +237,4 @@ DriverMutations::DriverMutations(const std::string& mutant_name,
 
 }   // Mutations
 
-}   // RACES
+}   // CLONES

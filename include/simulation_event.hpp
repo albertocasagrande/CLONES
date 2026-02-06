@@ -2,10 +2,10 @@
  * @file simulation_event.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a basic simulation class
- * @version 1.0
- * @date 2024-06-10
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,12 +28,12 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_SIMULATION_EVENT__
-#define __RACES_SIMULATION_EVENT__
+#ifndef __CLONES_SIMULATION_EVENT__
+#define __CLONES_SIMULATION_EVENT__
 
 #include <map>
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutants
@@ -67,6 +67,6 @@ extern const std::map<SimulationEvent::Type, const char*> simulation_event_names
 
 }   // Mutants
 
-}   // RACES
+}   // CLONES
 
-#endif // __RACES_SIMULATION_EVENT__
+#endif // __CLONES_SIMULATION_EVENT__

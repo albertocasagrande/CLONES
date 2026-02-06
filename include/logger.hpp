@@ -2,10 +2,10 @@
  * @file logger.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines simulation loggers
- * @version 1.0
- * @date 2024-06-10
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_LOGGER__
-#define __RACES_LOGGER__
+#ifndef __CLONES_LOGGER__
+#define __CLONES_LOGGER__
 
 #include <string>
 #include <filesystem>
@@ -39,7 +39,7 @@
 #include "time.hpp"
 #include "tissue_sample.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutants
@@ -117,7 +117,7 @@ public:
      */
     static void
     save_sample(const std::filesystem::path simulation_dir,
-                const RACES::Mutants::Evolutions::TissueSample& tissue_sample);
+                const CLONES::Mutants::Evolutions::TissueSample& tissue_sample);
 
     /**
      * @brief Close open archives
@@ -153,7 +153,7 @@ public:
      *
      * @param tissue_sample is the tissue sample to log
      */
-    inline void save_sample(const RACES::Mutants::Evolutions::TissueSample& tissue_sample) const
+    inline void save_sample(const CLONES::Mutants::Evolutions::TissueSample& tissue_sample) const
     {
         BasicLogger::save_sample(directory, tissue_sample);
     }
@@ -163,6 +163,6 @@ public:
 
 }   // Mutants
 
-}   // RACES
+}   // CLONES
 
-#endif // __RACES_LOGGER__
+#endif // __CLONES_LOGGER__

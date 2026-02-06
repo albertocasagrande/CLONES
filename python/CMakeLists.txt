@@ -22,16 +22,16 @@ if(${COMPILE_PYTHON_BINDINGS})
     include_directories(${Boost_INCLUDE_DIRS})
 
     # create the lib
-    add_library(pyRACES MODULE
+    add_library(pyCLONES MODULE
                       ${CMAKE_CURRENT_SOURCE_DIR}/src/bindings.cpp
                       ${CMAKE_CURRENT_SOURCE_DIR}/src/mutant.cpp  
                       ${CMAKE_CURRENT_SOURCE_DIR}/src/epigenetic_rates.cpp  
                       ${CMAKE_CURRENT_SOURCE_DIR}/src/simulation_wrapper.cpp)
 
-    set_target_properties(pyRACES PROPERTIES OUTPUT_NAME RACES PREFIX "")
+    set_target_properties(pyCLONES PROPERTIES OUTPUT_NAME CLONES PREFIX "")
 
     # link
-    target_link_libraries(pyRACES ${Boost_LIBRARIES} Python::Module ${BUILD_LIB_TARGET})
+    target_link_libraries(pyCLONES ${Boost_LIBRARIES} Python::Module ${BUILD_LIB_TARGET})
 
     execute_process(COMMAND ${Python_EXECUTABLE} -m pytest --version
         OUTPUT_VARIABLE PYTEST_output

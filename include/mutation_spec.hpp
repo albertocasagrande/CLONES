@@ -2,10 +2,10 @@
  * @file mutation_spec.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a wrapper class to specify mutation allele
- * @version 1.0
- * @date 2024-06-10
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,13 +28,13 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_MUTATION_SPEC__
-#define __RACES_MUTATION_SPEC__
+#ifndef __CLONES_MUTATION_SPEC__
+#define __CLONES_MUTATION_SPEC__
 
 #include "allele.hpp"
 #include "mutation.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutations
@@ -111,17 +111,17 @@ struct MutationSpec : public MUTATION_TYPE
 
 }   // Mutations
 
-}   // RACES
+}   // CLONES
 
 
 namespace std
 {
 
 template<typename MUTATION_TYPE>
-struct less<RACES::Mutations::MutationSpec<MUTATION_TYPE>>
+struct less<CLONES::Mutations::MutationSpec<MUTATION_TYPE>>
 {
-    inline bool operator()(const RACES::Mutations::MutationSpec<MUTATION_TYPE> &lhs,
-                           const RACES::Mutations::MutationSpec<MUTATION_TYPE> &rhs) const
+    inline bool operator()(const CLONES::Mutations::MutationSpec<MUTATION_TYPE> &lhs,
+                           const CLONES::Mutations::MutationSpec<MUTATION_TYPE> &rhs) const
     {
         less<MUTATION_TYPE> cmp;
 
@@ -138,7 +138,7 @@ struct less<RACES::Mutations::MutationSpec<MUTATION_TYPE>>
 };
 
 template<typename MUTATION_TYPE>
-std::ostream& operator<<(std::ostream& os, const RACES::Mutations::MutationSpec<MUTATION_TYPE>& specification)
+std::ostream& operator<<(std::ostream& os, const CLONES::Mutations::MutationSpec<MUTATION_TYPE>& specification)
 {
     os << static_cast<const MUTATION_TYPE&>(specification) << "(allele: ";
 
@@ -155,4 +155,4 @@ std::ostream& operator<<(std::ostream& os, const RACES::Mutations::MutationSpec<
 
 }   // std
 
-#endif // __RACES_MUTATION_SPEC__
+#endif // __CLONES_MUTATION_SPEC__
