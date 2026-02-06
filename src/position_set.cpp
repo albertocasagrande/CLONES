@@ -2,10 +2,10 @@
  * @file position_set.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements classes to represent tissue position set
- * @version 1.0
- * @date 2024-06-10
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -30,7 +30,7 @@
 
 #include "position_set.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutants
@@ -193,12 +193,12 @@ RectangleSet::const_iterator RectangleSet::end() const
 
 }   // Mutants
 
-}   // RACES
+}   // CLONES
 
 namespace std
 {
 
-std::ostream& operator<<(std::ostream& os, const RACES::Mutants::RectangleSet& rectangle)
+std::ostream& operator<<(std::ostream& os, const CLONES::Mutants::RectangleSet& rectangle)
 {
     os << "RectangleSet{" << rectangle.lower_corner
        << "," << rectangle.upper_corner << "}";

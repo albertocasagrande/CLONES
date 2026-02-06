@@ -2,10 +2,10 @@
  * @file allele.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines allele representation
- * @version 1.4
- * @date 2024-10-26
+ * @version 1.5
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_ALLELE__
-#define __RACES_ALLELE__
+#ifndef __CLONES_ALLELE__
+#define __CLONES_ALLELE__
 
 #include <map>
 #include <limits>
@@ -37,7 +37,7 @@
 #include "sid.hpp"
 #include "genomic_region.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutations
@@ -49,7 +49,7 @@ namespace Mutations
 typedef size_t AlleleId;
 
 // define a random allele identifier
-#define RANDOM_ALLELE std::numeric_limits<RACES::Mutations::AlleleId>::max()
+#define RANDOM_ALLELE std::numeric_limits<CLONES::Mutations::AlleleId>::max()
 
 /**
  * @brief A class to represent a fragment of an allele
@@ -279,7 +279,7 @@ public:
     template<typename ARCHIVE, std::enable_if_t<std::is_base_of_v<Archive::Basic::Out, ARCHIVE>, bool> = true>
     inline void save(ARCHIVE& archive) const
     {
-        ARCHIVE::write_header(archive, "RACES AlleleFragment", 0);
+        ARCHIVE::write_header(archive, "CLONES AlleleFragment", 0);
 
         archive & static_cast<const GenomicRegion&>(*this)
                 & _data;
@@ -295,7 +295,7 @@ public:
     template<typename ARCHIVE, std::enable_if_t<std::is_base_of_v<Archive::Basic::In, ARCHIVE>, bool> = true>
     inline static AlleleFragment load(ARCHIVE& archive)
     {
-        ARCHIVE::read_header(archive, "RACES AlleleFragment", 0);
+        ARCHIVE::read_header(archive, "CLONES AlleleFragment", 0);
 
         AlleleFragment a_fragment;
 
@@ -515,7 +515,7 @@ public:
      * @param allele_id is the allele identifier to be formatted
      * @return the string representation of `allele_id`
      */
-    static std::string format_id(const RACES::Mutations::AlleleId& allele_id);
+    static std::string format_id(const CLONES::Mutations::AlleleId& allele_id);
 
     /**
      * @brief Copy genomic structure
@@ -563,7 +563,7 @@ public:
 
 }   // Mutations
 
-}   // RACES
+}   // CLONES
 
 namespace std
 {
@@ -575,7 +575,7 @@ namespace std
  * @param allele_fragment is the allele fragment to be written
  * @return a reference to output stream
  */
-std::ostream& operator<<(std::ostream& os, const RACES::Mutations::AlleleFragment& allele_fragment);
+std::ostream& operator<<(std::ostream& os, const CLONES::Mutations::AlleleFragment& allele_fragment);
 
 
 /**
@@ -585,8 +585,8 @@ std::ostream& operator<<(std::ostream& os, const RACES::Mutations::AlleleFragmen
  * @param allele is the allele to be written
  * @return a reference to output stream
  */
-std::ostream& operator<<(std::ostream& os, const RACES::Mutations::Allele& allele);
+std::ostream& operator<<(std::ostream& os, const CLONES::Mutations::Allele& allele);
 
 } // std
 
-#endif // __RACES_ALLELE__
+#endif // __CLONES_ALLELE__

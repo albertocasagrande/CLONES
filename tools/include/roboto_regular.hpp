@@ -2,8 +2,8 @@
  * @file roboto_regular.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines the Google Roboto Regular font in a header
- * @version 1.0
- * @date 2024-06-10
+ * @version 1.1
+ * @date 2026-02-06
  *
  * This file contains the binary dump of the Roboto Regular font which
  * is made and distributed by Google under the Apache 2.0 licence.

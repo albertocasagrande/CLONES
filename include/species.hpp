@@ -2,10 +2,10 @@
  * @file species.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines species representation
- * @version 1.1
- * @date 2024-10-22
+ * @version 1.2
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_SPECIES__
-#define __RACES_SPECIES__
+#ifndef __CLONES_SPECIES__
+#define __CLONES_SPECIES__
 
 #include <iostream>
 
@@ -44,7 +44,7 @@
 #include "mutant_properties.hpp"
 
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutants
@@ -444,7 +444,7 @@ public:
     template<typename ARCHIVE, std::enable_if_t<std::is_base_of_v<Archive::Basic::Out, ARCHIVE>, bool> = true>
     void save(ARCHIVE& archive) const
     {
-        ARCHIVE::write_header(archive, "RACES Species", 0);
+        ARCHIVE::write_header(archive, "CLONES Species", 0);
 
         archive & static_cast<const SpeciesProperties &>(*this);
 
@@ -474,7 +474,7 @@ public:
     template<typename ARCHIVE, std::enable_if_t<std::is_base_of_v<Archive::Basic::In, ARCHIVE>, bool> = true>
     static Species load(ARCHIVE& archive)
     {
-        ARCHIVE::read_header(archive, "RACES Species", 0);
+        ARCHIVE::read_header(archive, "CLONES Species", 0);
 
         auto species_properties = SpeciesProperties::load(archive);
         Species species(species_properties);
@@ -525,6 +525,6 @@ void swap(Species& a, Species& b);
 
 }   // Mutants
 
-}   // RACES
+}   // CLONES
 
-#endif // __RACES_SPECIES__
+#endif // __CLONES_SPECIES__

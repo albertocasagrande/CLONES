@@ -2,10 +2,10 @@
  * @file id_signature.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines indel signature
- * @version 1.0
- * @date 2024-06-10
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_ID_SIGNATURE__
-#define __RACES_ID_SIGNATURE__
+#ifndef __CLONES_ID_SIGNATURE__
+#define __CLONES_ID_SIGNATURE__
 
 #include <string>
 #include <functional> // std::less
@@ -39,7 +39,7 @@
 #include "mutation.hpp"
 #include "signature.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutations
@@ -194,17 +194,17 @@ private:
 
 }   // Mutations
 
-}   // RACES
+}   // CLONES
 
 
 namespace std
 {
 
 template<>
-struct less<RACES::Mutations::IDType>
+struct less<CLONES::Mutations::IDType>
 {
-    bool operator()(const RACES::Mutations::IDType &lhs,
-                    const RACES::Mutations::IDType &rhs) const;
+    bool operator()(const CLONES::Mutations::IDType &lhs,
+                    const CLONES::Mutations::IDType &rhs) const;
 };
 
 /**
@@ -214,7 +214,7 @@ struct less<RACES::Mutations::IDType>
  * @param type is the ID type to stream
  * @return a reference to the output stream
  */
-std::ostream& operator<<(std::ostream& out, const RACES::Mutations::IDType& type);
+std::ostream& operator<<(std::ostream& out, const CLONES::Mutations::IDType& type);
 
 /**
  * @brief Stream the ID type from a stream
@@ -223,11 +223,11 @@ std::ostream& operator<<(std::ostream& out, const RACES::Mutations::IDType& type
  * @param type is the object where the streamed ID type will be placed
  * @return a reference to the input stream
  */
-std::istream& operator>>(std::istream& in, RACES::Mutations::IDType& type);
+std::istream& operator>>(std::istream& in, CLONES::Mutations::IDType& type);
 
 }  // std
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutations
@@ -237,7 +237,7 @@ using IDSignature = Signature<IDType>;
 
 }   // Mutations
 
-}   // RACES
+}   // CLONES
 
 
-#endif // __RACES_ID_SIGNATURE__
+#endif // __CLONES_ID_SIGNATURE__

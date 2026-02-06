@@ -1,11 +1,11 @@
 /**
  * @file descendants_builder.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
- * @brief Main file for the RACES descendants forest builder
- * @version 1.0
- * @date 2024-06-10
+ * @brief Main file for the CLONES descendants forest builder
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -93,13 +93,13 @@ public:
 
     void run() const
     {
-        using namespace RACES::Mutants;
+        using namespace CLONES::Mutants;
 
         try {
             auto species_simulation = load_species_simulation(snapshot_path, true);
             DescendantsForest forest(species_simulation);
 
-            RACES::Mutants::IO::phyloXMLStream os;
+            CLONES::Mutants::IO::phyloXMLStream os;
 
             os << forest;
         } catch (std::runtime_error& ex) {

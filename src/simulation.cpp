@@ -2,10 +2,10 @@
  * @file simulation.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Define a tumour evolution simulation
- * @version 1.2
- * @date 2025-02-20
+ * @version 1.3
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -34,7 +34,7 @@
 #include <list>
 #include <string>
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutants
@@ -1052,7 +1052,7 @@ void Simulation::log_initial_cells()
 }
 
 std::vector<Tissue::CellInTissueConstantProxy>
-Simulation::collect_cell_proxies_in(const RACES::Mutants::RectangleSet& rectangle) const
+Simulation::collect_cell_proxies_in(const CLONES::Mutants::RectangleSet& rectangle) const
 {
     std::vector<Tissue::CellInTissueConstantProxy> proxies;
 
@@ -1069,7 +1069,7 @@ Simulation::collect_cell_proxies_in(const RACES::Mutants::RectangleSet& rectangl
 }
 
 std::vector<Tissue::CellInTissueProxy>
-Simulation::collect_cell_proxies_in(const RACES::Mutants::RectangleSet& rectangle)
+Simulation::collect_cell_proxies_in(const CLONES::Mutants::RectangleSet& rectangle)
 {
     std::vector<Tissue::CellInTissueProxy> proxies;
 
@@ -1143,7 +1143,7 @@ Simulation::sample_tissue(const SampleSpecification& specification)
     samples.push_back(sample);
     name2sample[specification.get_name()]=(samples.end()--);
 
-    make_snapshot<RACES::UI::ProgressBar>(nullptr);
+    make_snapshot<CLONES::UI::ProgressBar>(nullptr);
 
     return sample;
 }
@@ -1177,4 +1177,4 @@ Simulation::~Simulation()
 
 }   // Mutants
 
-}   // RACES
+}   // CLONES

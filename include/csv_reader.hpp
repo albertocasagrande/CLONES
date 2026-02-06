@@ -2,10 +2,10 @@
  * @file csv_reader.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a class to read CSV
- * @version 1.0
- * @date 2024-06-10
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,15 +28,15 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_CSV_READER__
-#define __RACES_CSV_READER__
+#ifndef __CLONES_CSV_READER__
+#define __CLONES_CSV_READER__
 
 #include <map>
 #include <vector>
 #include <fstream>
 #include <filesystem>
 
-namespace RACES
+namespace CLONES
 {
 
 namespace IO
@@ -265,6 +265,6 @@ public:
 
 }   // IO
 
-}   // RACES
+}   // CLONES
 
-#endif // __RACES_CSV_READER__
+#endif // __CLONES_CSV_READER__

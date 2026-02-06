@@ -2,10 +2,10 @@
  * @file mutation_engine.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a class to place mutations on a descendants forest
- * @version 1.25
- * @date 2025-07-14
+ * @version 1.26
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_MUTATION_ENGINE__
-#define __RACES_MUTATION_ENGINE__
+#ifndef __CLONES_MUTATION_ENGINE__
+#define __CLONES_MUTATION_ENGINE__
 
 #include <map>
 #include <stack>
@@ -53,7 +53,7 @@
 #include "warning.hpp"
 
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutations
@@ -120,7 +120,7 @@ public:
      * @return a reference to the updated object
      */
     MutationStatistics&
-    record(const std::list<RACES::Mutations::SampleGenomeMutations>& mutations_list,
+    record(const std::list<CLONES::Mutations::SampleGenomeMutations>& mutations_list,
            UI::ProgressBar* progress_bar=nullptr);
 
     /**
@@ -131,7 +131,7 @@ public:
      * @return a reference to the updated object
      */
     inline MutationStatistics&
-    record(const std::list<RACES::Mutations::SampleGenomeMutations>& mutations_list,
+    record(const std::list<CLONES::Mutations::SampleGenomeMutations>& mutations_list,
            UI::ProgressBar& progress_bar)
     {
         return record(mutations_list, &progress_bar);
@@ -349,7 +349,7 @@ class MutationEngine
      */
     MutationSpec<SID> select_SID(const SBSType& m_type)
     {
-        using namespace RACES::Mutations;
+        using namespace CLONES::Mutations;
 
         SBSContext context = m_type.get_context();
         SBSContext compl_context = context.get_reverse_complement();
@@ -399,7 +399,7 @@ class MutationEngine
      */
     MutationSpec<SID> select_SID(const IDType& id_type)
     {
-        using namespace RACES::Mutations;
+        using namespace CLONES::Mutations;
 
         if (infinite_sites_model) {
             rs_stack.push(id_type);
@@ -1035,7 +1035,7 @@ class MutationEngine
                          std::map<Mutants::MutantId, DriverMutations>& driver_mutations,
                          size_t& visited_nodes, UI::ProgressBar *progress_bar)
     {
-        using namespace RACES::Mutations;
+        using namespace CLONES::Mutations;
 
         const size_t context_stack_size = context_stack.size();
         const size_t rs_stack_size = rs_stack.size();
@@ -1155,7 +1155,7 @@ class MutationEngine
     std::map<Mutants::SpeciesId, PassengerRates>
     get_species_rate_map(const Mutants::DescendantsForest& descendants_forest) const
     {
-        using namespace RACES::Mutants;
+        using namespace CLONES::Mutants;
 
         std::map<SpeciesId, PassengerRates> species_rates;
 
@@ -1189,7 +1189,7 @@ class MutationEngine
     std::map<Mutants::MutantId, DriverMutations>
     get_driver_mutation_map(const Mutants::DescendantsForest& descendants_forest) const
     {
-        using namespace RACES::Mutants;
+        using namespace CLONES::Mutants;
 
         std::map<MutantId, DriverMutations> driver_mutations;
 
@@ -1461,7 +1461,7 @@ public:
      * @brief The empty constructor
      */
     MutationEngine():
-        driver_CNA_min_distance(0), warning(RACES::warning),
+        driver_CNA_min_distance(0), warning(CLONES::warning),
         infinite_sites_model(true), avoid_homozygous_losses(true)
     {}
 
@@ -1487,7 +1487,7 @@ public:
                    const DriverStorage& driver_storage,
                    const std::vector<CNA>& passenger_CNAs={},
                    const unsigned int& driver_CNA_min_distance=10000,
-                   WarningFunction warning=RACES::warning):
+                   WarningFunction warning=CLONES::warning):
         MutationEngine(context_index, repetition_index, SBS_signatures,
                        ID_signatures, MutationalProperties(),
                        germline_mutations, driver_storage, passenger_CNAs,
@@ -1518,7 +1518,7 @@ public:
                    const DriverStorage& driver_storage,
                    const std::vector<CNA>& passenger_CNAs={},
                    const unsigned int& driver_CNA_min_distance=10000,
-                   WarningFunction warning=RACES::warning):
+                   WarningFunction warning=CLONES::warning):
         generator(), context_index(context_index), rs_index(repetition_index),
         mutational_properties(mutational_properties),
         germline_mutations(std::make_shared<GenomeMutations>(germline_mutations)),
@@ -1724,9 +1724,9 @@ public:
                     const std::string& preneoplatic_SNV_signature_name="SBS1",
                     const std::string& preneoplatic_indel_signature_name="ID1")
     {
-        using namespace RACES::Mutants;
-        using namespace RACES::Mutants::Evolutions;
-        using namespace RACES::Mutations;
+        using namespace CLONES::Mutants;
+        using namespace CLONES::Mutants::Evolutions;
+        using namespace CLONES::Mutations;
 
         for (const auto& [name, type]:
                 std::map<std::string, MutationType::Type>({{"SBS", MutationType::Type::SBS},
@@ -1985,6 +1985,6 @@ public:
 
 }   // Mutations
 
-}   // RACES
+}   // CLONES
 
-#endif // __RACES_MUTATION_ENGINE__
+#endif // __CLONES_MUTATION_ENGINE__

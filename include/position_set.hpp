@@ -2,10 +2,10 @@
  * @file position_set.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines classes to represent tissue position set
- * @version 1.0
- * @date 2024-06-10
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_POSITION_SET__
-#define __RACES_POSITION_SET__
+#ifndef __CLONES_POSITION_SET__
+#define __CLONES_POSITION_SET__
 
 #include <cstdint>
 #include <vector>
@@ -37,7 +37,7 @@
 #include "tissue.hpp"
 #include "archive.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutants
@@ -358,7 +358,7 @@ inline bool operator!=(const RectangleSet::const_iterator& a, const RectangleSet
 
 }   // Mutants
 
-}   // RACES
+}   // CLONES
 
 namespace std {
 /**
@@ -368,8 +368,8 @@ namespace std {
  * @param rectangle is a rectangle position set
  * @return a reference to the updated output stream
  */
-std::ostream& operator<<(std::ostream& os, const RACES::Mutants::RectangleSet& rectangle);
+std::ostream& operator<<(std::ostream& os, const CLONES::Mutants::RectangleSet& rectangle);
 
 }   // std
 
-#endif // __RACES_POSITION_SET__
+#endif // __CLONES_POSITION_SET__

@@ -8,7 +8,7 @@ if(${Boost_unit_test_framework_FOUND})
     link_directories(${Boost_LIBRARY_DIRS})
     set(TEST_LIBRARIES ${Boost_LIBRARIES} ${BUILD_LIB_TARGET} )
 
-    set(RACES_TESTS archive fasta_reader context_index genome_mutations)
+    set(CLONES_TESTS archive fasta_reader context_index genome_mutations)
 
     set(ASSET_DIR "${CMAKE_CURRENT_SOURCE_DIR}/assets")
     set(SBS_EXAMPLE "${ASSET_DIR}/v3.3_SBS3_PROFILE.txt")
@@ -54,7 +54,7 @@ if(${Boost_unit_test_framework_FOUND})
         target_compile_definitions(test_id_signature PUBLIC ID_EXAMPLE="${ID_EXAMPLE}")
     endif()
 
-    foreach(TEST ${RACES_TESTS})
+    foreach(TEST ${CLONES_TESTS})
         add_executable( test_${TEST} ${TEST}.cpp)
         add_dependencies( test_${TEST} ${BUILD_LIB_TARGET} )
         target_link_libraries(test_${TEST} ${TEST_LIBRARIES})

@@ -2,10 +2,10 @@
  * @file statistics.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Define simulation statistics
- * @version 1.0
- * @date 2024-06-10
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -33,7 +33,7 @@
 #include "statistics.hpp"
 #include "tissue.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutants
@@ -247,4 +247,4 @@ size_t TissueStatistics::count_fired_events(const SpeciesId& species_id,
 
 }   // Mutants
 
-}   // RACES
+}   // CLONES

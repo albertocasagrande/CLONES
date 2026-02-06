@@ -2,10 +2,10 @@
  * @file read.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines sequencing reads
- * @version 1.3
- * @date 2025-05-07
+ * @version 1.4
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_READ__
-#define __RACES_READ__
+#ifndef __CLONES_READ__
+#define __CLONES_READ__
 
 #include <string>
 #include <vector>
@@ -37,7 +37,7 @@
 #include "sid.hpp"
 #include "genomic_position.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutations
@@ -456,7 +456,7 @@ public:
 
 }   // Mutations
 
-}   // RACES
+}   // CLONES
 
 
-#endif // __RACES_READ__
+#endif // __CLONES_READ__

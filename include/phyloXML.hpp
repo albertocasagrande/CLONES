@@ -2,10 +2,10 @@
  * @file phyloXML.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines phyloXML stream
- * @version 1.0
- * @date 2024-06-10
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,15 +28,15 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_PHYLOXML__
-#define __RACES_PHYLOXML__
+#ifndef __CLONES_PHYLOXML__
+#define __CLONES_PHYLOXML__
 
 #include <ostream>
 
 #include "descendant_forest.hpp"
 #include "palette.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutants
@@ -129,4 +129,4 @@ public:
 
 }   // Race
 
-#endif // __RACES_PHYLOXML__
+#endif // __CLONES_PHYLOXML__

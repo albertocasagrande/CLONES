@@ -18,9 +18,9 @@ tissue_sampler
 build_context_index
 build_repetition_index
 sample_context_index
-RACES.so
-RACES.dll
-libRACES.*
+CLONES.so
+CLONES.dll
+libCLONES.*
 include/indicators.hpp
 include/variables.hpp
 *.cpython*.pyc

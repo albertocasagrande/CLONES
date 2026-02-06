@@ -2,10 +2,10 @@
  * @file context_index.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements a class to build a context index
- * @version 1.1
- * @date 2025-05-13
+ * @version 1.2
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_CONTEXT_INDEX__
-#define __RACES_CONTEXT_INDEX__
+#ifndef __CLONES_CONTEXT_INDEX__
+#define __CLONES_CONTEXT_INDEX__
 
 #include <map>
 #include <set>
@@ -49,7 +49,7 @@
 #include "progress_bar.hpp"
 
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutations
@@ -300,7 +300,7 @@ protected:
             throw std::domain_error("The sampling rate must be positive");
         }
 
-        auto streamsize = RACES::IO::get_stream_size(fasta_stream);
+        auto streamsize = CLONES::IO::get_stream_size(fasta_stream);
 
         initialize_context2pos();
         abs_pos2chr.clear();
@@ -388,7 +388,7 @@ public:
      * @param[in] genome_fasta is the path of a FASTA file
      * @param[in,out] progress_bar is the progress bar
      * @return the index of the contexts that lay in the sequences corresponding to a
-     *          chromosome according to `RACES::IO::FASTA::seq_name_decoders`
+     *          chromosome according to `CLONES::IO::FASTA::seq_name_decoders`
      */
     static inline ContextIndex build_index(const std::filesystem::path& genome_fasta,
                                            UI::ProgressBar* progress_bar=nullptr)
@@ -404,7 +404,7 @@ public:
      *          in the index
      * @param[in,out] progress_bar is the progress bar
      * @return the index of the contexts that lay in the sequences corresponding to a
-     *          chromosome according to `RACES::IO::FASTA::seq_name_decoders`
+     *          chromosome according to `CLONES::IO::FASTA::seq_name_decoders`
      */
     static inline ContextIndex build_index(const std::filesystem::path& genome_fasta,
                                            const size_t& sampling_rate,
@@ -420,7 +420,7 @@ public:
      * @param[in] regions_to_avoid is a set of regions to avoid
      * @param[in,out] progress_bar is the progress bar
      * @return the index of the contexts that lay in the sequences corresponding
-     *      to a chromosome according to `RACES::IO::FASTA::seq_name_decoders`,
+     *      to a chromosome according to `CLONES::IO::FASTA::seq_name_decoders`,
      *      but that are located outside the regions in `regions_to_avoid`
      */
     static inline ContextIndex build_index(const std::filesystem::path& genome_fasta,
@@ -439,7 +439,7 @@ public:
      *          in the index
      * @param[in,out] progress_bar is the progress bar
      * @return the index of the contexts that lay in the sequences corresponding
-     *      to a chromosome according to `RACES::IO::FASTA::seq_name_decoders`,
+     *      to a chromosome according to `CLONES::IO::FASTA::seq_name_decoders`,
      *      but that are located outside the regions in `regions_to_avoid`
      */
     static ContextIndex build_index(const std::filesystem::path& genome_fasta,
@@ -624,7 +624,7 @@ public:
     template<typename ARCHIVE, std::enable_if_t<std::is_base_of_v<Archive::Basic::Out, ARCHIVE>, bool> = true>
     inline void save(ARCHIVE& archive) const
     {
-        ARCHIVE::write_header(archive, "RACES Context Index", 0);
+        ARCHIVE::write_header(archive, "CLONES Context Index", 0);
 
         uint8_t abs_pos_size = sizeof(GENOME_WIDE_POSITION);
 
@@ -644,7 +644,7 @@ public:
     template<typename ARCHIVE, std::enable_if_t<std::is_base_of_v<Archive::Basic::In, ARCHIVE>, bool> = true>
     static ContextIndex load(ARCHIVE& archive)
     {
-        ARCHIVE::read_header(archive, "RACES Context Index", 0);
+        ARCHIVE::read_header(archive, "CLONES Context Index", 0);
 
         ContextIndex context_index;
         uint8_t abs_pos_size;
@@ -693,9 +693,9 @@ public:
     }
 };
 
-}   // RACES
+}   // CLONES
 
 }   // Mutations
 
 
-#endif // __RACES_CONTEXT_INDEX__
+#endif // __CLONES_CONTEXT_INDEX__

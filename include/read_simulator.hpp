@@ -2,10 +2,10 @@
  * @file read_simulator.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines classes to simulate sequencing
- * @version 1.23
- * @date 2025-07-09
+ * @version 1.24
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_READ_SIMULATOR__
-#define __RACES_READ_SIMULATOR__
+#ifndef __CLONES_READ_SIMULATOR__
+#define __CLONES_READ_SIMULATOR__
 
 #include <list>
 #include <set>
@@ -59,7 +59,7 @@
 #include <matplot/matplot.h>
 #endif // WITH_MATPLOT
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutations
@@ -1031,7 +1031,7 @@ private:
      *      `alphabet` as alphabet
      */
     std::string
-    encode_cell_id(const RACES::Mutants::CellId& cell_id,
+    encode_cell_id(const CLONES::Mutants::CellId& cell_id,
                    const uint8_t code_length=8,
                    const std::string alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ")
     {
@@ -1074,10 +1074,10 @@ private:
      * @param[in] sample_name is the tissue sample name
      */
     template<typename SEQUENCER,
-             std::enable_if_t<std::is_base_of_v<RACES::Sequencers::BasicSequencer, SEQUENCER>, bool> = true>
+             std::enable_if_t<std::is_base_of_v<CLONES::Sequencers::BasicSequencer, SEQUENCER>, bool> = true>
     void process_template(SEQUENCER& sequencer,
-                          const RACES::IO::FASTA::ChromosomeData<RACES::IO::FASTA::Sequence>& chr_data,
-                          const RACES::Mutants::CellId& cell_id,
+                          const CLONES::IO::FASTA::ChromosomeData<CLONES::IO::FASTA::Sequence>& chr_data,
+                          const CLONES::Mutants::CellId& cell_id,
                           const std::map<GenomicPosition, std::shared_ptr<SID>>& germlines,
                           const std::map<GenomicPosition, std::shared_ptr<SID>>& passengers,
                           const ChrPosition& template_begin_pos,
@@ -1176,16 +1176,16 @@ private:
      * @param[in,out] SAM_stream is the SAM file output stream
      */
     template<typename SEQUENCER,
-             std::enable_if_t<std::is_base_of_v<RACES::Sequencers::BasicSequencer, SEQUENCER>, bool> = true>
+             std::enable_if_t<std::is_base_of_v<CLONES::Sequencers::BasicSequencer, SEQUENCER>, bool> = true>
     void generate_fragment_reads(SEQUENCER& sequencer,
-                                 const RACES::IO::FASTA::ChromosomeData<RACES::IO::FASTA::Sequence>& chr_data,
-                                 const RACES::Mutants::CellId& cell_id,
+                                 const CLONES::IO::FASTA::ChromosomeData<CLONES::IO::FASTA::Sequence>& chr_data,
+                                 const CLONES::Mutants::CellId& cell_id,
                                  const AlleleFragment& germline_fragment,
                                  const AlleleFragment& fragment,
                                  ReadSimulationData& sample_simulation_data, const std::string& sample_name,
                                  ChrSampleStatistics& chr_statistics,
                                  const size_t& total_steps, size_t& steps,
-                                 RACES::UI::ProgressBar& progress_bar, std::ostream* SAM_stream)
+                                 CLONES::UI::ProgressBar& progress_bar, std::ostream* SAM_stream)
     {
         auto insert_size_mean = insert_size.p()*insert_size.t();
         auto insert_size_stddev = (1-insert_size.p())*insert_size_mean;
@@ -1258,15 +1258,15 @@ private:
      * @return the sample statistics of the chromosome
      */
     template<typename SEQUENCER,
-             std::enable_if_t<std::is_base_of_v<RACES::Sequencers::BasicSequencer, SEQUENCER>, bool> = true>
+             std::enable_if_t<std::is_base_of_v<CLONES::Sequencers::BasicSequencer, SEQUENCER>, bool> = true>
     ChrSampleStatistics
     generate_chromosome_reads(SEQUENCER& sequencer,
-                              const RACES::IO::FASTA::ChromosomeData<RACES::IO::FASTA::Sequence>& chr_data,
+                              const CLONES::IO::FASTA::ChromosomeData<CLONES::IO::FASTA::Sequence>& chr_data,
                               const SampleGenomeMutations& sample_genome_mutations,
                               ReadSimulationData& sample_simulation_data,
                               ChrSampleStatistics chr_statistics,
                               const size_t& total_steps, size_t& steps,
-                              RACES::UI::ProgressBar& progress_bar,
+                              CLONES::UI::ProgressBar& progress_bar,
                               std::ostream* SAM_stream=nullptr)
     {
         for (const auto& cell_mutations: sample_genome_mutations.mutations) {
@@ -1319,14 +1319,14 @@ private:
      * @param[in,out] SAM_stream is the SAM file output stream
      */
     template<typename SEQUENCER,
-             std::enable_if_t<std::is_base_of_v<RACES::Sequencers::BasicSequencer, SEQUENCER>, bool> = true>
+             std::enable_if_t<std::is_base_of_v<CLONES::Sequencers::BasicSequencer, SEQUENCER>, bool> = true>
     void generate_chromosome_reads(SEQUENCER& sequencer,
                                    SampleSetStatistics& statistics,
-                                   const RACES::IO::FASTA::ChromosomeData<RACES::IO::FASTA::Sequence>& chr_data,
+                                   const CLONES::IO::FASTA::ChromosomeData<CLONES::IO::FASTA::Sequence>& chr_data,
                                    const std::list<SampleGenomeMutations>& mutations_list,
                                    std::list<ReadSimulationData>& simulation_data,
                                    const size_t& total_steps, size_t& steps,
-                                   RACES::UI::ProgressBar& progress_bar,
+                                   CLONES::UI::ProgressBar& progress_bar,
                                    std::ostream* SAM_stream=nullptr)
     {
         auto chr_name = GenomicPosition::chrtos(chr_data.chr_id);
@@ -1364,7 +1364,7 @@ private:
      * @return the SAM stream
      */
     std::ofstream
-    get_SAM_stream(const RACES::IO::FASTA::ChromosomeData<RACES::IO::FASTA::Sequence>& chr_data,
+    get_SAM_stream(const CLONES::IO::FASTA::ChromosomeData<CLONES::IO::FASTA::Sequence>& chr_data,
                    const std::list<SampleGenomeMutations>& mutations_list,
                    const std::string& base_name="chr_",
                    const std::string& platform="ILLUMINA") const
@@ -1507,7 +1507,7 @@ private:
      * @return the statistics about the generated reads
      */
     template<typename SEQUENCER,
-             std::enable_if_t<std::is_base_of_v<RACES::Sequencers::BasicSequencer, SEQUENCER>, bool> = true>
+             std::enable_if_t<std::is_base_of_v<CLONES::Sequencers::BasicSequencer, SEQUENCER>, bool> = true>
     SampleSetStatistics generate_reads(SEQUENCER& sequencer,
                                        const std::list<SampleGenomeMutations>& mutations_list,
                                        const std::set<ChromosomeId>& chromosome_ids,
@@ -1518,7 +1518,7 @@ private:
                                                                      coverage);
 
 
-        using namespace RACES::IO::FASTA;
+        using namespace CLONES::IO::FASTA;
 
         IndexedReader<ChromosomeData<Sequence>> chr_reader(ref_genome_filename);
 
@@ -1640,7 +1640,7 @@ private:
      *      position in the file indexed by `chr_reader`
      */
     std::list<std::string>
-    get_relevant_chr_names(const RACES::IO::FASTA::IndexedReader<RACES::IO::FASTA::ChromosomeData<RACES::IO::FASTA::Sequence>>& chr_reader,
+    get_relevant_chr_names(const CLONES::IO::FASTA::IndexedReader<CLONES::IO::FASTA::ChromosomeData<CLONES::IO::FASTA::Sequence>>& chr_reader,
                            const std::list<SampleGenomeMutations>& mutations_list,
                            const std::set<ChromosomeId>& chromosome_ids)
     {
@@ -1738,17 +1738,17 @@ public:
      * @return the sample set statistics about the generated reads
      */
     template<typename SEQUENCER,
-             std::enable_if_t<std::is_base_of_v<RACES::Sequencers::BasicSequencer, SEQUENCER>, bool> = true>
+             std::enable_if_t<std::is_base_of_v<CLONES::Sequencers::BasicSequencer, SEQUENCER>, bool> = true>
     SampleSetStatistics operator()(SEQUENCER& sequencer,
-                                   std::list<RACES::Mutations::SampleGenomeMutations> mutations_list,
+                                   std::list<CLONES::Mutations::SampleGenomeMutations> mutations_list,
                                    const std::set<ChromosomeId>& chromosome_ids,
                                    const double& coverage,
-                                   const RACES::Mutations::SampleGenomeMutations& normal_sample,
+                                   const CLONES::Mutations::SampleGenomeMutations& normal_sample,
                                    const double purity, const std::string& base_name="chr_",
                                    std::ostream& progress_bar_stream=std::cout,
                                    const bool quiet=false)
     {
-        using namespace RACES;
+        using namespace CLONES;
 
         if (coverage < 0) {
             throw std::domain_error("The coverage value must be non-negative: got "
@@ -1821,9 +1821,9 @@ public:
      * @return the sample set statistics about the generated reads
      */
     template<typename SEQUENCER,
-             std::enable_if_t<std::is_base_of_v<RACES::Sequencers::BasicSequencer, SEQUENCER>, bool> = true>
+             std::enable_if_t<std::is_base_of_v<CLONES::Sequencers::BasicSequencer, SEQUENCER>, bool> = true>
     inline SampleSetStatistics operator()(SEQUENCER& sequencer,
-                                          std::list<RACES::Mutations::SampleGenomeMutations> mutations_list,
+                                          std::list<CLONES::Mutations::SampleGenomeMutations> mutations_list,
                                           const std::set<ChromosomeId>& chromosome_ids,
                                           const double& coverage, const std::string& base_name="chr_",
                                           std::ostream& progress_bar_stream=std::cout,
@@ -1857,11 +1857,11 @@ public:
      * @return the sample set statistics about the generated reads
      */
     template<typename SEQUENCER,
-             std::enable_if_t<std::is_base_of_v<RACES::Sequencers::BasicSequencer, SEQUENCER>, bool> = true>
+             std::enable_if_t<std::is_base_of_v<CLONES::Sequencers::BasicSequencer, SEQUENCER>, bool> = true>
     SampleSetStatistics operator()(SEQUENCER& sequencer,
-                                   std::list<RACES::Mutations::SampleGenomeMutations> mutations_list,
+                                   std::list<CLONES::Mutations::SampleGenomeMutations> mutations_list,
                                    const double& coverage,
-                                   const RACES::Mutations::SampleGenomeMutations& normal_sample,
+                                   const CLONES::Mutations::SampleGenomeMutations& normal_sample,
                                    const double purity,
                                    const std::string& base_name="chr_",
                                    std::ostream& progress_bar_stream=std::cout,
@@ -1893,9 +1893,9 @@ public:
      * @return the sample set statistics about the generated reads
      */
     template<typename SEQUENCER,
-             std::enable_if_t<std::is_base_of_v<RACES::Sequencers::BasicSequencer, SEQUENCER>, bool> = true>
+             std::enable_if_t<std::is_base_of_v<CLONES::Sequencers::BasicSequencer, SEQUENCER>, bool> = true>
     SampleSetStatistics operator()(SEQUENCER& sequencer,
-                                   std::list<RACES::Mutations::SampleGenomeMutations> mutations_list,
+                                   std::list<CLONES::Mutations::SampleGenomeMutations> mutations_list,
                                    const double& coverage,
                                    const std::string& base_name="chr_",
                                    std::ostream& progress_bar_stream=std::cout,
@@ -1931,17 +1931,17 @@ public:
      * @return the statistics about the generated reads
      */
     template<typename SEQUENCER,
-             std::enable_if_t<std::is_base_of_v<RACES::Sequencers::BasicSequencer, SEQUENCER>, bool> = true>
+             std::enable_if_t<std::is_base_of_v<CLONES::Sequencers::BasicSequencer, SEQUENCER>, bool> = true>
     SampleStatistics operator()(SEQUENCER& sequencer,
-                                const RACES::Mutations::SampleGenomeMutations& mutations,
+                                const CLONES::Mutations::SampleGenomeMutations& mutations,
                                 const double& coverage,
-                                const RACES::Mutations::SampleGenomeMutations& normal_sample,
+                                const CLONES::Mutations::SampleGenomeMutations& normal_sample,
                                 const double purity,
                                 const std::string& base_name="chr_",
                                 std::ostream& progress_bar_stream=std::cout,
                                 const bool quiet=false)
     {
-        using namespace RACES::Mutations;
+        using namespace CLONES::Mutations;
         std::list<SampleGenomeMutations> mutations_list{mutations};
 
         auto statistics = operator()(sequencer, mutations_list, coverage, normal_sample,
@@ -1970,9 +1970,9 @@ public:
      * @return the statistics about the generated reads
      */
     template<typename SEQUENCER,
-             std::enable_if_t<std::is_base_of_v<RACES::Sequencers::BasicSequencer, SEQUENCER>, bool> = true>
+             std::enable_if_t<std::is_base_of_v<CLONES::Sequencers::BasicSequencer, SEQUENCER>, bool> = true>
     inline SampleStatistics operator()(SEQUENCER& sequencer,
-                                       const RACES::Mutations::SampleGenomeMutations& mutations,
+                                       const CLONES::Mutations::SampleGenomeMutations& mutations,
                                        const double& coverage,
                                        const std::string& base_name="chr_",
                                        std::ostream& progress_bar_stream=std::cout,
@@ -2007,18 +2007,18 @@ public:
      * @return the statistics about the generated reads
      */
     template<typename SEQUENCER,
-             std::enable_if_t<std::is_base_of_v<RACES::Sequencers::BasicSequencer, SEQUENCER>, bool> = true>
+             std::enable_if_t<std::is_base_of_v<CLONES::Sequencers::BasicSequencer, SEQUENCER>, bool> = true>
     SampleStatistics operator()(SEQUENCER& sequencer,
-                                const RACES::Mutations::SampleGenomeMutations& mutations,
+                                const CLONES::Mutations::SampleGenomeMutations& mutations,
                                 const std::set<ChromosomeId>& chromosome_ids,
                                 const double& coverage,
-                                const RACES::Mutations::SampleGenomeMutations& normal_sample,
+                                const CLONES::Mutations::SampleGenomeMutations& normal_sample,
                                 const double purity,
                                 const std::string& base_name="chr_",
                                 std::ostream& progress_bar_stream=std::cout,
                                 const bool quiet=false)
     {
-        using namespace RACES::Mutations;
+        using namespace CLONES::Mutations;
         std::list<SampleGenomeMutations> mutations_list{mutations};
 
         auto statistics = operator()(sequencer, mutations_list, chromosome_ids, coverage,
@@ -2049,9 +2049,9 @@ public:
      * @return the statistics about the generated reads
      */
     template<typename SEQUENCER,
-             std::enable_if_t<std::is_base_of_v<RACES::Sequencers::BasicSequencer, SEQUENCER>, bool> = true>
+             std::enable_if_t<std::is_base_of_v<CLONES::Sequencers::BasicSequencer, SEQUENCER>, bool> = true>
     inline SampleStatistics operator()(SEQUENCER& sequencer,
-                                       const RACES::Mutations::SampleGenomeMutations& mutations,
+                                       const CLONES::Mutations::SampleGenomeMutations& mutations,
                                        const std::set<ChromosomeId>& chromosome_ids,
                                        const double& coverage,
                                        const std::string& base_name="chr_",
@@ -2088,6 +2088,6 @@ public:
 
 }   // Mutations
 
-}   // RACES
+}   // CLONES
 
-#endif // __RACES_READ_SIMULATOR__
+#endif // __CLONES_READ_SIMULATOR__

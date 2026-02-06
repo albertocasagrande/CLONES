@@ -2,10 +2,10 @@
  * @file common.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines auxiliary classes and functions for executables
- * @version 1.0
- * @date 2024-06-10
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -38,7 +38,7 @@
 #include "json_config.hpp"
 
 /**
- * @brief A basic class for RACES executables
+ * @brief A basic class for CLONES executables
  */
 class BasicExecutable
 {
@@ -90,6 +90,6 @@ public:
      * @param quiet is a Boolean flag to switch on/off (false/true) descriptive messages
      * @return the loaded simulation snapshot
      */
-    static RACES::Mutants::Evolutions::Simulation
+    static CLONES::Mutants::Evolutions::Simulation
     load_species_simulation(const std::filesystem::path snapshot_path, const bool quiet=false);
 };

@@ -2,10 +2,10 @@
  * @file sbs_sbs_context.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines SBS contexts and extended context automata
- * @version 1.1
- * @date 2025-07-07
+ * @version 1.2
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_SBS_CONTEXT__
-#define __RACES_SBS_CONTEXT__
+#ifndef __CLONES_SBS_CONTEXT__
+#define __CLONES_SBS_CONTEXT__
 
 #include <cstdint>
 #include <functional>   // std::less
@@ -40,7 +40,7 @@
 
 #include "archive.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutations
@@ -337,13 +337,13 @@ public:
 
 }   // Mutations
 
-}   // RACES
+}   // CLONES
 
 template<>
-struct std::less<RACES::Mutations::SBSContext>
+struct std::less<CLONES::Mutations::SBSContext>
 {
-    inline bool operator()(const RACES::Mutations::SBSContext &lhs,
-                           const RACES::Mutations::SBSContext &rhs) const
+    inline bool operator()(const CLONES::Mutations::SBSContext &lhs,
+                           const CLONES::Mutations::SBSContext &rhs) const
     {
         return lhs.get_code() < rhs.get_code();
     }
@@ -359,11 +359,11 @@ namespace std
  * @param context is the SBS context to stream
  * @return a reference to the output stream
  */
-inline std::ostream& operator<<(std::ostream& out, const RACES::Mutations::SBSContext& context)
+inline std::ostream& operator<<(std::ostream& out, const CLONES::Mutations::SBSContext& context)
 {
     return (out << context.get_sequence());
 }
 
 }   // std
 
-#endif // __RACES_SBS_CONTEXT__
+#endif // __CLONES_SBS_CONTEXT__

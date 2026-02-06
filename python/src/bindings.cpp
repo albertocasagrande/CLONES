@@ -2,10 +2,10 @@
  * @file bindings.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements Python bindings
- * @version 0.18
- * @date 2024-06-10
+ * @version 1.0
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -41,45 +41,45 @@
 
 using namespace boost::python;
 
-namespace RACESSim = RACES::Mutants::Evolutions;
-namespace RACESDrv = RACES::Mutants;
+namespace CLONESSim = CLONES::Mutants::Evolutions;
+namespace CLONESDrv = CLONES::Mutants;
 
 
 BOOST_PYTHON_FUNCTION_OVERLOADS(run_up_to_overloads, SimulationWrapper::static_run_up_to, 2, 4)
 
-BOOST_PYTHON_MODULE(RACES)
+BOOST_PYTHON_MODULE(CLONES)
 {
-    class_<RACESSim::PositionInTissue>("Position", init<RACESSim::AxisPosition, RACESSim::AxisPosition>())
-        .def(init<RACESSim::AxisPosition, RACESSim::AxisPosition, RACESSim::AxisPosition>())
+    class_<CLONESSim::PositionInTissue>("Position", init<CLONESSim::AxisPosition, CLONESSim::AxisPosition>())
+        .def(init<CLONESSim::AxisPosition, CLONESSim::AxisPosition, CLONESSim::AxisPosition>())
         .def(self_ns::str(self))
-        .def_readwrite("x", &RACESSim::PositionInTissue::x)
-        .def_readwrite("y", &RACESSim::PositionInTissue::y)
-        .def_readwrite("z", &RACESSim::PositionInTissue::z)
+        .def_readwrite("x", &CLONESSim::PositionInTissue::x)
+        .def_readwrite("y", &CLONESSim::PositionInTissue::y)
+        .def_readwrite("z", &CLONESSim::PositionInTissue::z)
     ;
 
-    enum_<RACESDrv::CellEventType>("CellEventType")
-        .value("DEATH", RACESDrv::CellEventType::DEATH)
-        .value("DUPLICATION", RACESDrv::CellEventType::DUPLICATION)
-        .value("EPIGENETIC_SWITCH", RACESDrv::CellEventType::EPIGENETIC_SWITCH)
-        .value("MUTATION", RACESDrv::CellEventType::MUTATION)
+    enum_<CLONESDrv::CellEventType>("CellEventType")
+        .value("DEATH", CLONESDrv::CellEventType::DEATH)
+        .value("DUPLICATION", CLONESDrv::CellEventType::DUPLICATION)
+        .value("EPIGENETIC_SWITCH", CLONESDrv::CellEventType::EPIGENETIC_SWITCH)
+        .value("MUTATION", CLONESDrv::CellEventType::MUTATION)
     ;
 
-    class_<RACESDrv::EpigeneticRates, std::shared_ptr<RACESDrv::EpigeneticRates>>("EpigeneticRates", init<double, double>())
+    class_<CLONESDrv::EpigeneticRates, std::shared_ptr<CLONESDrv::EpigeneticRates>>("EpigeneticRates", init<double, double>())
         .def("__init__", make_constructor(EpigeneticRatesWrapper::create))
         .def(self_ns::str(self))
-        .def("get_methylation_rate", make_function(&RACESDrv::EpigeneticRates::get_methylation_rate, return_value_policy<copy_const_reference>()))
+        .def("get_methylation_rate", make_function(&CLONESDrv::EpigeneticRates::get_methylation_rate, return_value_policy<copy_const_reference>()))
         .def("set_methylation_rate", &EpigeneticRatesWrapper::set_methylation_rate)
-        .def("get_demethylation_rate", make_function(&RACESDrv::EpigeneticRates::get_demethylation_rate, return_value_policy<copy_const_reference>()))
+        .def("get_demethylation_rate", make_function(&CLONESDrv::EpigeneticRates::get_demethylation_rate, return_value_policy<copy_const_reference>()))
         .def("set_demethylation_rate", &EpigeneticRatesWrapper::set_demethylation_rate)
     ;
 
-    class_<RACESDrv::MutantProperties, std::shared_ptr<RACESDrv::MutantProperties>>("Clone", no_init)
+    class_<CLONESDrv::MutantProperties, std::shared_ptr<CLONESDrv::MutantProperties>>("Clone", no_init)
         .def("__init__", make_constructor(CloneWrapper::create))
         .def("set_rates", &CloneWrapper::set_rates)
         .def("get_rate", &CloneWrapper::get_rate)
-        .add_property("num_of_promoters", &RACESDrv::MutantProperties::num_of_promoters)
-        .add_property("name", make_function(&RACESDrv::MutantProperties::get_name, return_value_policy<copy_const_reference>()))
-        .add_property("id", make_function(&RACESDrv::MutantProperties::get_id, return_value_policy<copy_const_reference>()))
+        .add_property("num_of_promoters", &CLONESDrv::MutantProperties::num_of_promoters)
+        .add_property("name", make_function(&CLONESDrv::MutantProperties::get_name, return_value_policy<copy_const_reference>()))
+        .add_property("id", make_function(&CLONESDrv::MutantProperties::get_id, return_value_policy<copy_const_reference>()))
     ;
 
     class_<SimulationWrapper, std::shared_ptr<SimulationWrapper>>("Simulation", no_init)

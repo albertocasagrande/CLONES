@@ -2,8 +2,8 @@
  * @file imap.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines indexed map
- * @version 1.0
- * @date 2024-06-10
+ * @version 1.1
+ * @date 2026-02-06
  *
  * @copyright Copyright (c) 2024
  *
@@ -28,12 +28,12 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_IMAP__
-#define __RACES_IMAP__
+#ifndef __CLONES_IMAP__
+#define __CLONES_IMAP__
 
 #include "irb_tree.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 /**
@@ -387,4 +387,4 @@ public:
 
 }
 
-#endif // __RACES_IMAP__
+#endif // __CLONES_IMAP__

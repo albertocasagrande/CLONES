@@ -2,8 +2,8 @@
  * @file descendant_forest.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements classes and function for descendant forests
- * @version 1.1
- * @date 2026-01-29
+ * @version 1.2
+ * @date 2026-02-06
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -35,7 +35,7 @@
 
 #include "simulation.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutants
@@ -382,4 +382,4 @@ void DescendantsForest::clear()
 
 }   // Mutants
 
-}   // RACES
+}   // CLONES

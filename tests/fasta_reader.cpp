@@ -1,11 +1,11 @@
 /**
  * @file fasta_reader.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
- * @brief Testing RACES::IO::FASTA::Reader class
- * @version 1.0
- * @date 2025-05-13
+ * @brief Testing CLONES::IO::FASTA::Reader class
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -40,7 +40,7 @@
 
 BOOST_AUTO_TEST_CASE(reader_creation)
 {
-    using namespace RACES::IO::FASTA;
+    using namespace CLONES::IO::FASTA;
 
     BOOST_CHECK_NO_THROW(Sequence sequence);
     BOOST_CHECK_NO_THROW(SequenceInfo seq_info);
@@ -94,7 +94,7 @@ BOOST_FIXTURE_TEST_SUITE( FASTA_test, FASTAFixture )
 
 BOOST_AUTO_TEST_CASE(read_sequence_infos)
 {
-    using namespace RACES::IO::FASTA;
+    using namespace CLONES::IO::FASTA;
 
     Reader<SequenceInfo> fasta_reader(FASTA_FILE);
     SequenceInfo seq_info;
@@ -110,7 +110,7 @@ BOOST_AUTO_TEST_CASE(read_sequence_infos)
 
 BOOST_AUTO_TEST_CASE(read_sequences)
 {
-    using namespace RACES::IO::FASTA;
+    using namespace CLONES::IO::FASTA;
 
     Reader<Sequence> fasta_reader(FASTA_FILE);
 
@@ -128,7 +128,7 @@ BOOST_AUTO_TEST_CASE(read_sequences)
 
 BOOST_AUTO_TEST_CASE(index_reader)
 {
-    using namespace RACES::IO::FASTA;
+    using namespace CLONES::IO::FASTA;
 
     std::filesystem::remove(Index<Sequence>::get_index_filename(FASTA_FILE));
 
@@ -152,7 +152,7 @@ BOOST_AUTO_TEST_CASE(index_reader)
 
 BOOST_AUTO_TEST_CASE(read_chromosomes)
 {
-    using namespace RACES::IO::FASTA;
+    using namespace CLONES::IO::FASTA;
 
     Reader<ChromosomeData<Sequence>> fasta_reader(FASTA_FILE);
 
@@ -170,7 +170,7 @@ BOOST_AUTO_TEST_CASE(read_chromosomes)
 
 BOOST_AUTO_TEST_CASE(nucleotides_reader)
 {
-    using namespace RACES::IO::FASTA;
+    using namespace CLONES::IO::FASTA;
 
     std::filesystem::remove(Index<Sequence>::get_index_filename(FASTA_FILE));
 
@@ -190,7 +190,7 @@ BOOST_AUTO_TEST_CASE(nucleotides_reader)
 
 BOOST_AUTO_TEST_CASE(chr_index_reader)
 {
-    using namespace RACES::IO::FASTA;
+    using namespace CLONES::IO::FASTA;
 
     std::filesystem::remove(Index<ChromosomeData<Sequence>>::get_index_filename(FASTA_FILE));
 
@@ -203,7 +203,7 @@ BOOST_AUTO_TEST_CASE(chr_index_reader)
             const auto& nucleotides = it->second;
             BOOST_CHECK(ireader.read(chr, name));
 
-            BOOST_CHECK_EQUAL(RACES::Mutations::GenomicPosition::chrtos(chr.chr_id), name);
+            BOOST_CHECK_EQUAL(CLONES::Mutations::GenomicPosition::chrtos(chr.chr_id), name);
             BOOST_CHECK_EQUAL(chr.length, nucleotides.size());
             BOOST_CHECK_EQUAL(chr.nucleotides, nucleotides);
         }
@@ -214,7 +214,7 @@ BOOST_AUTO_TEST_CASE(chr_index_reader)
 
 BOOST_AUTO_TEST_CASE(build_index_reader_error)
 {
-    using namespace RACES::IO::FASTA;
+    using namespace CLONES::IO::FASTA;
 
     BOOST_CHECK_NO_THROW(IndexedReader<Sequence> ireader);
 
@@ -226,7 +226,7 @@ BOOST_AUTO_TEST_CASE(build_index_reader_error)
 
 BOOST_AUTO_TEST_CASE(chr_nucleotides_reader)
 {
-    using namespace RACES::IO::FASTA;
+    using namespace CLONES::IO::FASTA;
 
     std::filesystem::remove(Index<ChromosomeData<Sequence>>::get_index_filename(FASTA_FILE));
 

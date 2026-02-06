@@ -2,10 +2,10 @@
  * @file event_wrapper.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implement a simulation event wrapper
- * @version 1.0
- * @date 2024-06-10
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -30,7 +30,7 @@
 
 #include "event_wrapper.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutants
@@ -58,13 +58,13 @@ SimulationEventWrapper::SimulationEventWrapper(const Sampling& sampling):
 
 }   // Mutants
 
-}   // RACES
+}   // CLONES
 
 
-bool operator==(const RACES::Mutants::Evolutions::SimulationEventWrapper& lhs,
-                const RACES::Mutants::Evolutions::SimulationEventWrapper& rhs)
+bool operator==(const CLONES::Mutants::Evolutions::SimulationEventWrapper& lhs,
+                const CLONES::Mutants::Evolutions::SimulationEventWrapper& rhs)
 {
-    using namespace RACES::Mutants::Evolutions;
+    using namespace CLONES::Mutants::Evolutions;
 
     if (lhs.type != rhs.type) {
         return false;

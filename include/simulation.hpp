@@ -2,10 +2,10 @@
  * @file simulation.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a tumour evolution simulation
- * @version 1.1
- * @date 2025-03-11
+ * @version 1.2
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_SIMULATOR__
-#define __RACES_SIMULATOR__
+#ifndef __CLONES_SIMULATOR__
+#define __CLONES_SIMULATOR__
 
 #include <random>
 #include <list>
@@ -51,7 +51,7 @@
 
 #include "progress_bar.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutants
@@ -322,7 +322,7 @@ protected:
      *      in the tissue region bounded by the rectangle
      */
     std::vector<Tissue::CellInTissueConstantProxy>
-    collect_cell_proxies_in(const RACES::Mutants::RectangleSet& rectangle) const;
+    collect_cell_proxies_in(const CLONES::Mutants::RectangleSet& rectangle) const;
 
     /**
      * @brief Collect proxies of cells in a rectangle
@@ -333,7 +333,7 @@ protected:
      *      tissue region bounded by the rectangle
      */
     std::vector<Tissue::CellInTissueProxy>
-    collect_cell_proxies_in(const RACES::Mutants::RectangleSet& rectangle);
+    collect_cell_proxies_in(const CLONES::Mutants::RectangleSet& rectangle);
 public:
     /**
      * @brief Simulation test
@@ -1131,7 +1131,7 @@ public:
     template<typename ARCHIVE, std::enable_if_t<std::is_base_of_v<Archive::Basic::Out, ARCHIVE>, bool> = true>
     inline void save(ARCHIVE& archive) const
     {
-        ARCHIVE::write_header(archive, "RACES Tissue Simulation", 0);
+        ARCHIVE::write_header(archive, "CLONES Tissue Simulation", 0);
 
         archive & tissues
                 & lineage_graph
@@ -1159,7 +1159,7 @@ public:
     template<typename ARCHIVE, std::enable_if_t<std::is_base_of_v<Archive::Basic::In, ARCHIVE>, bool> = true>
     static Simulation load(ARCHIVE& archive)
     {
-        ARCHIVE::read_header(archive, "RACES Tissue Simulation", 0);
+        ARCHIVE::read_header(archive, "CLONES Tissue Simulation", 0);
 
         Simulation simulation;
 
@@ -1288,6 +1288,6 @@ Simulation& Simulation::simulate(const CellEvent& event, UI::TissuePlotter<PLOT_
 
 }   // Mutants
 
-}   // RACES
+}   // CLONES
 
-#endif // __RACES_SIMULATOR__
+#endif // __CLONES_SIMULATOR__

@@ -2,10 +2,10 @@
  * @file rs_index.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements a class to compute the repeated substring index
- * @version 1.2
- * @date 2025-07-08
+ * @version 1.3
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -34,7 +34,7 @@
 #include "basic_IO.hpp"
 #include "fasta_chr_reader.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutations
@@ -658,4 +658,4 @@ void RSIndex::restore()
 
 }   // Mutations
 
-}   // RACES
+}   // CLONES

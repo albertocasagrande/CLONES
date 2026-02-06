@@ -2,10 +2,10 @@
  * @file allele.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements allele representation
- * @version 1.5
- * @date 2025-07-09
+ * @version 1.6
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -30,7 +30,7 @@
 
 #include "allele.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutations
@@ -405,7 +405,7 @@ Allele::Length Allele::size() const
     return total_size;
 }
 
-std::string Allele::format_id(const RACES::Mutations::AlleleId& allele_id)
+std::string Allele::format_id(const CLONES::Mutations::AlleleId& allele_id)
 {
     if (allele_id == RANDOM_ALLELE) {
         return "NA";
@@ -430,12 +430,12 @@ Allele Allele::copy_structure() const
 
 }   // Mutations
 
-}   // RACES
+}   // CLONES
 
 namespace std
 {
 
-std::ostream& operator<<(std::ostream& os, const RACES::Mutations::AlleleFragment& allele_fragment)
+std::ostream& operator<<(std::ostream& os, const CLONES::Mutations::AlleleFragment& allele_fragment)
 {
     os << "["<< allele_fragment.begin() << "-"
        << allele_fragment.end() << "]{";
@@ -451,7 +451,7 @@ std::ostream& operator<<(std::ostream& os, const RACES::Mutations::AlleleFragmen
     return os;
 }
 
-std::ostream& operator<<(std::ostream& os, const RACES::Mutations::Allele& allele)
+std::ostream& operator<<(std::ostream& os, const CLONES::Mutations::Allele& allele)
 {
     std::string sep;
     for (const auto& [pos, fragment]: allele.get_fragments()) {

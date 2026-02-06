@@ -2,10 +2,10 @@
  * @file archive.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements some archive classes and their methods
- * @version 1.1
- * @date 2024-11-10
+ * @version 1.2
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -30,7 +30,7 @@
 
 #include "archive.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Archive {
@@ -109,7 +109,7 @@ ProgressViewer::ProgressViewer():
     progress_bar(nullptr), total_steps{0}, next_percentage{0}, performed_steps{0}
 {}
 
-void ProgressViewer::initialize(RACES::UI::ProgressBar* progress_bar, const size_t total_steps)
+void ProgressViewer::initialize(CLONES::UI::ProgressBar* progress_bar, const size_t total_steps)
 {
     this->progress_bar = progress_bar;
     this->total_steps = total_steps;
@@ -150,7 +150,7 @@ Out::Out(std::filesystem::path position, std::ios_base::openmode mode):
     Archive::Basic::Out(position, mode | std::fstream::binary), ProgressViewer()
 {}
 
-ByteCounter::ByteCounter(RACES::UI::ProgressBar* progress_bar):
+ByteCounter::ByteCounter(CLONES::UI::ProgressBar* progress_bar):
     Out(), bytes(0), progress_bar(progress_bar)
 {}
 

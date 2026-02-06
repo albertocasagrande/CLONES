@@ -2,8 +2,8 @@
  * @file warning.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implement the default warning function
- * @version 1.0
- * @date 2025-07-14
+ * @version 1.1
+ * @date 2026-02-06
  *
  * @copyright Copyright (c) 2025
  *
@@ -32,7 +32,7 @@
 
 #include "warning.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 void warning(const WarningType type, const std::string message)

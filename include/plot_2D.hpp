@@ -2,10 +2,10 @@
  * @file plot_2D.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a 2D plot window
- * @version 1.0
- * @date 2024-06-10
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,15 +28,15 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_PLOT_2D__
-#define __RACES_PLOT_2D__
+#ifndef __CLONES_PLOT_2D__
+#define __CLONES_PLOT_2D__
 
 #include <string>
 #include <cstdint>
 
 #include "palette.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace UI
@@ -296,6 +296,6 @@ inline bool Plot2DWindow::waiting_end() const
 
 }  // UI
 
-}  // RACES
+}  // CLONES
 
-#endif // __RACES_PLOT_2D__
+#endif // __CLONES_PLOT_2D__

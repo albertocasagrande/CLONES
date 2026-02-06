@@ -2,10 +2,10 @@
  * @file tissue_sample.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements tissue samples
- * @version 1.0
- * @date 2024-06-10
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -30,7 +30,7 @@
 
 #include "tissue_sample.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutants
@@ -50,15 +50,15 @@ TissueSample::TissueSample(const Time& time, const RectangleSet& bounding_box,
     TissueSample(time, bounding_box, tumour_cells_in_bbox, {})
 {}
 
-TissueSample::TissueSample(const std::string& name, const RACES::Time& time,
-                           const RACES::Mutants::RectangleSet& bounding_box,
+TissueSample::TissueSample(const std::string& name, const CLONES::Time& time,
+                           const CLONES::Mutants::RectangleSet& bounding_box,
                            const size_t& tumour_cells_in_bbox):
     TissueSample(name, time, bounding_box, tumour_cells_in_bbox, {})
 {}
 
 TissueSample::TissueSample(const Time& time, const RectangleSet& bounding_box,
                            const size_t& tumour_cells_in_bbox,
-                           const std::list<RACES::Mutants::CellId>& cell_ids):
+                           const std::list<CLONES::Mutants::CellId>& cell_ids):
     TissueSample("", time, bounding_box, tumour_cells_in_bbox, cell_ids)
 {
     name = "S_"+std::to_string(id);
@@ -67,13 +67,13 @@ TissueSample::TissueSample(const Time& time, const RectangleSet& bounding_box,
 TissueSample::TissueSample(const std::string& name, const Time& time,
                            const RectangleSet& bounding_box,
                            const size_t& tumour_cells_in_bbox,
-                           const std::list<RACES::Mutants::CellId>& cell_ids):
+                           const std::list<CLONES::Mutants::CellId>& cell_ids):
     id(counter++), time(time), bounding_box(bounding_box),
     tumour_cells_in_bbox(tumour_cells_in_bbox), cell_ids(cell_ids),
     name(name)
 {}
 
-void TissueSample::add_cell_id(const RACES::Mutants::CellId& cell_id)
+void TissueSample::add_cell_id(const CLONES::Mutants::CellId& cell_id)
 {
     if (bounding_box.size() == cell_ids.size()) {
         throw std::domain_error("The sample already contains all the cell ids");
@@ -86,11 +86,11 @@ void TissueSample::add_cell_id(const RACES::Mutants::CellId& cell_id)
 
 }   // Mutants
 
-}   // RACES
+}   // CLONES
 
-std::ostream& operator<<(std::ostream& os, const RACES::Mutants::Evolutions::TissueSample& tissue_sample)
+std::ostream& operator<<(std::ostream& os, const CLONES::Mutants::Evolutions::TissueSample& tissue_sample)
 {
-    const RACES::Mutants::RectangleSet& bounding_box =  tissue_sample.get_bounding_box();
+    const CLONES::Mutants::RectangleSet& bounding_box =  tissue_sample.get_bounding_box();
 
     os << "# " << tissue_sample.get_time()
        << " " << tissue_sample.get_cell_ids().size()

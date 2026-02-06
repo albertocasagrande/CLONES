@@ -2,10 +2,10 @@
  * @file mutant_properties.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines mutant properties
- * @version 1.0
- * @date 2024-06-10
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_MUTANT_PROPERTIES__
-#define __RACES_MUTANT_PROPERTIES__
+#ifndef __CLONES_MUTANT_PROPERTIES__
+#define __CLONES_MUTANT_PROPERTIES__
 
 #include <map>
 #include <string>
@@ -38,7 +38,7 @@
 #include "archive.hpp"
 #include "cell_event.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutants
@@ -480,7 +480,7 @@ void MutantProperties::validate_signature(const SIGNATURE_TYPE& signature) const
 
 }   // Mutants
 
-}   // RACES
+}   // CLONES
 
 namespace std
 {
@@ -492,7 +492,7 @@ namespace std
  * @param epigenetic_rates are the epigenetic rates to be streamed
  * @return a reference to the output stream
  */
-std::ostream& operator<<(std::ostream& out, const RACES::Mutants::EpigeneticRates& epigenetic_rates);
+std::ostream& operator<<(std::ostream& out, const CLONES::Mutants::EpigeneticRates& epigenetic_rates);
 
 /**
  * @brief Write information about a species in an output stream
@@ -501,7 +501,7 @@ std::ostream& operator<<(std::ostream& out, const RACES::Mutants::EpigeneticRate
  * @param species is the species to be streamed
  * @return a reference to the output stream
  */
-std::ostream& operator<<(std::ostream& out, const RACES::Mutants::SpeciesProperties& species);
+std::ostream& operator<<(std::ostream& out, const CLONES::Mutants::SpeciesProperties& species);
 
 /**
  * @brief Write information about a mutant in an output stream
@@ -510,9 +510,9 @@ std::ostream& operator<<(std::ostream& out, const RACES::Mutants::SpeciesPropert
  * @param mutant is the mutant to be streamed
  * @return a reference to the output stream
  */
-std::ostream& operator<<(std::ostream& out, const RACES::Mutants::MutantProperties& mutant);
+std::ostream& operator<<(std::ostream& out, const CLONES::Mutants::MutantProperties& mutant);
 
 }   // std
 
 
-#endif // __RACES_MUTANT_PROPERTIES__
+#endif // __CLONES_MUTANT_PROPERTIES__

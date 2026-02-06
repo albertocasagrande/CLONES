@@ -2,10 +2,10 @@
  * @file mutant_properties.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements the mutant properties
- * @version 1.0
- * @date 2024-06-10
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -34,7 +34,7 @@
 #include "mutant_properties.hpp"
 #include "cell_event.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutants
@@ -286,26 +286,26 @@ MethylationSignature MutantProperties::index_to_signature(const size_t& index, c
 
 }   // Mutants
 
-}   // RACES
+}   // CLONES
 
 namespace std
 {
 
-std::ostream& operator<<(std::ostream& out, const RACES::Mutants::EpigeneticRates& epigentic_rates)
+std::ostream& operator<<(std::ostream& out, const CLONES::Mutants::EpigeneticRates& epigentic_rates)
 {
     out << "{\"on\": " << epigentic_rates.get_methylation_rate()
             << ",\"off\": " << epigentic_rates.get_demethylation_rate() << "}";
     return out;
 }
 
-std::ostream& operator<<(std::ostream& out, const RACES::Mutants::SpeciesProperties& species)
+std::ostream& operator<<(std::ostream& out, const CLONES::Mutants::SpeciesProperties& species)
 {
     out << "{name: \""<< species.get_name() << "\", id: " << species.get_id()
         << ", event_rates: {";
 
     std::string sep="";
     for (const auto& [event, rate]: species.get_rates()) {
-        out << sep << RACES::Mutants::cell_event_names[event] << ": " << rate;
+        out << sep << CLONES::Mutants::cell_event_names[event] << ": " << rate;
         sep = ", ";
     }
 
@@ -325,7 +325,7 @@ std::ostream& operator<<(std::ostream& out, const RACES::Mutants::SpeciesPropert
     return out;
 }
 
-std::ostream& operator<<(std::ostream& out, const RACES::Mutants::MutantProperties& mutant)
+std::ostream& operator<<(std::ostream& out, const CLONES::Mutants::MutantProperties& mutant)
 {
     out << "{name: \"" << mutant.get_name() << "\", id: "
         << mutant.get_id() << ", species=[";

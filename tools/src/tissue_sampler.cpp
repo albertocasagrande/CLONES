@@ -1,11 +1,11 @@
 /**
  * @file tissue_sampler.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
- * @brief Main file for the RACES tool that sample tissues
- * @version 1.0
- * @date 2024-06-10
+ * @brief Main file for the CLONES tool that sample tissues
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -48,9 +48,9 @@ class TissueSampler : public BasicExecutable
 
     void perform_sampling(const nlohmann::json& sampling_cfg, const bool quiet=false) const
     {
-        using namespace RACES::Mutants;
-        using namespace RACES::Mutants::Evolutions;
-        using ConfigReader = RACES::ConfigReader;
+        using namespace CLONES::Mutants;
+        using namespace CLONES::Mutants::Evolutions;
+        using ConfigReader = CLONES::ConfigReader;
 
         if (!sampling_cfg.is_array()) {
             throw std::runtime_error("The sampling configuration does not consist in an array");
@@ -66,7 +66,7 @@ class TissueSampler : public BasicExecutable
             simulation.sample_tissue(sample_specs);
         }
 
-        simulation.make_snapshot<RACES::UI::ProgressBar>(nullptr);
+        simulation.make_snapshot<CLONES::UI::ProgressBar>(nullptr);
     }
 public:
 

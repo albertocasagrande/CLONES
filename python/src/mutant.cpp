@@ -2,10 +2,10 @@
  * @file mutant.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements the Python wrapper class and functions for `MutantProperties`
- * @version 0.2
- * @date 2024-06-10
+ * @version 1.0
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -35,10 +35,10 @@
 
 #include <boost/python/suite/indexing/vector_indexing_suite.hpp>
 
-std::shared_ptr<RACES::Mutants::MutantProperties>
+std::shared_ptr<CLONES::Mutants::MutantProperties>
 CloneWrapper::create(std::string const& name, boost::python::list const& epigenetic_rates)
 {
-    using namespace RACES::Mutants;
+    using namespace CLONES::Mutants;
 
     namespace bp = boost::python;
 
@@ -63,11 +63,11 @@ CloneWrapper::create(std::string const& name, boost::python::list const& epigene
     return std::make_shared<MutantProperties>(name, c_epigenetic_rates);
 }
 
-void CloneWrapper::set_rates(RACES::Mutants::MutantProperties *mutant,
+void CloneWrapper::set_rates(CLONES::Mutants::MutantProperties *mutant,
                                 const std::string& methylation_signature,
                                 boost::python::dict const& rates)
 {
-    using namespace RACES::Mutants;
+    using namespace CLONES::Mutants;
 
     namespace bp = boost::python;
 

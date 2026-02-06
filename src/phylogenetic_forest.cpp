@@ -2,8 +2,8 @@
  * @file phylogenetic_forest.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements classes and function for phylogenetic forests
- * @version 1.9
- * @date 2026-01-12
+ * @version 1.10
+ * @date 2026-02-06
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -35,7 +35,7 @@
 
 #include "simulation.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutations
@@ -187,7 +187,7 @@ std::list<SampleGenomeMutations> PhylogeneticForest::get_sample_mutations_list()
 }
 
 size_t
-find_sample_index(const std::vector<RACES::Mutants::Evolutions::TissueSample>& sample_list,
+find_sample_index(const std::vector<CLONES::Mutants::Evolutions::TissueSample>& sample_list,
                  const std::string& sample_name)
 {
     size_t idx=0;
@@ -425,4 +425,4 @@ void PhylogeneticForest::clear()
 
 }   // Mutants
 
-}   // RACES
+}   // CLONES

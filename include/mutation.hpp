@@ -2,10 +2,10 @@
  * @file mutation.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a general class for mutations
- * @version 1.2
- * @date 2025-07-09
+ * @version 1.3
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,12 +28,12 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_MUTATION__
-#define __RACES_MUTATION__
+#ifndef __CLONES_MUTATION__
+#define __CLONES_MUTATION__
 
 #include "genomic_position.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutations
@@ -190,6 +190,6 @@ struct Mutation : public GenomicPosition
 
 }   // Mutations
 
-}   // RACES
+}   // CLONES
 
-#endif // __RACES_MUTATION__
+#endif // __CLONES_MUTATION__

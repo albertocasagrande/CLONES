@@ -2,10 +2,10 @@
  * @file driver_storage.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements class to load and store driver mutations
- * @version 1.1
- * @date 2025-07-13
+ * @version 1.2
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -32,7 +32,7 @@
 
 #include "csv_reader.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutations
@@ -67,7 +67,7 @@ DriverStorage DriverStorage::load(const std::filesystem::path& filename)
 {
     DriverStorage storage;
 
-    RACES::IO::CSVReader csv_reader(filename, true, '\t');
+    CLONES::IO::CSVReader csv_reader(filename, true, '\t');
 
     const size_t chr_col = csv_reader.get_column_position("chr");
     const size_t pos_col = csv_reader.get_column_position("from");
@@ -117,4 +117,4 @@ DriverStorage DriverStorage::load(const std::filesystem::path& filename)
 
 }   // Mutations
 
-}   // RACES
+}   // CLONES

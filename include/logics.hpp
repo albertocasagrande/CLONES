@@ -2,10 +2,10 @@
  * @file logics.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a logic about the simulation
- * @version 1.0
- * @date 2024-06-10
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_LOGIC__
-#define __RACES_LOGIC__
+#ifndef __CLONES_LOGIC__
+#define __CLONES_LOGIC__
 
 #include <string>
 #include <memory>
@@ -39,7 +39,7 @@
 
 struct Context;
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutants
@@ -120,8 +120,8 @@ public:
         return type;
     }
 
-    friend class RACES::Mutants::Evolutions::Tissue;
-    friend class RACES::Mutants::Evolutions::Simulation;
+    friend class CLONES::Mutants::Evolutions::Tissue;
+    friend class CLONES::Mutants::Evolutions::Simulation;
     friend std::ostream& operator<<(std::ostream& os, const Variable& variable);
 private:
 
@@ -852,6 +852,6 @@ inline Formula operator||(Formula&& lhs, Formula&& rhs)
 
 }   // Mutants
 
-}   // RACES
+}   // CLONES
 
-#endif // __RACES_LOGIC__
+#endif // __CLONES_LOGIC__

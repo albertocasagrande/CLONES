@@ -2,10 +2,10 @@
  * @file genome_mutations.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines genome and chromosome data structures
- * @version 1.11
- * @date 2025-07-09
+ * @version 1.12
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_GENOME_MUTATIONS__
-#define __RACES_GENOME_MUTATIONS__
+#ifndef __CLONES_GENOME_MUTATIONS__
+#define __CLONES_GENOME_MUTATIONS__
 
 #include <map>
 #include <list>
@@ -48,7 +48,7 @@
 
 #include "progress_bar.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 /**
@@ -573,7 +573,7 @@ public:
     template<typename ARCHIVE, std::enable_if_t<std::is_base_of_v<Archive::Basic::Out, ARCHIVE>, bool> = true>
     inline void save(ARCHIVE& archive) const
     {
-        ARCHIVE::write_header(archive, "RACES Genome Mutations", 0);
+        ARCHIVE::write_header(archive, "CLONES Genome Mutations", 0);
 
         archive & _data;
     }
@@ -590,7 +590,7 @@ public:
     {
         ChromosomeMutations chr_mutations;
 
-        ARCHIVE::read_header(archive, "RACES Genome Mutations", 0);
+        ARCHIVE::read_header(archive, "CLONES Genome Mutations", 0);
 
         archive & chr_mutations._data;
 
@@ -1106,7 +1106,7 @@ struct SampleGenomeMutations
 
 }   // Mutations
 
-}   // RACES
+}   // CLONES
 
 
 namespace std
@@ -1119,7 +1119,7 @@ namespace std
  * @param chromosome_mutations is a chromosome mutations
  * @return a reference to output stream
  */
-std::ostream& operator<<(std::ostream& os, const RACES::Mutations::ChromosomeMutations& chromosome_mutations);
+std::ostream& operator<<(std::ostream& os, const CLONES::Mutations::ChromosomeMutations& chromosome_mutations);
 
 /**
  * @brief Write genome mutations data in a stream
@@ -1128,8 +1128,8 @@ std::ostream& operator<<(std::ostream& os, const RACES::Mutations::ChromosomeMut
  * @param genome_mutations is a genome mutations
  * @return a reference to output stream
  */
-std::ostream& operator<<(std::ostream& os, const RACES::Mutations::GenomeMutations& genome_mutations);
+std::ostream& operator<<(std::ostream& os, const CLONES::Mutations::GenomeMutations& genome_mutations);
 
 }   // std
 
-#endif // __RACES_GENOME_MUTATIONS__
+#endif // __CLONES_GENOME_MUTATIONS__

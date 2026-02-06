@@ -2,10 +2,10 @@
  * @file cna.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements a class for copy number alterations
- * @version 1.0
- * @date 2024-06-10
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -30,7 +30,7 @@
 
 #include "cna.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutations
@@ -59,16 +59,16 @@ CNA::CNA(const GenomicPosition& initial_position, const CNA::Length& length,
 
 }   // Mutations
 
-}   // RACES
+}   // CLONES
 
 
 namespace std
 {
 
-bool less<RACES::Mutations::CNA>::operator()(const RACES::Mutations::CNA &lhs,
-                                             const RACES::Mutations::CNA &rhs) const
+bool less<CLONES::Mutations::CNA>::operator()(const CLONES::Mutations::CNA &lhs,
+                                             const CLONES::Mutations::CNA &rhs) const
 {
-    using namespace RACES::Mutations;
+    using namespace CLONES::Mutations;
 
     // differences in initial position
     {
@@ -125,10 +125,10 @@ bool less<RACES::Mutations::CNA>::operator()(const RACES::Mutations::CNA &lhs,
     return false;
 }
 
-std::ostream& operator<<(std::ostream& out, const RACES::Mutations::CNA& cna)
+std::ostream& operator<<(std::ostream& out, const CLONES::Mutations::CNA& cna)
 {
     out << "CNA(";
-    using namespace RACES::Mutations;
+    using namespace CLONES::Mutations;
     switch(cna.type) {
         case CNA::Type::AMPLIFICATION:
             out << "\"A\"," << static_cast<const GenomicPosition&>(cna)

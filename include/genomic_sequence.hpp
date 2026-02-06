@@ -2,10 +2,10 @@
  * @file genomic_sequence.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a structure to handle genomic sequence
- * @version 1.2
- * @date 2025-07-12
+ * @version 1.3
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,14 +28,14 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_GENOMIC_SEQUENCE__
-#define __RACES_GENOMIC_SEQUENCE__
+#ifndef __CLONES_GENOMIC_SEQUENCE__
+#define __CLONES_GENOMIC_SEQUENCE__
 
 #include <string>
 #include <vector>
 #include <algorithm>
 
-namespace RACES
+namespace CLONES
 {
 
 /**
@@ -127,6 +127,6 @@ struct GenomicSequence
     static bool is_a_DNA_base(const char& symbol);
 };
 
-}   // RACES
+}   // CLONES
 
-#endif // __RACES_GENOMIC_SEQUENCE__
+#endif // __CLONES_GENOMIC_SEQUENCE__

@@ -2,10 +2,10 @@
  * @file read.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements sequencing reads
- * @version 1.4
- * @date 2025-07-09
+ * @version 1.5
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -32,7 +32,7 @@
 
 #include "read.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutations
@@ -550,4 +550,4 @@ void Read::alter_base(const size_t pos, const char base)
 
 }   // Mutations
 
-}   // RACES
+}   // CLONES

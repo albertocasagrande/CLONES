@@ -2,10 +2,10 @@
  * @file sample_context_index.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief The main source file for context index sampler
- * @version 1.0
- * @date 2024-06-10
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -53,15 +53,15 @@ class ContextSampler
     template<typename GENOME_WIDE_POSITION>
     void sample_context_index() const
     {
-        using namespace RACES::Mutations;
+        using namespace CLONES::Mutations;
 
-        RACES::UI::ProgressBar* bar{nullptr};
+        CLONES::UI::ProgressBar* bar{nullptr};
 
         {
             ContextIndex<GENOME_WIDE_POSITION> context_index;
 
             {
-                RACES::Archive::Binary::In archive(context_index_filename);
+                CLONES::Archive::Binary::In archive(context_index_filename);
                 if (quiet) {
                     archive & context_index;
                 } else {
@@ -70,9 +70,9 @@ class ContextSampler
             }
 
             if (!quiet) {
-                RACES::UI::ProgressBar::hide_console_cursor();
+                CLONES::UI::ProgressBar::hide_console_cursor();
 
-                bar = new RACES::UI::ProgressBar(std::cout);
+                bar = new CLONES::UI::ProgressBar(std::cout);
                 bar->set_message("Sampling context index");
             }
 
@@ -99,7 +99,7 @@ class ContextSampler
                 }
             }
 
-            RACES::Archive::Binary::Out archive(output_filename);
+            CLONES::Archive::Binary::Out archive(output_filename);
 
             if (quiet) {
                 archive & context_index;
@@ -108,7 +108,7 @@ class ContextSampler
 
                 delete bar;
 
-                RACES::UI::ProgressBar::show_console_cursor();
+                CLONES::UI::ProgressBar::show_console_cursor();
 
                 archive.save(context_index, "sampled index");
 
@@ -203,9 +203,9 @@ public:
         }
 
         try {
-            using namespace RACES::Mutations;
+            using namespace CLONES::Mutations;
 
-            RACES::Archive::Binary::In archive(context_index_filename);
+            CLONES::Archive::Binary::In archive(context_index_filename);
 
             bytes_per_abs_position = ContextIndex<>::read_bytes_per_absolute_position(archive);
 

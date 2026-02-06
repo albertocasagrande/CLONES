@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.11)
 
-project(RACES VERSION 1.1.0
-              DESCRIPTION "RACES is an Advanced Cancer Evolution Simulation"
-              HOMEPAGE_URL https://github.com/albertocasagrande/RACES
+project(CLONES VERSION 1.1.0
+              DESCRIPTION "CLONES is a C++ Library fOr Neoplastic Evolution Simulations"
+              HOMEPAGE_URL https://github.com/albertocasagrande/CLONES
               LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -19,7 +19,7 @@ cmake_policy(SET CMP0167 NEW)
 endif()
 add_compile_options(-Wall -Wextra -Wpedantic)
 
-set(RACES_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/allele.cpp
+set(CLONES_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/allele.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/archive.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/basic_IO.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/binary_logger.cpp
@@ -75,7 +75,7 @@ set(RACES_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/allele.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/warning.cpp
 )
 
-set(RACES_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/include/allele.hpp
+set(CLONES_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/include/allele.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/archive.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/basic_IO.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/binary_logger.hpp
@@ -158,7 +158,7 @@ if(${USE_OPTIONAL_LIBS})
 
         set(WITH_MATPLOT true)
 
-        set(RACES_LIBRARIES ${RACES_LIBRARIES} Matplot++::matplot)
+        set(CLONES_LIBRARIES ${CLONES_LIBRARIES} Matplot++::matplot)
     else()
         message("Matplot++ NOT found")
     endif()
@@ -180,7 +180,7 @@ if(NOT EXISTS ${CMAKE_SOURCE_DIR}/include/indicators.hpp)
         message("done")
         message("Using \"p-ranav/indicators\"")
 
-        set(RACES_HEADER ${RACES_HEADER} ${CMAKE_CURRENT_SOURCE_DIR}/include/indicators.hpp)
+        set(CLONES_HEADER ${CLONES_HEADER} ${CMAKE_CURRENT_SOURCE_DIR}/include/indicators.hpp)
     else()
         set(WITH_INDICATORS false)
         message("Download error: ${DOWNLOAD_RESULT_MESSAGE}")
@@ -190,15 +190,15 @@ else()
     set(WITH_INDICATORS true)
     message("Using \"p-ranav/indicators\"")
 
-    set(RACES_HEADER ${RACES_HEADER} ${CMAKE_CURRENT_SOURCE_DIR}/include/indicators.hpp)
+    set(CLONES_HEADER ${CLONES_HEADER} ${CMAKE_CURRENT_SOURCE_DIR}/include/indicators.hpp)
 endif()
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/variables.hpp.in ${CMAKE_CURRENT_SOURCE_DIR}/include/variables.hpp @ONLY)
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
-add_library(objlib OBJECT ${RACES_SOURCES})
-target_link_libraries(objlib ${RACES_LIBRARIES})
+add_library(objlib OBJECT ${CLONES_SOURCES})
+target_link_libraries(objlib ${CLONES_LIBRARIES})
 
 set_property(TARGET objlib PROPERTY POSITION_INDEPENDENT_CODE 1)
 
@@ -207,8 +207,8 @@ if(NOT DEFINED BUILD_STATIC_LIBS)
 endif()
 
 if(${BUILD_STATIC_LIBS})
-    set(BUILD_LIB_TARGET libRACES_static)
-    set(LIB_INSTALL_TARGETS libRACES_static)
+    set(BUILD_LIB_TARGET libCLONES_static)
+    set(LIB_INSTALL_TARGETS libCLONES_static)
 endif()
 
 if(NOT DEFINED BUILD_ONLY_LIBRARIES)
@@ -216,12 +216,12 @@ if(NOT DEFINED BUILD_ONLY_LIBRARIES)
 endif()
 
 if(NOT DEFINED BUILD_SHARED_LIBS)
-    set(BUILD_LIB_TARGET libRACES)
+    set(BUILD_LIB_TARGET libCLONES)
     set(BUILD_SHARED_LIBS TRUE)
 endif()
 
 if(${BUILD_SHARED_LIBS})
-    set(LIB_INSTALL_TARGETS libRACES ${LIB_INSTALL_TARGETS})
+    set(LIB_INSTALL_TARGETS libCLONES ${LIB_INSTALL_TARGETS})
 endif()
 
 if((NOT ${BUILD_SHARED_LIBS}) AND (NOT ${BUILD_STATIC_LIBS}))
@@ -238,19 +238,19 @@ if(NOT ${BUILD_ONLY_LIBRARIES})
 
     add_subdirectory(tests)
 else()
-    message("Building exclusively RACES libraries")
+    message("Building exclusively CLONES libraries")
 endif()
 
 if(${BUILD_SHARED_LIBS})
-    add_library(libRACES SHARED $<TARGET_OBJECTS:objlib>)
-    target_link_libraries(libRACES ${RACES_LIBRARIES})
-    set_target_properties(libRACES PROPERTIES VERSION ${PROJECT_VERSION} OUTPUT_NAME RACES)
+    add_library(libCLONES SHARED $<TARGET_OBJECTS:objlib>)
+    target_link_libraries(libCLONES ${CLONES_LIBRARIES})
+    set_target_properties(libCLONES PROPERTIES VERSION ${PROJECT_VERSION} OUTPUT_NAME CLONES)
 endif()
 
 if(${BUILD_STATIC_LIBS})
-    add_library(libRACES_static STATIC $<TARGET_OBJECTS:objlib>)
-    target_link_libraries(libRACES_static ${RACES_LIBRARIES})
-    set_target_properties(libRACES_static PROPERTIES VERSION ${PROJECT_VERSION} OUTPUT_NAME RACES)
+    add_library(libCLONES_static STATIC $<TARGET_OBJECTS:objlib>)
+    target_link_libraries(libCLONES_static ${CLONES_LIBRARIES})
+    set_target_properties(libCLONES_static PROPERTIES VERSION ${PROJECT_VERSION} OUTPUT_NAME CLONES)
 endif()
 
 if(NOT DEFINED INSTALL_HEADERS)
@@ -259,11 +259,11 @@ endif()
 
 if(${INSTALL_HEADERS})
   if(${BUILD_SHARED_LIBS})
-    set_property(TARGET libRACES PROPERTY PUBLIC_HEADER ${RACES_HEADER})
+    set_property(TARGET libCLONES PROPERTY PUBLIC_HEADER ${CLONES_HEADER})
   endif()
 
   if(${BUILD_STATIC_LIBS})
-     set_property(TARGET libRACES_static PROPERTY PUBLIC_HEADER ${RACES_HEADER})
+     set_property(TARGET libCLONES_static PROPERTY PUBLIC_HEADER ${CLONES_HEADER})
   endif()
   install(TARGETS ${LIB_INSTALL_TARGETS} FILE_SET HEADERS)
 else()

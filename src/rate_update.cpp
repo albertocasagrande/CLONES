@@ -2,10 +2,10 @@
  * @file rate_update.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements liveness rate updates
- * @version 1.0
- * @date 2024-06-10
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -31,7 +31,7 @@
 #include "rate_update.hpp"
 #include "cell_event.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutants
@@ -54,4 +54,4 @@ RateUpdate::RateUpdate(const SpeciesProperties& species, const CellEventType& ev
 
 }   // Mutants
 
-}   // RACES
+}   // CLONES

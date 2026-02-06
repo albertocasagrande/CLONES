@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2023 Alberto Casagrande <alberto.casagrande@uniud.it>
+# Copyright \(c\) 2023-2026 Alberto Casagrande <alberto.casagrande@uniud.it>
 #
 # MIT License
 #
@@ -24,51 +24,51 @@
 
 import unittest
 
-import RACES
+import CLONES
 
 
 class TestCellEventType(unittest.TestCase):
 
     def test_values(self):
-        self.assertEqual(RACES.CellEventType.values, {
-            0: RACES.CellEventType.DEATH,
-            1: RACES.CellEventType.DUPLICATION,
-            2: RACES.CellEventType.EPIGENETIC_SWITCH,
-            3: RACES.CellEventType.MUTATION
+        self.assertEqual(CLONES.CellEventType.values, {
+            0: CLONES.CellEventType.DEATH,
+            1: CLONES.CellEventType.DUPLICATION,
+            2: CLONES.CellEventType.EPIGENETIC_SWITCH,
+            3: CLONES.CellEventType.MUTATION
         })
 
 
 class TestEpigeneticRates(unittest.TestCase):
     def test_init(self):
         try:
-            RACES.EpigeneticRates(0.2, 0.1)
+            CLONES.EpigeneticRates(0.2, 0.1)
         except BaseException:
-            self.fail("RACES.EpigeneticRates(0.2, 0.1) unexpectedly"
+            self.fail("CLONES.EpigeneticRates(0.2, 0.1) unexpectedly"
                       + " raised an exeception!")
 
         with self.assertRaises(Exception):
-            RACES.EpigeneticRates()
+            CLONES.EpigeneticRates()
 
         with self.assertRaises(Exception):
-            RACES.EpigeneticRates(-0.2, 0.1)
+            CLONES.EpigeneticRates(-0.2, 0.1)
 
         with self.assertRaises(Exception):
-            RACES.EpigeneticRates(0.2, -0.1)
+            CLONES.EpigeneticRates(0.2, -0.1)
 
         with self.assertRaises(Exception):
-            RACES.EpigeneticRates(1.2, 0.1)
+            CLONES.EpigeneticRates(1.2, 0.1)
 
         with self.assertRaises(Exception):
-            RACES.EpigeneticRates(0.2, 1.1)
+            CLONES.EpigeneticRates(0.2, 1.1)
 
     def test_get(self):
-        e_rates = RACES.EpigeneticRates(0.2, 0.1)
+        e_rates = CLONES.EpigeneticRates(0.2, 0.1)
 
         self.assertEqual(e_rates.get_methylation_rate(), 0.2)
         self.assertEqual(e_rates.get_demethylation_rate(), 0.1)
 
     def test_set(self):
-        e_rates = RACES.EpigeneticRates(0.2, 0.1)
+        e_rates = CLONES.EpigeneticRates(0.2, 0.1)
 
         e_rates.set_methylation_rate(0.3)
         e_rates.set_demethylation_rate(0.4)
@@ -92,46 +92,46 @@ class TestEpigeneticRates(unittest.TestCase):
 class TestClone(unittest.TestCase):
     def test_init(self):
         try:
-            RACES.Clone("A", [RACES.EpigeneticRates(0.01, 0.01)])
+            CLONES.Clone("A", [CLONES.EpigeneticRates(0.01, 0.01)])
         except BaseException:
-            self.fail('RACES.Clone("A", '
-                      + '[RACES.EpigeneticRates(0.01, 0.01)]) '
+            self.fail('CLONES.Clone("A", '
+                      + '[CLONES.EpigeneticRates(0.01, 0.01)]) '
                       + ' raised an unexpected exeception!')
 
         try:
-            RACES.Clone("A", [[0.01, 0.01]])
+            CLONES.Clone("A", [[0.01, 0.01]])
         except BaseException:
-            self.fail('RACES.Clone("A", [[0.01, 0.01]]) '
+            self.fail('CLONES.Clone("A", [[0.01, 0.01]]) '
                       + ' raised an unexpected exeception!')
 
         try:
-            RACES.Clone("A", [])
+            CLONES.Clone("A", [])
         except BaseException:
-            self.fail('RACES.Clone("A", []) '
+            self.fail('CLONES.Clone("A", []) '
                       + ' raised an unexpected exeception!')
 
         try:
-            RACES.Clone("A", [[0.01, 0.01], [0.01, 0.01]])
+            CLONES.Clone("A", [[0.01, 0.01], [0.01, 0.01]])
         except BaseException:
-            self.fail('RACES.Clone("A", [[0.01, 0.01], '
+            self.fail('CLONES.Clone("A", [[0.01, 0.01], '
                       + '[0.01, 0.01]]) raised an unexpected exeception!')
 
         with self.assertRaises(Exception):
-            RACES.Clone("A", 2)
+            CLONES.Clone("A", 2)
 
         with self.assertRaises(Exception):
-            RACES.Clone("A", ['a'])
+            CLONES.Clone("A", ['a'])
 
         with self.assertRaises(Exception):
-            RACES.Clone("A", [[0.01, 0.01, 2]])
+            CLONES.Clone("A", [[0.01, 0.01, 2]])
 
     def test_properties(self):
-        A = RACES.Clone("A", [[0.01, 0.01]])
+        A = CLONES.Clone("A", [[0.01, 0.01]])
 
         self.assertEqual(A.name, "A")
         self.assertEqual(A.num_of_promoters, 1)
 
-        B = RACES.Clone("B", [])
+        B = CLONES.Clone("B", [])
 
         self.assertEqual(B.name, "B")
         self.assertEqual(B.id, A.id+1)
@@ -147,89 +147,89 @@ class TestClone(unittest.TestCase):
             A.num_of_promoters = 7
 
     def test_set_rates(self):
-        A = RACES.Clone("A", [[0.01, 0.01]])
+        A = CLONES.Clone("A", [[0.01, 0.01]])
         try:
-            A.set_rates("-", {RACES.CellEventType.DEATH: 0.1,
-                              RACES.CellEventType.DUPLICATION: 0.2})
+            A.set_rates("-", {CLONES.CellEventType.DEATH: 0.1,
+                              CLONES.CellEventType.DUPLICATION: 0.2})
         except BaseException:
-            self.fail('A.set_rates("-", {RACES.CellEventType.DEATH: 0.1, '
-                      + 'RACES.CellEventType.DUPLICATION: 0.2})'
+            self.fail('A.set_rates("-", {CLONES.CellEventType.DEATH: 0.1, '
+                      + 'CLONES.CellEventType.DUPLICATION: 0.2})'
                       + ' raised an unexpected exeception!')
 
         with self.assertRaises(Exception):
-            A.set_rates("", {RACES.CellEventType.DEATH: 0.1,
-                             RACES.CellEventType.DUPLICATION: 0.2})
+            A.set_rates("", {CLONES.CellEventType.DEATH: 0.1,
+                             CLONES.CellEventType.DUPLICATION: 0.2})
 
-        B = RACES.Clone("B", [])
+        B = CLONES.Clone("B", [])
 
         try:
-            B.set_rates("", {RACES.CellEventType.DEATH: 0.1,
-                             RACES.CellEventType.DUPLICATION: 0.2})
+            B.set_rates("", {CLONES.CellEventType.DEATH: 0.1,
+                             CLONES.CellEventType.DUPLICATION: 0.2})
         except BaseException:
-            self.fail('B.set_rates("", {RACES.CellEventType.DEATH: 0.1, '
-                      + 'RACES.CellEventType.DUPLICATION: 0.2})'
+            self.fail('B.set_rates("", {CLONES.CellEventType.DEATH: 0.1, '
+                      + 'CLONES.CellEventType.DUPLICATION: 0.2})'
                       + ' raised an unexpected exeception!')
 
         with self.assertRaises(Exception):
-            B.set_rates("-", {RACES.CellEventType.DEATH: 0.1,
-                              RACES.CellEventType.DUPLICATION: 0.2})
+            B.set_rates("-", {CLONES.CellEventType.DEATH: 0.1,
+                              CLONES.CellEventType.DUPLICATION: 0.2})
 
     def test_get_rate(self):
-        A = RACES.Clone("A", [[0.01, 0.01]])
-        A.set_rates("-", {RACES.CellEventType.DEATH: 0.1,
-                          RACES.CellEventType.DUPLICATION: 0.2})
+        A = CLONES.Clone("A", [[0.01, 0.01]])
+        A.set_rates("-", {CLONES.CellEventType.DEATH: 0.1,
+                          CLONES.CellEventType.DUPLICATION: 0.2})
         try:
-            self.assertEqual(A.get_rate("-", RACES.CellEventType.DEATH), 0.1)
-            self.assertEqual(A.get_rate("-", RACES.CellEventType.DUPLICATION),
+            self.assertEqual(A.get_rate("-", CLONES.CellEventType.DEATH), 0.1)
+            self.assertEqual(A.get_rate("-", CLONES.CellEventType.DUPLICATION),
                              0.2)
             self.assertEqual(A.get_rate("-",
-                                        RACES.CellEventType.EPIGENETIC_SWITCH),
+                                        CLONES.CellEventType.EPIGENETIC_SWITCH),
                              0.0)
         except BaseException:
-            self.fail('RACES.Clone.set_rate() '
+            self.fail('CLONES.Clone.set_rate() '
                       + ' raised an unexpected exeception!')
 
         with self.assertRaises(Exception):
-            self.assertEqual(A.get_rate("", RACES.CellEventType.DEATH), 0.01)
+            self.assertEqual(A.get_rate("", CLONES.CellEventType.DEATH), 0.01)
 
-        B = RACES.Clone("B", [])
-        B.set_rates("", {RACES.CellEventType.DEATH: 0.1,
-                         RACES.CellEventType.DUPLICATION: 0.2})
+        B = CLONES.Clone("B", [])
+        B.set_rates("", {CLONES.CellEventType.DEATH: 0.1,
+                         CLONES.CellEventType.DUPLICATION: 0.2})
         try:
-            self.assertEqual(B.get_rate("", RACES.CellEventType.DEATH), 0.1)
-            self.assertEqual(B.get_rate("", RACES.CellEventType.DUPLICATION),
+            self.assertEqual(B.get_rate("", CLONES.CellEventType.DEATH), 0.1)
+            self.assertEqual(B.get_rate("", CLONES.CellEventType.DUPLICATION),
                              0.2)
             self.assertEqual(B.get_rate("",
-                                        RACES.CellEventType.EPIGENETIC_SWITCH),
+                                        CLONES.CellEventType.EPIGENETIC_SWITCH),
                              0.0)
         except BaseException:
-            self.fail('RACES.Clone.set_rate() '
+            self.fail('CLONES.Clone.set_rate() '
                       + ' raised an unexpected exeception!')
 
         with self.assertRaises(Exception):
-            self.assertEqual(B.get_rate("-", RACES.CellEventType.DEATH), 0.01)
+            self.assertEqual(B.get_rate("-", CLONES.CellEventType.DEATH), 0.01)
 
 
 class TestSimulation(unittest.TestCase):
     def test_init(self):
         try:
-            RACES.Simulation()
+            CLONES.Simulation()
         except BaseException:
-            self.fail('RACES.Simulation() raised an unexpected exeception!')
+            self.fail('CLONES.Simulation() raised an unexpected exeception!')
 
         try:
-            RACES.Simulation(5)
+            CLONES.Simulation(5)
         except BaseException:
-            self.fail('RACES.Simulation(5) raised an unexpected exeception!')
+            self.fail('CLONES.Simulation(5) raised an unexpected exeception!')
 
         try:
-            RACES.Simulation(5, 1)
+            CLONES.Simulation(5, 1)
         except BaseException:
-            self.fail('RACES.Simulation(5, 1) raised an unexpected'
+            self.fail('CLONES.Simulation(5, 1) raised an unexpected'
                       + ' exeception!')
 
     def test_set_tissue(self):
-        sim = RACES.Simulation()
+        sim = CLONES.Simulation()
 
         try:
             sim.set_tissue("Liver", [100, 100])
@@ -259,18 +259,18 @@ class TestSimulation(unittest.TestCase):
             sim.set_tissue("Liver", [100, -100])
 
     def test_get_time(self):
-        sim = RACES.Simulation()
+        sim = CLONES.Simulation()
 
         self.assertEqual(sim.get_time(), 0)
 
     def test_add_mutant(self):
-        sim = RACES.Simulation()
+        sim = CLONES.Simulation()
 
-        A = RACES.Clone("A", [[0.01, 0.01]])
-        A.set_rates("-", {RACES.CellEventType.DEATH: 0.1,
-                          RACES.CellEventType.DUPLICATION: 0.2})
-        A.set_rates("+", {RACES.CellEventType.DEATH: 0.01,
-                          RACES.CellEventType.DUPLICATION: 0.02})
+        A = CLONES.Clone("A", [[0.01, 0.01]])
+        A.set_rates("-", {CLONES.CellEventType.DEATH: 0.1,
+                          CLONES.CellEventType.DUPLICATION: 0.2})
+        A.set_rates("+", {CLONES.CellEventType.DEATH: 0.01,
+                          CLONES.CellEventType.DUPLICATION: 0.02})
 
         sim.set_tissue("Liver", [100, 100])
 
@@ -285,13 +285,13 @@ class TestSimulation(unittest.TestCase):
             sim.add_mutant("A")
 
     def test_place_cell(self):
-        sim = RACES.Simulation()
+        sim = CLONES.Simulation()
 
-        A = RACES.Clone("A", [[0.01, 0.01]])
-        A.set_rates("-", {RACES.CellEventType.DEATH: 0.1,
-                          RACES.CellEventType.DUPLICATION: 0.2})
-        A.set_rates("+", {RACES.CellEventType.DEATH: 0.01,
-                          RACES.CellEventType.DUPLICATION: 0.02})
+        A = CLONES.Clone("A", [[0.01, 0.01]])
+        A.set_rates("-", {CLONES.CellEventType.DEATH: 0.1,
+                          CLONES.CellEventType.DUPLICATION: 0.2})
+        A.set_rates("+", {CLONES.CellEventType.DEATH: 0.01,
+                          CLONES.CellEventType.DUPLICATION: 0.02})
 
         sim.set_tissue("Liver", [100, 100])
 
@@ -308,27 +308,27 @@ class TestSimulation(unittest.TestCase):
             sim.place_cell(A, "-", [50, 150])
 
     def test_schedule_mutation(self):
-        sim = RACES.Simulation()
+        sim = CLONES.Simulation()
 
         sim.set_tissue("Liver", [100, 100])
 
-        A = RACES.Clone("A", [[0.01, 0.01]])
-        A.set_rates("-", {RACES.CellEventType.DEATH: 0.1,
-                          RACES.CellEventType.DUPLICATION: 0.2})
-        A.set_rates("+", {RACES.CellEventType.DEATH: 0.01,
-                          RACES.CellEventType.DUPLICATION: 0.02})
+        A = CLONES.Clone("A", [[0.01, 0.01]])
+        A.set_rates("-", {CLONES.CellEventType.DEATH: 0.1,
+                          CLONES.CellEventType.DUPLICATION: 0.2})
+        A.set_rates("+", {CLONES.CellEventType.DEATH: 0.01,
+                          CLONES.CellEventType.DUPLICATION: 0.02})
         sim.add_mutant(A)
 
-        B = RACES.Clone("B", [[0.01, 0.01]])
-        B.set_rates("-", {RACES.CellEventType.DEATH: 0.1,
-                          RACES.CellEventType.DUPLICATION: 0.3})
-        B.set_rates("+", {RACES.CellEventType.DEATH: 0.1,
-                          RACES.CellEventType.DUPLICATION: 0.45})
+        B = CLONES.Clone("B", [[0.01, 0.01]])
+        B.set_rates("-", {CLONES.CellEventType.DEATH: 0.1,
+                          CLONES.CellEventType.DUPLICATION: 0.3})
+        B.set_rates("+", {CLONES.CellEventType.DEATH: 0.1,
+                          CLONES.CellEventType.DUPLICATION: 0.45})
         sim.add_mutant(B)
 
-        C = RACES.Clone("C", [])
-        C.set_rates("", {RACES.CellEventType.DEATH: 0.1,
-                         RACES.CellEventType.DUPLICATION: 0.3})
+        C = CLONES.Clone("C", [])
+        C.set_rates("", {CLONES.CellEventType.DEATH: 0.1,
+                         CLONES.CellEventType.DUPLICATION: 0.3})
         sim.add_mutant(C)
 
         try:
@@ -349,22 +349,22 @@ class TestSimulation(unittest.TestCase):
                       + ' an unexpected exeception!')
 
     def test_run_up_to(self):
-        sim = RACES.Simulation()
+        sim = CLONES.Simulation()
 
         sim.set_tissue("Liver", [100, 100])
 
-        A = RACES.Clone("A", [[0.01, 0.01]])
-        A.set_rates("-", {RACES.CellEventType.DEATH: 0.1,
-                          RACES.CellEventType.DUPLICATION: 0.2})
-        A.set_rates("+", {RACES.CellEventType.DEATH: 0.01,
-                          RACES.CellEventType.DUPLICATION: 0.02})
+        A = CLONES.Clone("A", [[0.01, 0.01]])
+        A.set_rates("-", {CLONES.CellEventType.DEATH: 0.1,
+                          CLONES.CellEventType.DUPLICATION: 0.2})
+        A.set_rates("+", {CLONES.CellEventType.DEATH: 0.01,
+                          CLONES.CellEventType.DUPLICATION: 0.02})
         sim.add_mutant(A)
 
-        B = RACES.Clone("B", [[0.01, 0.01]])
-        B.set_rates("-", {RACES.CellEventType.DEATH: 0.1,
-                          RACES.CellEventType.DUPLICATION: 0.3})
-        B.set_rates("+", {RACES.CellEventType.DEATH: 0.1,
-                          RACES.CellEventType.DUPLICATION: 0.45})
+        B = CLONES.Clone("B", [[0.01, 0.01]])
+        B.set_rates("-", {CLONES.CellEventType.DEATH: 0.1,
+                          CLONES.CellEventType.DUPLICATION: 0.3})
+        B.set_rates("+", {CLONES.CellEventType.DEATH: 0.1,
+                          CLONES.CellEventType.DUPLICATION: 0.45})
         sim.add_mutant(B)
         sim.schedule_mutation(A, B, 70)
 
@@ -373,7 +373,7 @@ class TestSimulation(unittest.TestCase):
         sim.run_up_to(0, quiet=True)
 
     def test_death_activation_level(self):
-        sim = RACES.Simulation()
+        sim = CLONES.Simulation()
 
         try:
             value = sim.death_activation_level

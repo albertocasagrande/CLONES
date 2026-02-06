@@ -2,10 +2,10 @@
  * @file binary_logger.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements a binary simulation logger
- * @version 1.2
- * @date 2025-05-19
+ * @version 1.3
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -40,7 +40,7 @@
 #include "simulation.hpp"
 #include "utils.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutants
@@ -52,7 +52,7 @@ namespace Evolutions
 std::string snapshot_prefix = "snapshot";
 
 BinaryLogger::BinaryLogger():
-    BinaryLogger("races_"+BasicLogger::get_time_string())
+    BinaryLogger("clones_"+BasicLogger::get_time_string())
 {
 }
 
@@ -128,7 +128,7 @@ std::filesystem::path BinaryLogger::find_last_snapshot_in(const std::filesystem:
     if (!found) {
         std::ostringstream oss;
 
-        oss << "No RACES simulation snapshot in "<< directory<< "";
+        oss << "No CLONES simulation snapshot in "<< directory<< "";
         throw std::runtime_error(oss.str());
     }
 
@@ -305,4 +305,4 @@ BinaryLogger::~BinaryLogger()
 
 }   // Mutants
 
-}   // RACES
+}   // CLONES

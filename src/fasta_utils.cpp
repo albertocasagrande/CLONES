@@ -2,10 +2,10 @@
  * @file fasta_utils.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements support utilities for FASTA files
- * @version 1.2
- * @date 2025-05-19
+ * @version 1.3
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -32,7 +32,7 @@
 
 #include "fasta_utils.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace IO
@@ -98,4 +98,4 @@ bool is_chromosome_header(const std::string& seq_name, Mutations::ChromosomeId& 
 
 }   // IO
 
-}   // RACES
+}   // CLONES

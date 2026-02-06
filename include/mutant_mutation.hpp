@@ -2,10 +2,10 @@
  * @file mutant_mutation.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines mutations
- * @version 1.0
- * @date 2024-06-10
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,13 +28,13 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_MUTANT_MUTATION__
-#define __RACES_MUTANT_MUTATION__
+#ifndef __CLONES_MUTANT_MUTATION__
+#define __CLONES_MUTANT_MUTATION__
 
 #include "mutant_properties.hpp"
 #include "simulation_event.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutants
@@ -110,7 +110,7 @@ struct Mutation : public SimulationEvent
 
 }   // Mutants
 
-}   // RACES
+}   // CLONES
 
 /**
  * @brief Test the equivalence between two mutations
@@ -120,11 +120,11 @@ struct Mutation : public SimulationEvent
  * @return `true` if and only if the two mutations represent
  *      the same event
  */
-inline bool operator==(const RACES::Mutants::Evolutions::Mutation& lhs,
-                       const RACES::Mutants::Evolutions::Mutation& rhs)
+inline bool operator==(const CLONES::Mutants::Evolutions::Mutation& lhs,
+                       const CLONES::Mutants::Evolutions::Mutation& rhs)
 {
     return (lhs.initial_id == rhs.initial_id)
             && (lhs.final_id == rhs.final_id);
 }
 
-#endif // __RACES_MUTANT_MUTATION__
+#endif // __CLONES_MUTANT_MUTATION__

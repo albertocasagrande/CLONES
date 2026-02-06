@@ -2,10 +2,10 @@
  * @file mutant_mutation.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements mutations
- * @version 1.0
- * @date 2024-06-10
+ * @version 1.1
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -30,7 +30,7 @@
 
 #include "mutant_mutation.hpp"
 
-namespace RACES
+namespace CLONES
 {
 
 namespace Mutants
@@ -53,4 +53,4 @@ Mutation::Mutation(const MutantProperties& initial_mutant,
 
 }   // Mutants
 
-}   // RACES
+}   // CLONES

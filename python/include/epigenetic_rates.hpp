@@ -1,11 +1,11 @@
 /**
  * @file epigenetic_rates.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
- * @brief Define the Python wrapper class and functions for `RACES::EpigeneticRates`
- * @version 0.7
- * @date 2024-06-10
+ * @brief Define the Python wrapper class and functions for `CLONES::EpigeneticRates`
+ * @version 1.0
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2024
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_PYTHON_EPIGENETIC_RATES__
-#define __RACES_PYTHON_EPIGENETIC_RATES__
+#ifndef __CLONES_PYTHON_EPIGENETIC_RATES__
+#define __CLONES_PYTHON_EPIGENETIC_RATES__
 
 #include <memory>
 
@@ -41,14 +41,14 @@
 using namespace boost::python;
 
 /**
- * @brief A wrapper structure for `RACES::EpigeneticRates`
+ * @brief A wrapper structure for `CLONES::EpigeneticRates`
  */
 struct EpigeneticRatesWrapper
 {
     /**
-     * @brief Create a new `RACES::EpigeneticRates` object
+     * @brief Create a new `CLONES::EpigeneticRates` object
      *
-     * This method creates a new `RACES::EpigeneticRates` object
+     * This method creates a new `CLONES::EpigeneticRates` object
      * by using as parameters the values stored in Python list.
      * If the list contains 1 or 2 real values, then this
      * method creates the object. Otherwise, it throws a
@@ -56,34 +56,34 @@ struct EpigeneticRatesWrapper
      *
      * @param rates_list is a Python list of object
      * @return a shared pointer to the newly created
-     *        `RACES::EpigeneticRates` object
+     *        `CLONES::EpigeneticRates` object
      */
-    static std::shared_ptr<RACES::Mutants::EpigeneticRates>
+    static std::shared_ptr<CLONES::Mutants::EpigeneticRates>
     create(boost::python::list const& rates_list);
 
     /**
-     * @brief Set the methylation rate of a `RACES::EpigeneticRates` object
+     * @brief Set the methylation rate of a `CLONES::EpigeneticRates` object
      *
-     * @param epigenetic_rates is the `RACES::EpigeneticRates` object
+     * @param epigenetic_rates is the `CLONES::EpigeneticRates` object
      * @param value is the methylation rate value to be set
      */
     inline static
-    void set_methylation_rate(RACES::Mutants::EpigeneticRates *epigenetic_rates, const double& value)
+    void set_methylation_rate(CLONES::Mutants::EpigeneticRates *epigenetic_rates, const double& value)
     {
         epigenetic_rates->set_methylation_rate(value);
     }
 
     /**
-     * @brief Set the demethylation rate of a `RACES::EpigeneticRates` object
+     * @brief Set the demethylation rate of a `CLONES::EpigeneticRates` object
      *
-     * @param epigenetic_rates is the `RACES::EpigeneticRates` object
+     * @param epigenetic_rates is the `CLONES::EpigeneticRates` object
      * @param value is the demethylation rate value to be set
      */
     inline static
-    void set_demethylation_rate(RACES::Mutants::EpigeneticRates *epigenetic_rates, const double& value)
+    void set_demethylation_rate(CLONES::Mutants::EpigeneticRates *epigenetic_rates, const double& value)
     {
         epigenetic_rates->set_demethylation_rate(value);
     }
 };
 
-#endif // __RACES_PYTHON_EPIGENETIC_RATES__
+#endif // __CLONES_PYTHON_EPIGENETIC_RATES__

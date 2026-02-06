@@ -2,10 +2,10 @@
  * @file utils.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines utility functions
- * @version 1.2
- * @date 2025-05-19
+ * @version 1.3
+ * @date 2026-02-06
  *
- * @copyright Copyright (c) 2023-2025
+ * @copyright Copyright (c) 2023-2026
  *
  * MIT License
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __RACES_UTILS__
-#define __RACES_UTILS__
+#ifndef __CLONES_UTILS__
+#define __CLONES_UTILS__
 
 #include <string>
 #include <filesystem>
@@ -174,4 +174,4 @@ std::ostream& operator<<(std::ostream& os, const std::map<KEYS, VALUES>& m)
 
 }   // std
 
-#endif // __RACES_UTILS__
+#endif // __CLONES_UTILS__
