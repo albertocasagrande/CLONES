@@ -2,8 +2,8 @@
  * @file descendant_forest.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines classes and function for descendant forests
- * @version 1.7
- * @date 2026-02-06
+ * @version 1.8
+ * @date 2026-02-17
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -828,6 +828,14 @@ public:
      */
     std::list<std::list<CellId>>
     get_sticks(const double birth_time_threshold) const;
+
+    /**
+     * @brief Get the node depths
+     *
+     * @return A map associating the cell identifier node to
+     *      the corresponding node depth.
+     */
+    std::map<CellId, size_t> get_node_depths() const;
 
     /**
      * @brief Get the forest sticks
