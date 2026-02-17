@@ -2,8 +2,8 @@
  * @file simulation.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Define a tumour evolution simulation
- * @version 1.3
- * @date 2026-02-06
+ * @version 1.4
+ * @date 2026-02-17
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -790,20 +790,10 @@ Simulation::simulate_mutation(const Position& position, const SpeciesId& final_i
 
 void disable_duplication_on_neighborhood_internals(Tissue& tissue, const PositionInTissue& position)
 {
-    auto sizes = tissue.size();
-    PositionInTissue pos;
-    pos.x = (position.x>0?position.x-1:0);
-    for (; (pos.x < position.x+2 &&  pos.x < sizes[0]); ++pos.x) {
-        pos.y = (position.y>0?position.y-1:0);
-        for (; (pos.y < position.y+2 &&  pos.y < sizes[1]); ++pos.y) {
-            pos.z = (position.z>0?position.z-1:0);
-            for (; ((sizes.size()==3 && pos.z < position.z+2 &&  pos.z < sizes[2])
-                    || (sizes.size()==2 && pos.z==0)); ++pos.z) {
-                Tissue::CellInTissueProxy cell_in_tissue = tissue(pos);
-                if (!cell_in_tissue.is_wild_type() && !cell_in_tissue.is_on_border()) {
-                    cell_in_tissue.disable_duplication();
-                }
-            }
+    for (const auto pos : tissue.get_neighborhood_positions(position)) {
+        Tissue::CellInTissueProxy cell_in_tissue = tissue(pos);
+        if (!cell_in_tissue.is_wild_type()) {
+            cell_in_tissue.switch_duplication(cell_in_tissue.is_on_border());
         }
     }
 }
@@ -827,7 +817,8 @@ Simulation::simulate_duplication(const Position& position)
     const Direction& push_dir = select_inverse_min_direction(random_gen, tissue, position,
                                                              valid_directions);
 
-    affected.lost_cells = tissue.push_cells(position, push_dir);
+    affected.lost_cells = tissue.push_cells(position, push_dir,
+                                            !duplicate_internal_cells);
 
     Tissue::CellInTissueProxy cell_in_tissue = tissue(position);
 
