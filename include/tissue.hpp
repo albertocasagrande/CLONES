@@ -2,8 +2,8 @@
  * @file tissue.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines tissue class
- * @version 1.1
- * @date 2026-02-06
+ * @version 1.2
+ * @date 2026-02-17
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -486,6 +486,16 @@ public:
         }
 
         /**
+         * @brief Get the valid neighborhood positions
+         *
+         * @return The list of valid neighborhood positions
+         */
+        inline std::list<PositionInTissue> get_neighborhood_positions() const
+        {
+            return tissue->get_neighborhood_positions(position);
+        }
+
+        /**
          * @brief Get a constant reference to the referenced cell
          *
          * This method returns a constant reference of the referenced cell. When
@@ -723,6 +733,16 @@ public:
     }
 
     /**
+     * @brief Get the valid neighborhood positions
+     *
+     * @param position is the the position whose neighbor positions
+     *      are aimed
+     * @return The list of valid neighborhood positions
+     */
+    std::list<PositionInTissue>
+    get_neighborhood_positions(const PositionInTissue& position) const;
+
+    /**
      * @brief Get the number of tissue dimensions
      *
      * @return the number of tissue dimensions
@@ -821,10 +841,15 @@ public:
      *
      * @param from_position is the position from which the cells are pushed
      * @param direction is the push direction
+     * @param duplicate_internal_cells is a Boolean flag that, when set to
+     *      be `false`, removes internal cells from the cells available for
+     *      the duplication
      * @return the list of the cells that have been pushed outside the
      *      tissue border
      */
-    std::list<Cell> push_cells(const PositionInTissue from_position, const Direction& direction);
+    std::list<Cell> push_cells(const PositionInTissue from_position,
+                               const Direction& direction,
+                               const bool duplicate_internal_cells);
 
     /**
      * @brief Get the tissue size

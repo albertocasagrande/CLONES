@@ -2,8 +2,8 @@
  * @file tissue.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Define tissue class
- * @version 1.1
- * @date 2026-02-06
+ * @version 1.2
+ * @date 2026-02-17
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -425,11 +425,35 @@ size_t Tissue::count_neighbors_in(const PositionInTissue position, const Species
     return counter;
 }
 
-std::list<Cell> Tissue::push_cells(const PositionInTissue from_position, const Direction& direction)
+std::list<PositionInTissue>
+Tissue::get_neighborhood_positions(const PositionInTissue& position) const
+{
+    std::list<PositionInTissue> positions;
+
+    for (int16_t x=(position.x==0?0:position.x-1); x<position.x+2; ++x) {
+        for (int16_t y=(position.y==0?0:position.y-1); y<position.y+2; ++y) {
+            for (int16_t z=(position.z==0?0:position.z-1); z<position.z+2; ++z) {
+                PositionInTissue pos(x, y, z);
+                if (is_valid(pos)) {
+                    positions.push_back(pos);
+                }
+            }
+        }
+    }
+
+    return positions;
+}
+
+std::list<Cell> Tissue::push_cells(const PositionInTissue from_position, const Direction& direction,
+                                   const bool duplicate_internal_cells)
 {
     PositionDelta delta(direction);
     PositionInTissue to_position(from_position+delta);
     CellInTissue* to_be_moved = cell_pointer(from_position);
+    bool old_on_border;
+    if (duplicate_internal_cells) {
+        old_on_border = operator()(from_position).is_on_border();
+    }
     while (to_be_moved!=nullptr && is_valid(to_position)) {
         CellInTissue*& dest_ptr = cell_pointer(to_position);
 
@@ -437,7 +461,30 @@ std::list<Cell> Tissue::push_cells(const PositionInTissue from_position, const D
 
         *dest_ptr = to_position;
 
+        if (duplicate_internal_cells) {
+            Tissue::CellInTissueProxy cell_in_tissue = operator()(to_position);
+            const bool on_border = cell_in_tissue.is_on_border();
+
+            // switch cell status only when on border status changed
+            if (old_on_border != on_border) {
+                cell_in_tissue.switch_duplication(cell_in_tissue.is_on_border());
+
+                old_on_border = on_border;
+            }
+        }
+
         to_position += delta;
+    }
+
+    if (duplicate_internal_cells && is_valid(to_position)) {
+        to_position -= delta;
+        Tissue::CellInTissueProxy cell_in_tissue = operator()(to_position);
+        for (auto pos : cell_in_tissue.get_neighborhood_positions()) {
+            Tissue::CellInTissueProxy neighbor = operator()(pos);
+            if (!neighbor.is_wild_type()) {
+                neighbor.switch_duplication(neighbor.is_on_border());
+            }
+        }
     }
 
     std::list<Cell> lost_cell;
