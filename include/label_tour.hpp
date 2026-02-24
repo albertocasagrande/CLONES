@@ -2,8 +2,8 @@
  * @file label_tour.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines the label tour class
- * @version 1.1
- * @date 2026-02-06
+ * @version 1.2
+ * @date 2026-02-24
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -125,7 +125,7 @@ public:
     private:
         forest_type const* forest;   //!< A pointer to the forest
 
-        labelling_functor_type l_functor;
+        labelling_functor_type const* l_functor;
 
         bool only_leaves;   //!< A Boolean flag to enable/disable internal node visit
         bool tour_end;      //!< A Boolean flag to mark the end of the tour
@@ -146,7 +146,7 @@ public:
                        const labelling_functor_type& labelling_functor,
                        const label_type& init_label,
                        const bool& only_leaves):
-            forest{forest}, l_functor{labelling_functor},
+            forest{forest}, l_functor{&labelling_functor},
             only_leaves{only_leaves}, tour_end{false}
         {
             if (forest != nullptr) {
@@ -171,7 +171,8 @@ public:
         }
 
         const_iterator(const forest_type* forest, const bool& only_leaves):
-            forest{forest}, only_leaves{only_leaves}, tour_end{true}
+            forest{forest}, l_functor{nullptr}, only_leaves{only_leaves},
+            tour_end{true}
         {}
     public:
         /**
@@ -227,14 +228,14 @@ public:
                 for (auto child_it = children.rbegin();
                         child_it != children.rend()-1; ++child_it) {
 
-                    label_type child_label = l_functor(node_label.second, *child_it);
+                    label_type child_label = (*l_functor)(node_label.second, *child_it);
 
                     iterator_stack.emplace(child_it->get_id(), std::move(child_label));
                 }
 
                 // apply the first children mutations to the current cell genome mutations
                 std::swap(node, children.front());
-                node_label.second = l_functor(node_label.second, node);
+                node_label.second = (*l_functor)(node_label.second, node);
 
                 next_node_found = node.is_leaf() || !only_leaves;
             }
