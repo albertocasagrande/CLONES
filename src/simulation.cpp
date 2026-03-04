@@ -2,8 +2,8 @@
  * @file simulation.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Define a tumour evolution simulation
- * @version 1.4
- * @date 2026-02-17
+ * @version 1.5
+ * @date 2026-03-04
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -90,7 +90,6 @@ Simulation& Simulation::operator=(Simulation&& orig)
     std::swap(statistics, orig.statistics);
     std::swap(time, orig.time);
     std::swap(timed_event_queue, orig.timed_event_queue);
-    std::swap(death_enabled, orig.death_enabled);
     std::swap(death_activation_level, orig.death_activation_level);
     std::swap(duplicate_internal_cells, orig.duplicate_internal_cells);
     std::swap(storage_enabled, orig.storage_enabled);
@@ -122,16 +121,12 @@ Tissue& Simulation::tissue()
 
 template<typename GENERATOR_TYPE>
 void select_liveness_event_in_species(CellEvent& event, Tissue& tissue,
-                                      const std::set<SpeciesId>& death_enabled,
                                       const Species& species,
                                       std::uniform_real_distribution<double>& uni_dist,
                                       GENERATOR_TYPE& random_gen)
 {
-    std::list<CellEventType> event_types{CellEventType::DUPLICATION};
-
-    if (death_enabled.count(species.get_id())>0) {
-        event_types.push_back(CellEventType::DEATH);
-    }
+    const std::list<CellEventType> event_types{CellEventType::DUPLICATION,
+                                               CellEventType::DEATH};
 
     bool selected_new_event = false;
     // deal with exclusively genomic events
@@ -159,7 +154,8 @@ void select_liveness_event_in_species(CellEvent& event, Tissue& tissue,
 
 template<typename GENERATOR_TYPE>
 void select_epigenetic_event_in_species(CellEvent& event, Tissue& tissue, const Species& species,
-                                        std::uniform_real_distribution<double>& uni_dist, GENERATOR_TYPE& random_gen)
+                                        std::uniform_real_distribution<double>& uni_dist,
+                                        GENERATOR_TYPE& random_gen)
 {
     const auto num_of_cells = species.num_of_cells_available_for(CellEventType::EPIGENETIC_SWITCH);
 
@@ -192,7 +188,6 @@ void select_epigenetic_event_in_species(CellEvent& event, Tissue& tissue, const 
 
 template<typename GENERATOR_TYPE>
 void select_next_event_in_species(CellEvent& event, Tissue& tissue,
-                                  const std::set<SpeciesId>& death_enabled,
                                   const Species& species,
                                   std::uniform_real_distribution<double>& uni_dist,
                                   GENERATOR_TYPE& random_gen)
@@ -201,7 +196,7 @@ void select_next_event_in_species(CellEvent& event, Tissue& tissue,
         return;
     }
 
-    select_liveness_event_in_species(event, tissue, death_enabled, species, uni_dist, random_gen);
+    select_liveness_event_in_species(event, tissue, species, uni_dist, random_gen);
     select_epigenetic_event_in_species(event, tissue, species, uni_dist, random_gen);
 }
 
@@ -391,11 +386,11 @@ const CellInTissue& Simulation::choose_border_cell_in(const MutantId& mutant_id,
 
     for (const auto& [m_name, m_id]: mutant_name2id) {
         if (m_id == mutant_id) {
-            throw std::runtime_error("No border cells avaiable for \"" + m_name + "\".");
+            throw std::runtime_error("No border cells available for \"" + m_name + "\".");
         }
     }
 
-    throw std::runtime_error("No border cells avaiable for unknown mutant (id: "
+    throw std::runtime_error("No border cells available for unknown mutant (id: "
                              + std::to_string(mutant_id) + ").");
 }
 
@@ -581,11 +576,11 @@ CellEvent Simulation::select_next_cell_event()
     event.delay = std::numeric_limits<Time>::max();
 
     for (const Species& species: tissue()) {
-        select_next_event_in_species(event, tissue(), death_enabled, species, uni_dist, random_gen);
+        select_next_event_in_species(event, tissue(), species, uni_dist, random_gen);
     }
 
     if (event.delay == std::numeric_limits<Time>::max()) {
-        throw std::runtime_error("No event available for the selecton.");
+        throw std::runtime_error("No event available for the selection.");
     }
 
     return event;
@@ -788,14 +783,14 @@ Simulation::simulate_mutation(const Position& position, const SpeciesId& final_i
 }
 
 
-void disable_duplication_on_neighborhood_internals(Tissue& tissue, const PositionInTissue& position)
+void switch_duplication_on_neighborhood_internals(Tissue& tissue, const PositionInTissue& position)
 {
     for (const auto pos : tissue.get_neighborhood_positions(position)) {
         Tissue::CellInTissueProxy cell_in_tissue = tissue(pos);
         if (!cell_in_tissue.is_wild_type()) {
             cell_in_tissue.switch_duplication(cell_in_tissue.is_on_border());
-        }
-    }
+         }
+     }
 }
 
 typename Simulation::EventAffectedCells
@@ -835,7 +830,7 @@ Simulation::simulate_duplication(const Position& position)
         ++next_cell_id;
 
         if (!duplicate_internal_cells) {
-            disable_duplication_on_neighborhood_internals(tissue, new_cell_position);
+            switch_duplication_on_neighborhood_internals(tissue, new_cell_position);
         }
 
         affected.new_cells.push_back(cell_in_tissue);
@@ -970,8 +965,6 @@ void Simulation::reset()
     time = 0;
 
     next_cell_id = 0;
-
-    death_enabled.clear();
 
     logger = BinaryLogger(logger.get_directory());
 

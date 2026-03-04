@@ -2,8 +2,8 @@
  * @file species.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements species representation methods
- * @version 1.2
- * @date 2026-02-06
+ * @version 1.3
+ * @date 2026-03-04
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -56,12 +56,13 @@ void Species::reset()
 }
 
 Species::Species(const SpeciesProperties& species_properties):
-    SpeciesProperties(species_properties), last_insertion_time(0),
-    simulated_cells(0)
+    SpeciesProperties(species_properties), death_enabled{false},
+    last_insertion_time(0), simulated_cells(0)
 {}
 
 Species::Species(const Species& orig):
-    SpeciesProperties(orig), last_insertion_time(orig.last_insertion_time),
+    SpeciesProperties(orig), death_enabled{orig.death_enabled},
+    last_insertion_time(orig.last_insertion_time),
     simulated_cells(orig.simulated_cells)
 {
     for (const auto& [cell_id, cell_ptr]: orig.cells) {
@@ -79,6 +80,7 @@ Species& Species::operator=(const Species& orig)
 
     static_cast<SpeciesProperties&>(*this) = static_cast<SpeciesProperties>(orig);
 
+    death_enabled = orig.death_enabled;
     last_insertion_time = orig.last_insertion_time;
     simulated_cells = orig.simulated_cells;
 
@@ -106,7 +108,13 @@ size_t Species::num_of_cells_available_for(const CellEventType& event_type) cons
 {
     switch(event_type) {
         case CellEventType::DEATH:
-            return cells.size();
+        {
+            if (death_enabled) {
+                return cells.size();
+            } else {
+                return 0;
+            }
+        }
         case CellEventType::DUPLICATION:
         case CellEventType::EPIGENETIC_SWITCH:
         case CellEventType::MUTATION:
@@ -256,6 +264,7 @@ void swap(Species& a, Species& b)
               static_cast<SpeciesProperties&>(b));
     std::swap(a.cells,b.cells);
     std::swap(a.duplication_enabled,b.duplication_enabled);
+    std::swap(a.death_enabled,b.death_enabled);
     std::swap(a.last_insertion_time,b.last_insertion_time);
     std::swap(a.simulated_cells,b.simulated_cells);
 }
