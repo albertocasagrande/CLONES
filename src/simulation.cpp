@@ -2,8 +2,8 @@
  * @file simulation.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Define a tumour evolution simulation
- * @version 1.5
- * @date 2026-02-17
+ * @version 1.6
+ * @date 2026-03-04
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -90,7 +90,6 @@ Simulation& Simulation::operator=(Simulation&& orig)
     std::swap(statistics, orig.statistics);
     std::swap(time, orig.time);
     std::swap(timed_event_queue, orig.timed_event_queue);
-    std::swap(death_enabled, orig.death_enabled);
     std::swap(death_activation_level, orig.death_activation_level);
     std::swap(duplicate_internal_cells, orig.duplicate_internal_cells);
     std::swap(storage_enabled, orig.storage_enabled);
@@ -122,16 +121,12 @@ Tissue& Simulation::tissue()
 
 template<typename GENERATOR_TYPE>
 void select_liveness_event_in_species(CellEvent& event, Tissue& tissue,
-                                      const std::set<SpeciesId>& death_enabled,
                                       const Species& species,
                                       std::uniform_real_distribution<double>& uni_dist,
                                       GENERATOR_TYPE& random_gen)
 {
-    std::list<CellEventType> event_types{CellEventType::DUPLICATION};
-
-    if (death_enabled.count(species.get_id())>0) {
-        event_types.push_back(CellEventType::DEATH);
-    }
+    const std::list<CellEventType> event_types{CellEventType::DUPLICATION,
+                                               CellEventType::DEATH};
 
     bool selected_new_event = false;
     // deal with exclusively genomic events
@@ -193,7 +188,6 @@ void select_epigenetic_event_in_species(CellEvent& event, Tissue& tissue, const 
 
 template<typename GENERATOR_TYPE>
 void select_next_event_in_species(CellEvent& event, Tissue& tissue,
-                                  const std::set<SpeciesId>& death_enabled,
                                   const Species& species,
                                   std::uniform_real_distribution<double>& uni_dist,
                                   GENERATOR_TYPE& random_gen)
@@ -202,7 +196,7 @@ void select_next_event_in_species(CellEvent& event, Tissue& tissue,
         return;
     }
 
-    select_liveness_event_in_species(event, tissue, death_enabled, species, uni_dist, random_gen);
+    select_liveness_event_in_species(event, tissue, species, uni_dist, random_gen);
     select_epigenetic_event_in_species(event, tissue, species, uni_dist, random_gen);
 }
 
@@ -582,7 +576,7 @@ CellEvent Simulation::select_next_cell_event()
     event.delay = std::numeric_limits<Time>::max();
 
     for (const Species& species: tissue()) {
-        select_next_event_in_species(event, tissue(), death_enabled, species, uni_dist, random_gen);
+        select_next_event_in_species(event, tissue(), species, uni_dist, random_gen);
     }
 
     if (event.delay == std::numeric_limits<Time>::max()) {
@@ -971,8 +965,6 @@ void Simulation::reset()
     time = 0;
 
     next_cell_id = Cell::first_tumour_cell_id();
-
-    death_enabled.clear();
 
     logger = BinaryLogger(logger.get_directory());
 

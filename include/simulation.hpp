@@ -2,8 +2,8 @@
  * @file simulation.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a tumour evolution simulation
- * @version 1.2
- * @date 2026-02-06
+ * @version 1.3
+ * @date 2026-03-04
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -155,8 +155,6 @@ protected:
     std::mt19937_64 random_gen;      //!< Pseudo-random generator
 
     TimedEventQueue timed_event_queue;   //!< The timed event queue
-
-    std::set<SpeciesId> death_enabled;  //!< Species having reached the death activation level
 
     std::list<AddedCell> added_cells;   //!< The list of the manually added cells
 
@@ -1141,7 +1139,6 @@ public:
                 & statistics
                 & time
                 & timed_event_queue
-                & death_enabled
                 & death_activation_level
                 & duplicate_internal_cells
                 & storage_enabled
@@ -1171,7 +1168,6 @@ public:
                 & simulation.statistics
                 & simulation.time
                 & simulation.timed_event_queue
-                & simulation.death_enabled
                 & simulation.death_activation_level
                 & simulation.duplicate_internal_cells
                 & simulation.storage_enabled
@@ -1260,15 +1256,11 @@ Simulation& Simulation::simulate(const CellEvent& event, UI::TissuePlotter<PLOT_
 
         // if death has not been enabled yet
         const auto species_id = cell.get_species_id();
-        if (death_enabled.count(species_id)==0) {
-            Species& species = tissue().get_species(species_id);
+        Species& species = tissue().get_species(species_id);
 
-            // and the death activation level has been reached
-            if (species.num_of_cells()>=death_activation_level) {
-
-                // enable death
-                death_enabled.insert(species_id);
-            }
+        if ((!species.is_death_enabled())
+                && (species.num_of_cells()>=death_activation_level)) {
+            species.enable_death();
         }
     }
 

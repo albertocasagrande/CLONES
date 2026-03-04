@@ -2,8 +2,8 @@
  * @file tissue.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Define tissue class
- * @version 1.2
- * @date 2026-02-17
+ * @version 1.3
+ * @date 2026-03-04
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -363,6 +363,9 @@ Tissue& Tissue::add_mutant_species(const MutantProperties& mutant)
 
         name_pos[in_species.get_name()] = species.size();
         species.push_back(Species(in_species));
+
+        // initially disable the death
+        species.back().disable_death();
     }
 
     return *this;

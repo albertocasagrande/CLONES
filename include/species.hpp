@@ -2,8 +2,8 @@
  * @file species.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines species representation
- * @version 1.2
- * @date 2026-02-06
+ * @version 1.3
+ * @date 2026-03-04
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -67,12 +67,14 @@ class Species: public SpeciesProperties
      */
     using CellIdToCell = imap<CellId, CellInTissue*>;
 
-    CellIdToCell cells;                 //!< species cells sorted by birth time/id
-    CellIdToCell duplication_enabled;   //!< species cells that are duplication enabled
+    CellIdToCell cells;                 //!< Species cells sorted by birth time/id
+    CellIdToCell duplication_enabled;   //!< Species cells that are duplication enabled
 
-    Time last_insertion_time;     //!< the last insertion time
+    bool death_enabled;             //!< A Boolean flag that establishes whether the death is enabled
 
-    size_t simulated_cells;          //!< Total number of cells along the computation
+    Time last_insertion_time;       //!< The last insertion time
+
+    size_t simulated_cells;         //!< Total number of cells along the computation
 
     /**
      * @brief A constant iterator for the species cells
@@ -203,6 +205,32 @@ public:
      * @param species_properties is the species of the species
      */
     explicit Species(const SpeciesProperties& species_properties);
+
+    /**
+     * @brief Check whether death is enable on this species
+     *
+     * @return true if and only if death is enabled on this species
+     */
+    inline bool is_death_enabled() const
+    {
+        return death_enabled;
+    }
+
+    /**
+     * @brief Enable death on this species
+     */
+    inline void enable_death()
+    {
+        death_enabled = true;
+    }
+
+    /**
+     * @brief Disable death on this species
+     */
+    inline void disable_death()
+    {
+        death_enabled = false;
+    }
 
     /**
      * @brief A copy constructor
@@ -448,7 +476,8 @@ public:
 
         archive & static_cast<const SpeciesProperties &>(*this);
 
-        archive & last_insertion_time
+        archive & death_enabled
+                & last_insertion_time
                 & simulated_cells;
 
         // save species cells
@@ -479,7 +508,8 @@ public:
         auto species_properties = SpeciesProperties::load(archive);
         Species species(species_properties);
 
-        archive & species.last_insertion_time
+        archive & species.death_enabled
+                & species.last_insertion_time
                 & species.simulated_cells;
 
         size_t num_of_cells;
