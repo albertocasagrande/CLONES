@@ -46,7 +46,7 @@ namespace CLONES
  * field accounts the number of nodes in the subtree rooted in the specific node.
  * Finding the i-th key in the tree can be achieved by using the `subtree_size`
  * fields in time \f$O(\log \texttt{size()})\f$.
- * 
+ *
  * [1] Thomas H. Cormen, Charles E. Leiserson, Ronald L. Rivest, Clifford Stein:
  *     Introduction to Algorithms, 3rd Edition. MIT Press 2009,
  *     ISBN 978-0-262-03384-8, pp. I-XIX, 1-1292
@@ -386,7 +386,7 @@ class IRBTree
          *      reversed in-order visits when `side` is `IRBNode::LEFT` or
          *      `IRBNode::RIGHT`, respectively
          */
-        const IRBNode* torwards(const Side& side) const
+        const IRBNode* towards(const Side& side) const
         {
             if (child[side] != nullptr) {
                 const Side opposite_side = get_opposite_side(side);
@@ -416,7 +416,7 @@ class IRBTree
          */
         inline const IRBNode* successor() const
         {
-            return torwards(RIGHT);
+            return towards(RIGHT);
         }
 
         /**
@@ -435,7 +435,7 @@ class IRBTree
          */
         inline const IRBNode* predecessor() const
         {
-            return torwards(LEFT);
+            return towards(LEFT);
         }
 
         /**
@@ -454,7 +454,7 @@ class IRBTree
          *      reversed in-order visits when `side` is `IRBNode::LEFT` or
          *      `IRBNode::RIGHT`, respectively
          */
-        IRBNode* torwards(const Side& side)
+        IRBNode* towards(const Side& side)
         {
             if (child[side] != nullptr) {
                 const Side sibling = get_opposite_side(side);
@@ -484,7 +484,7 @@ class IRBTree
          */
         inline IRBNode* successor()
         {
-            return torwards(RIGHT);
+            return towards(RIGHT);
         }
 
         /**
@@ -502,7 +502,7 @@ class IRBTree
          */
         inline IRBNode* predecessor()
         {
-            return torwards(LEFT);
+            return towards(LEFT);
         }
 
         /**
@@ -1598,7 +1598,7 @@ public:
      * The time complexity of this method is \f$O(\log \texttt{size()})\f$.
      *
      * @param key is a key value
-     * @return a constant iterator refering to the
+     * @return a constant iterator referring to the
      *      node whose key is `key` if it exists or
      *      `end()` otherwise.
      */
@@ -1613,7 +1613,7 @@ public:
      * The time complexity of this method is \f$O(\log \texttt{size()})\f$.
      *
      * @param key is a key value
-     * @return an iterator refering to the node whose
+     * @return an iterator referring to the node whose
      *      key is `key` if it exists or `end()`
      *      otherwise.
      */
@@ -1656,7 +1656,7 @@ public:
      * The time complexity of this method is \f$O(\log \texttt{size()})\f$.
      *
      * @param index is the index
-     * @return an iterator refering to the `index`-th node in the in-order visit
+     * @return an iterator referring to the `index`-th node in the in-order visit
      *      of the tree
      */
     inline iterator get(const size_t index)
@@ -1670,7 +1670,7 @@ public:
      * The time complexity of this method is \f$O(\log \texttt{size()})\f$.
      *
      * @param index is the index
-     * @return a constant iterator refering to the `index`-th node in
+     * @return a constant iterator referring to the `index`-th node in
      *      the in-order visit of the tree
      */
     inline const_iterator get(const size_t index) const
@@ -1725,7 +1725,7 @@ public:
      *
      * The time complexity of this method is \f$O(1)\f$.
      *
-     * @return an in-order constant iterator refering to the minimal value node
+     * @return an in-order constant iterator referring to the minimal value node
      */
     const_iterator begin() const noexcept
     {
@@ -1741,7 +1741,7 @@ public:
      *
      * The time complexity of this method is \f$O(1)\f$.
      *
-     * @return an in-order iterator refering to the minimal value node
+     * @return an in-order iterator referring to the minimal value node
      */
     iterator begin() noexcept
     {
@@ -1757,7 +1757,7 @@ public:
      *
      * The time complexity of this method is \f$O(1)\f$.
      *
-     * @return an in-order constant iterator refering to the minimal value node
+     * @return an in-order constant iterator referring to the minimal value node
      */
     inline const_iterator cbegin() const noexcept
     {

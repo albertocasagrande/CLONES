@@ -81,12 +81,12 @@ DescendantsForest::DescendantsForest(const Evolutions::Simulation& simulation,
     std::set<MutantId> mutant_ids;
 
     auto species_properties = simulation.tissue().get_species_properties();
-    for (const auto& s_propeties: species_properties) {
-        const auto& mutant_id = s_propeties.get_mutant_id();
+    for (const auto& s_properties: species_properties) {
+        const auto& mutant_id = s_properties.get_mutant_id();
         mutant_ids.insert(mutant_id);
 
-        const auto& signature = s_propeties.get_methylation_signature();
-        species_data.insert({s_propeties.get_id(), {mutant_id, signature}});
+        const auto& signature = s_properties.get_methylation_signature();
+        species_data.insert({s_properties.get_id(), {mutant_id, signature}});
     }
 
     for (const auto& mutant_id : mutant_ids) {

@@ -61,36 +61,36 @@ void Read::MutationIterator::set_current_mutation()
     }
 }
 
-Read::MutationIterator::MutationIterator(const std::map<GenomicPosition, std::shared_ptr<SID>>& germlines,
+Read::MutationIterator::MutationIterator(const std::map<GenomicPosition, std::shared_ptr<SID>>& germline,
                             const std::map<GenomicPosition, std::shared_ptr<SID>>& passengers,
                             const std::map<GenomicPosition, std::shared_ptr<SID>>::const_iterator& germline_it,
                             const std::map<GenomicPosition, std::shared_ptr<SID>>::const_iterator& passenger_it):
-    passengers{&passengers}, germlines{&germlines},
+    passengers{&passengers}, germline{&germline},
     p_it{passenger_it}, g_it{germline_it},
     direction{Direction::FORWARD},
     p_begin{passengers.begin() == passenger_it},
     p_end{passengers.end() == passenger_it},
-    g_begin{germlines.begin() == germline_it},
-    g_end{germlines.end() == germline_it}
+    g_begin{germline.begin() == germline_it},
+    g_end{germline.end() == germline_it}
 {
     set_current_mutation();
 }
 
 Read::MutationIterator::MutationIterator():
-    passengers{nullptr}, germlines{nullptr}, p_it{}, g_it{},
+    passengers{nullptr}, germline{nullptr}, p_it{}, g_it{},
     direction{Read::Direction::FORWARD},
     p_begin{true}, p_end{true}, g_begin{true}, g_end{true}
 {}
 
 Read::MutationIterator
-Read::MutationIterator::lower_bound(const std::map<GenomicPosition, std::shared_ptr<SID>>& germlines,
+Read::MutationIterator::lower_bound(const std::map<GenomicPosition, std::shared_ptr<SID>>& germline,
                                     const std::map<GenomicPosition, std::shared_ptr<SID>>& passengers,
                                     const GenomicPosition& genomic_position)
 {
-    auto g_it = germlines.lower_bound(genomic_position);
+    auto g_it = germline.lower_bound(genomic_position);
     auto p_it = passengers.lower_bound(genomic_position);
 
-    return {germlines, passengers, g_it, p_it};
+    return {germline, passengers, g_it, p_it};
 }
 
 Read::MutationIterator&
@@ -107,7 +107,7 @@ Read::MutationIterator::operator++()
         if (!g_end) {
             ++g_it;
 
-            if (g_it == germlines->end()) {
+            if (g_it == germline->end()) {
                 g_end = true;
             }
         }
@@ -140,7 +140,7 @@ Read::MutationIterator::operator++()
         ++g_it;
         g_begin = false;
 
-        if (g_it == germlines->end()) {
+        if (g_it == germline->end()) {
             p_it_curr = true;
             g_end = true;
 
@@ -180,7 +180,7 @@ Read::MutationIterator::operator--()
         if (!g_begin) {
             --g_it;
 
-            if (g_it == germlines->begin()) {
+            if (g_it == germline->begin()) {
                 g_begin = true;
             }
         }
@@ -210,7 +210,7 @@ Read::MutationIterator::operator--()
             return *this;
         }
     } else {
-        if (g_it == germlines->begin()) {
+        if (g_it == germline->begin()) {
             p_it_curr = true;
             g_begin = true;
 
@@ -422,13 +422,13 @@ void update_alignment(std::vector<MatchingType>& alignment,
 }
 
 Read::Read(const std::string& reference,
-           const std::map<GenomicPosition, std::shared_ptr<SID>>& germlines,
+           const std::map<GenomicPosition, std::shared_ptr<SID>>& germline,
            const std::map<GenomicPosition, std::shared_ptr<SID>>& passengers,
            const GenomicPosition& genomic_position,
            const size_t& read_size):
     genomic_position{genomic_position}
 {
-    auto it = MutationIterator::lower_bound(germlines, passengers,
+    auto it = MutationIterator::lower_bound(germline, passengers,
                                             genomic_position);
 
     // remove initial deletions from the read

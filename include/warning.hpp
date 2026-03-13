@@ -53,7 +53,7 @@ namespace CLONES
 
     /**
      * @brief The default warning function
-     * 
+     *
      * @param type is the warning type
      * @param message is the warning message
      */

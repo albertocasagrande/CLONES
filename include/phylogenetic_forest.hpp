@@ -58,8 +58,8 @@ class PhylogeneticForest : public Mutants::DescendantsForest
 
     std::map<Mutants::CellId, CellMutationsPtr> leaves_mutations;   //!< The mutations of each cells represented as leaves in the forest
     std::map<Mutants::CellId, MutationList> novel_mutations;        //!< The mutations introduces by each cell in the forest
-    std::map<SID, CellIdSet> SID_first_cells;                       //!< A map associating each SID to the first cells in which it occured
-    std::map<CNA, CellIdSet> CNA_first_cells;      //!< A map associating each CNA to the first cells in which it occured
+    std::map<SID, CellIdSet> SID_first_cells;                       //!< A map associating each SID to the first cells in which it occurred
+    std::map<CNA, CellIdSet> CNA_first_cells;      //!< A map associating each CNA to the first cells in which it occurred
 
     std::shared_ptr<GenomeMutations> germline_mutations; //!< The germline mutations
 
@@ -264,7 +264,7 @@ public:
      * @brief Get map associating each SID to the first cell in which it occurs
      *
      * @return a constant reference to a map associating each SID in the phylogenetic
-     *         forest to the identifier of the first cell in which the SID occured
+     *         forest to the identifier of the first cell in which the SID occurred
      */
     inline const std::map<SID, std::set<Mutants::CellId>>& get_mutation_first_cells() const
     {
@@ -275,7 +275,7 @@ public:
      * @brief Get map associating each CNA to the first cell in which it occurs
      *
      * @return a constant reference to a map associating each CNA in the phylogenetic
-     *         forest to the identifier of the first cell in which the CNA occured
+     *         forest to the identifier of the first cell in which the CNA occurred
      */
     inline const std::map<CNA, std::set<Mutants::CellId>>& get_CNA_first_cells() const
     {
@@ -373,7 +373,7 @@ public:
     /**
      * @brief Get the allelic count of a set of cells
      *
-     * @param cell_ids is a list of cell identifers corresponding to leaves in
+     * @param cell_ids is a list of cell identifiers corresponding to leaves in
      *   the phylogenetic forest
      * @param min_allelic_size is the minimum number of alleles to report
      * @return A map that, for each chromosome and for each break point, reports

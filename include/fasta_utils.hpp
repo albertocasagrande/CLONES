@@ -103,7 +103,7 @@ struct NCBISeqNameDecoder : public SeqNameDecoder
 };
 
 /**
- * @brief The list of sequence name decorders
+ * @brief The list of sequence name decoders
  *
  * The elements in this list are used by the function
  * `CLONES::IO::FASTA::is_chromosome_header(...)`.

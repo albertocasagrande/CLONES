@@ -49,7 +49,7 @@ class DriverStorage
 public:
     /**
      * @brief The mutation entry type in the code-mutation map
-     * 
+     *
      * This class represent the co-domain in the code-mutation map.
      * It maintains the mutation and the set of all the tumour type
      * for which it appears as a driver mutation.

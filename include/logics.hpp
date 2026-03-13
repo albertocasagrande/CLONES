@@ -81,7 +81,7 @@ public:
      *   must be evaluated
      * @param context is the context in which the variable must be
      *   evaluated
-     * @return The variable evalutation, i.e., the cardinality of the
+     * @return The variable evaluation, i.e., the cardinality of the
      *   species in the context
      */
     template<typename CONTEXT>
@@ -735,7 +735,7 @@ struct Formula
 private:
 
     /**
-     * @brief A constructor for a formula having two sub-fomulas
+     * @brief A constructor for a formula having two sub-formulas
      *
      * @param type is the type of the new formula
      * @param lhs is the left hand-side of the new formula
@@ -744,7 +744,7 @@ private:
     Formula(const Type& type, const Formula& lhs, const Formula& rhs);
 
     /**
-     * @brief A constructor for a formula having two sub-fomulas
+     * @brief A constructor for a formula having two sub-formulas
      *
      * @param type is the type of the new formula
      * @param lhs is the left hand-side of the new formula
@@ -753,7 +753,7 @@ private:
     Formula(const Type& type, Formula&& lhs, Formula&& rhs);
 
     /**
-     * @brief A constructor for a formula having one sub-fomula
+     * @brief A constructor for a formula having one sub-formula
      *
      * @param type is the type of the new formula
      * @param subformula is the subformula
@@ -761,7 +761,7 @@ private:
     Formula(const Type& type, const Formula& subformula);
 
     /**
-     * @brief A constructor for a formula having one sub-fomula
+     * @brief A constructor for a formula having one sub-formula
      *
      * @param type is the type of the new formula
      * @param subformula is the subformula

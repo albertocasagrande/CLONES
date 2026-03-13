@@ -56,7 +56,7 @@ class DescendantsForest
     /**
      * @brief Species data
      *
-     * This structure privatly stores species data.
+     * This structure privately stores species data.
      */
     struct SpeciesData
     {
@@ -653,7 +653,7 @@ public:
      * @brief Check whether a cell is represented by a forest leaf
      *
      * @param cell_id is a cell identifier
-     * @return `true` if and only if `cell_id` is the indentifier of a cell represented
+     * @return `true` if and only if `cell_id` is the identifier of a cell represented
      *      by one of the forest leaves
      */
     bool is_leaf(const CellId& cell_id) const;

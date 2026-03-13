@@ -290,7 +290,7 @@ public:
     }
 
     /**
-     * @brief Test whether a cell in the species is avaiable for an event
+     * @brief Test whether a cell in the species is available for an event
      *
      * @param cell_id is the id of the cell to be tested
      * @param event_type is the event type for which the availability is tested

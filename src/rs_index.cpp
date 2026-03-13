@@ -637,7 +637,7 @@ RSIndex RSIndex::build_index(const std::filesystem::path& genome_fasta,
 
 void RSIndex::restore()
 {
-    for (auto& [unit_nucleotipe, r_map]: *homo_map) {
+    for (auto& [unit_nucleotide, r_map]: *homo_map) {
         for (auto& [num_of_repeats, r_storage]: r_map) {
             r_storage.restore();
         }

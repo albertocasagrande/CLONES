@@ -99,7 +99,7 @@ struct PassengerRates
         archive & p_rates.indel
                 & p_rates.snv
                 & p_rates.cna;
-        
+
         return p_rates;
     }
 };
@@ -124,7 +124,7 @@ public:
      * @brief Add the properties of a mutant
      *
      * @param mutant_name is the name of the mutant
-     * @param epistate_passenger_rates is a map from epigenomic state to
+     * @param epistate_passenger_rates is a map from epigenetic state to
      *          passenger rates
      * @param driver_SIDs is a list of driver SIDs
      * @param driver_CNAs is a list of driver CNAs
@@ -141,7 +141,7 @@ public:
      * @brief Add the properties of a mutant
      *
      * @param mutant_name is the name of the mutant
-     * @param epistate_passenger_rates is a map from epigenomic state to
+     * @param epistate_passenger_rates is a map from epigenetic state to
      *          passenger rates
      * @param driver_SIDs is a list of driver SIDs
      * @param driver_CNAs is a list of driver CNAs
@@ -155,9 +155,9 @@ public:
                                      const std::list<DriverMutations::MutationType>& application_order);
 
     /**
-     * @brief Get the species passeger rates
+     * @brief Get the species passenger rates
      *
-     * @return a constant reference to the species passeger rates
+     * @return a constant reference to the species passenger rates
      */
     inline const std::map<std::string, PassengerRates>& get_passenger_rates() const
     {
@@ -209,7 +209,7 @@ public:
 
         archive & m_properties.passenger_rates
                 & m_properties.driver_mutations;
-        
+
         return m_properties;
     }
 };

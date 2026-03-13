@@ -260,7 +260,7 @@ bool ChromosomeMutations::has_context_free(const SID& mutation) const
     if (!contains(mutation)) {
         std::ostringstream oss;
 
-        oss << mutation << " is does not lie in the chromsome "
+        oss << mutation << " is does not lie in the chromosome "
             << id() << ".";
         throw std::domain_error(oss.str());
     }

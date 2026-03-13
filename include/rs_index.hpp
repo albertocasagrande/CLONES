@@ -326,7 +326,7 @@ struct RSIndex
     /**
      * @brief Upgrade the (h-1)-suffix array to a (h)-suffix array
      *
-     * @param h is the length of the prefices sorted in the (h)-suffix array
+     * @param h is the length of the prefixes sorted in the (h)-suffix array
      * @param h_suffix_array is a (h-1)-suffix array
      * @param h_classes is the vector of the classes of the (h-1)-suffix array
      * @param num_of_classes is the number of classes of the (h-1)-suffix array
@@ -417,7 +417,7 @@ struct RSIndex
      *      the repeated sequence
      * @param begin is the position of the repeated sequence first base
      *      in the chromosome
-     * @param index is the index of the repetition in the repetion map
+     * @param index is the index of the repetition in the repetition map
      * @param num_of_repetitions is the number of repetition of the unit
      * @param unit is the pointer to the unit first base in the sequence
      * @param unit_size is the unit size
@@ -680,8 +680,8 @@ struct RSIndex
      * @param num_of_repetitions is the number of repetitions of the searched polymer
      * @param for_insertion is a Boolean flag declaring whether the polymer will be
      *      targeted for insertion
-     * @return a pair repetition storage-position in the storage refering to a polymer
-     *      satisfing the parameters
+     * @return a pair repetition storage-position in the storage referring to a polymer
+     *      satisfying the parameters
      */
     template<typename INDEX_TYPE>
     std::pair<RepetitionStorage*, size_t>
@@ -719,7 +719,7 @@ struct RSIndex
      * @param num_of_repetitions is the number of repetitions of the aimed polymer
      * @param for_insertion is a Boolean flag declaring whether the polymer will be
      *      targeted for insertion
-     * @return a pair repetition storage-position refering to a heteropolymer having
+     * @return a pair repetition storage-position referring to a heteropolymer having
      *      unit size `unit_size` and whose unit is repeated `num_of_repetitions` times,
      *      when `for_insertion` is `false` or `num_of_repetitions` is smaller than 6,
      *      or either 5 or 6 times, when `for_insertion` is `true` and
@@ -740,7 +740,7 @@ struct RSIndex
      * @param num_of_repetitions is the number of repetitions of the aimed polymer
      * @param for_insertion is a Boolean flag declaring whether the polymer will be
      *      targeted for insertion or deletion
-     * @return a pair repetition storage-position refering to a homopolymer whose
+     * @return a pair repetition storage-position referring to a homopolymer whose
      *      unit is `unit_nucleotide` and it is repeated `num_of_repetitions`
      *      times, when `for_insertion` is `false` or `num_of_repetitions` is
      *      smaller than 6, or either 5 or 6 times, when `for_insertion` is `true`
@@ -755,18 +755,18 @@ struct RSIndex
     }
 
     /**
-     * @brief Find a microhomolory
+     * @brief Find a microhomology
      *
      * @param homology_distance is the aimed micro-homology distance
      * @param homology_size is the aimed micro-homology size
-     * @return a pair repetition storage-position refering to a micro-homology
+     * @return a pair repetition storage-position referring to a micro-homology
      *      between sequences whose distance is `homology_distance` and whose
      *      size if `homology_size`.
      */
     inline std::pair<RepetitionStorage*, size_t>
     find_a_microhomology(const uint8_t& homology_distance, const uint8_t& homology_size)
     {
-        return find_a_polymer(*micro_map, "microhomolory", get_first_index(homology_distance),
+        return find_a_polymer(*micro_map, "microhomology", get_first_index(homology_distance),
                               homology_size, false);
     }
 
@@ -800,8 +800,8 @@ struct RSIndex
     /**
      * @brief Add to the index all the repetitions in a chromosome
      *
-     * @param[in] chr_id is the identifier of a chrosomome
-     * @param[in] chr_sequence is the nucleotide sequence of a chrosomome
+     * @param[in] chr_id is the identifier of a chromosome
+     * @param[in] chr_sequence is the nucleotide sequence of a chromosome
      * @param[in,out] progress_bar is the progress bar
      */
     void collect_data_from(const ChromosomeId& chr_id, const std::string& chr_sequence,

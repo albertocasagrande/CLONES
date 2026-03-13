@@ -259,7 +259,7 @@ void check_in(const SID& mutation, const ChromosomeId& chr_id)
 
         std::ostringstream oss;
 
-        oss << mutation << " does not lay in the chromosome "
+        oss << mutation << " does not lie in the chromosome "
             << GenomicPosition::chrtos(chr_id) << ".";
 
         throw std::domain_error(oss.str());
@@ -328,7 +328,7 @@ void update_data(std::map<SID, SIDData>& a, const std::map<SID, SIDData>& b)
             // found an SID not laying before b_it->first
 
             if (!before(b_it->first, a_it->first)) {
-                // if the found SID does not lay after b_it->first,
+                // if the found SID does not lie after b_it->first,
                 // then it is in the same SID
 
                 a_it->second.update(b_it->second);

@@ -642,7 +642,7 @@ public:
 
     /**
      * @brief Save an object referenced by a shared pointer
-     * 
+     *
      * @tparam T is the type of the object to be saved
      * @param obj_ptr a shared pointer to the object to be save
      * @return a reference to the updated archive
@@ -737,13 +737,13 @@ public:
         if (progress_bar != nullptr) {
             progress_bar->update_elapsed_time();
         }
-    
+
         return *this;
     }
 
     /**
      * @brief Measure the space required by an object in dynamic memory
-     * 
+     *
      * @tparam T is the type of the object whose archive space is required
      * @param obj_ptr a shared pointer to the object whose archive space
      *    is required
@@ -879,7 +879,7 @@ public:
 
     /**
      * @brief Load an object in dynamic memory
-     * 
+     *
      * @tparam T is the type of the object to be loaded
      * @param obj_ptr a shared pointer that will reference
      *      the loaded object
@@ -1545,7 +1545,7 @@ Out& Out::operator&(const std::shared_ptr<T>& obj_ptr)
     }
 
     *this & *obj_ptr;
-    
+
     return *this;
 }
 
@@ -1596,7 +1596,7 @@ In& In::operator&(std::shared_ptr<T>& obj_ptr)
         }
 
         if (it->second.first != typeid(T).hash_code()) {
-            throw std::runtime_error("Wrong hash code for index " 
+            throw std::runtime_error("Wrong hash code for index "
                                         + std::to_string(idx));
         }
 
@@ -1688,7 +1688,7 @@ ByteCounter& ByteCounter::operator&(const std::shared_ptr<T>& obj_ptr)
     }
 
     *this & *obj_ptr;
-    
+
     return *this;
 }
 

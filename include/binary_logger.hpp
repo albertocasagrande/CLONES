@@ -68,7 +68,7 @@ struct BinaryLogger : public BasicLogger
 
     /**
      * @brief Get the cell file information file path
-     * 
+     *
      * @param log_directory is the log directory path
      * @return the cell file information file path
      */
@@ -80,7 +80,7 @@ struct BinaryLogger : public BasicLogger
 
     /**
      * @brief Get the cell file information file path
-     * 
+     *
      * @return the cell file information file path
      */
     inline std::filesystem::path get_cell_file_info_path() const
@@ -90,8 +90,8 @@ struct BinaryLogger : public BasicLogger
 
     /**
      * @brief Save the cell file infomation file
-     * 
-     * This methdo save the cell file information file
+     *
+     * This method save the cell file information file
      */
     void save_cell_file_info() const;
 

@@ -81,7 +81,7 @@ class Read
      * @brief A class for indices of bases in mutations
      *
      * Any valid object of this class refers to a base in
-     * the alterate sequence of a mutation laying a read.
+     * the alternative sequence of a mutation laying a read.
      * The objects of this class may also be not valid if
      * it does not refer to any base.
      */
@@ -111,8 +111,8 @@ class Read
         /**
          * @brief Check if this mutation base index is valid
          *
-         * @return `true` if and only if this object is refering
-         *      to a base in the alterate sequence of the
+         * @return `true` if and only if this object is referring
+         *      to a base in the alternative sequence of the
          *      `index`-th mutation laying in the read
          */
         inline bool is_valid() const
@@ -139,7 +139,7 @@ class Read
     class MutationIterator
     {
         std::map<GenomicPosition, std::shared_ptr<SID>> const* passengers;     //!< The passenger map
-        std::map<GenomicPosition, std::shared_ptr<SID>> const* germlines;      //!< The germline map
+        std::map<GenomicPosition, std::shared_ptr<SID>> const* germline;      //!< The germline map
 
         std::map<GenomicPosition, std::shared_ptr<SID>>::const_iterator p_it;    //!< The passenger iterator
         std::map<GenomicPosition, std::shared_ptr<SID>>::const_iterator g_it;    //!< The germline iterator
@@ -161,12 +161,12 @@ class Read
         /**
          * @brief Construct a new Forward Mutation Iterator object
          *
-         * @param germlines is the germline SID map
+         * @param germline is the germline SID map
          * @param passengers is the passenger SID map
          * @param germline_it is an germline SID map iterator
          * @param passenger_it is an passenger SID map iterator
          */
-        MutationIterator(const std::map<GenomicPosition, std::shared_ptr<SID>>& germlines,
+        MutationIterator(const std::map<GenomicPosition, std::shared_ptr<SID>>& germline,
                             const std::map<GenomicPosition, std::shared_ptr<SID>>& passengers,
                             const std::map<GenomicPosition, std::shared_ptr<SID>>::const_iterator& germline_it,
                             const std::map<GenomicPosition, std::shared_ptr<SID>>::const_iterator& passenger_it);
@@ -188,12 +188,12 @@ class Read
         /**
          * @brief
          *
-         * @param germlines
+         * @param germline
          * @param passengers
          * @param genomic_position
          * @return MutationIterator
          */
-        static MutationIterator lower_bound(const std::map<GenomicPosition, std::shared_ptr<SID>>& germlines,
+        static MutationIterator lower_bound(const std::map<GenomicPosition, std::shared_ptr<SID>>& germline,
                                             const std::map<GenomicPosition, std::shared_ptr<SID>>& passengers,
                                             const GenomicPosition& genomic_position);
 
@@ -330,13 +330,13 @@ public:
      * @brief A read constructor
      *
      * @param reference is the reference sequence
-     * @param germlines is the position-mutation map for germline mutations
+     * @param germline is the position-mutation map for germline mutations
      * @param passengers is the position-mutation map for passenger mutations
      * @param genomic_position is the aimed position of the first base in the read
      * @param read_size is the aimed read size
      */
     Read(const std::string& reference,
-         const std::map<GenomicPosition, std::shared_ptr<SID>>& germlines,
+         const std::map<GenomicPosition, std::shared_ptr<SID>>& germline,
          const std::map<GenomicPosition, std::shared_ptr<SID>>& passengers,
          const GenomicPosition& genomic_position,
          const size_t& read_size);

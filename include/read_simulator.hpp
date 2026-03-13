@@ -1060,7 +1060,7 @@ private:
      * @param[in] chr_data is the data about the chromosome from which the simulated
      *   template come from
      * @param[in] cell_id is the identifier of the fragment cell
-     * @param[in] germlines is a map from genomic positions to the corresponding
+     * @param[in] germline is a map from genomic positions to the corresponding
      *   germline SIDs
      * @param[in] passengers is a map from genomic positions to the corresponding
      *   passenger SIDs
@@ -1078,7 +1078,7 @@ private:
     void process_template(SEQUENCER& sequencer,
                           const CLONES::IO::FASTA::ChromosomeData<CLONES::IO::FASTA::Sequence>& chr_data,
                           const CLONES::Mutants::CellId& cell_id,
-                          const std::map<GenomicPosition, std::shared_ptr<SID>>& germlines,
+                          const std::map<GenomicPosition, std::shared_ptr<SID>>& germline,
                           const std::map<GenomicPosition, std::shared_ptr<SID>>& passengers,
                           const ChrPosition& template_begin_pos,
                           const size_t& template_size, ChrSampleStatistics& chr_statistics,
@@ -1097,7 +1097,7 @@ private:
 
             const GenomicPosition genomic_position{chr_data.chr_id, read_first_position};
 
-            read[i] = Read{chr_data.nucleotides, germlines, passengers,
+            read[i] = Read{chr_data.nucleotides, germline, passengers,
                            genomic_position, read_size};
 
             qual[i] = sequencer.simulate_seq(read[i], genomic_position, i==1);
@@ -1206,7 +1206,7 @@ private:
 
             const double current_progress = 100*static_cast<double>(steps)/total_steps;
 
-            const auto& germlines = germline_fragment.get_mutations();
+            const auto& germline = germline_fragment.get_mutations();
             const auto& passengers = fragment.get_mutations();
 
             auto first_possible_begin = fragment.begin();
@@ -1223,7 +1223,7 @@ private:
 
                 if (begin_pos+template_size<=fragment.end()+1) {
 
-                    process_template(sequencer, chr_data, cell_id, germlines, passengers, begin_pos,
+                    process_template(sequencer, chr_data, cell_id, germline, passengers, begin_pos,
                                     template_size, chr_statistics, SAM_stream, sample_name);
 
                     num_of_reads += ((read_type == ReadType::PAIRED_READ)?2:1);
@@ -1450,7 +1450,7 @@ private:
             std::binomial_distribution<size_t> b_dist(missing_templates, hit_probability);
             missing_templates = b_dist(random_generator);
 
-            // remove the allelic size of non-relevant chromsomes
+            // remove the allelic size of non-relevant chromosomes
             non_covered_allelic_size -= non_relevant_allelic_size;
 
             // build a read simulation data accounting for the relevant non-covered alleles

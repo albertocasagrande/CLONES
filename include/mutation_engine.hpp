@@ -424,7 +424,7 @@ class MutationEngine
      * @brief Randomly select the number of mutations according to a Poisson distribution
      *
      * @param genome_size is the genome size
-     * @param passenger_mutation_rate is the rate of the passanger mutations
+     * @param passenger_mutation_rate is the rate of the passenger mutations
      * @return is the randomly selected number of mutations
      */
     size_t number_of_mutations(GenomeMutations::Length genome_size,
@@ -499,7 +499,7 @@ class MutationEngine
      *
      * @param node is a phylogenetic forest node representing a cell
      * @param cell_mutations are the cell mutations
-     * @param CNA_rate is the rate of passegers CNAs
+     * @param CNA_rate is the rate of passengers CNAs
      */
     void place_CNAs(PhylogeneticForest::node& node, GenomeMutations& cell_mutations,
                     const double& CNA_rate)
@@ -1201,12 +1201,12 @@ class MutationEngine
     /**
      * @brief Get the driver mutation map
      *
-     * This method returns a map from the mutant identifier to the correspoding
+     * This method returns a map from the mutant identifier to the corresponding
      * driver mutations.
      *
      * @param descendants_forest is a descendent forest
      * @return a map associating the mutants in `descendants_forest` to the
-     *              correspoding driver mutations.
+     *              corresponding driver mutations.
      */
     std::map<Mutants::MutantId, DriverMutations>
     get_driver_mutation_map(const Mutants::DescendantsForest& descendants_forest) const
@@ -1568,7 +1568,7 @@ public:
      * its driver mutations) and all its species to the mutations engine.
      *
      * @param name is the name of the mutant
-     * @param epistate_passenger_rates is a map from epigenomic status to
+     * @param epistate_passenger_rates is a map from epigenetic status to
      *          passenger rate
      * @param driver_SIDs is a list of driver SIDs
      * @param driver_CNAs is a list of driver CNAs
@@ -1595,7 +1595,7 @@ public:
      * its driver mutations) and all its species to the mutations engine.
      *
      * @param name is the name of the mutant
-     * @param epistate_passenger_rates is a map from epigenomic status to
+     * @param epistate_passenger_rates is a map from epigenetic status to
      *          passenger rate
      * @param driver_SIDs is a list of driver SIDs
      * @param driver_CNAs is a list of driver CNAs

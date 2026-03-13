@@ -64,7 +64,7 @@ class GermlineMutations
     std::mt19937_64 rand_gen;   //!< the random generator
 
     const size_t genome_size;   //!< the genome size
-    const size_t expected_mutations;    //!< the expected number of geminal mutations to place
+    const size_t expected_mutations;    //!< the expected number of germinal mutations to place
 
     size_t not_processed_size;  //!< the length of the regions in which mutations has not been placed
     size_t mutations_not_placed;  //!< the number of mutations not placed yet
@@ -133,7 +133,7 @@ public:
      * "file". Each row of these files corresponds to a chromosome and reports,
      * in order, the chromosome name and the relative path of a VCF file in
      * IGSR format (see https://www.internationalgenome.org/wiki/Analysis/Variant%20Call%20Format/vcf-variant-call-format-version-40)
-     * that describes the mutations in the chrosomome.
+     * that describes the mutations in the chromosome.
      *
      * @param germline_data_file is a germline data file
      * @param alleles_per_chromosome is the number of alleles in wild-type cells
