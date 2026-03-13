@@ -2,8 +2,8 @@
  * @file allele.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines allele representation
- * @version 1.5
- * @date 2026-02-06
+ * @version 1.6
+ * @date 2026-03-13
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -65,7 +65,7 @@ class AlleleFragment : public GenomicRegion
      * `AlleleFragment:_data`.
      */
     class Data
-    {    
+    {
         std::map<GenomicPosition,
                  std::shared_ptr<SID>> mutations;  //!< the fragment SIDs
     public:
@@ -112,14 +112,14 @@ class AlleleFragment : public GenomicRegion
      * @brief Make data exclusive
      *
      * When the data pointer is not exclusive and is referenced by many different
-     * alleles, the method copy of the original data member into a data
+     * alleles, the method copies the original data member into a data
      * object exclusively pointed by the current `AlleleFragment` object.
      *
-     * @warning In order to avoid unneccessary and time-consuming copies of 
+     * @warning In order to avoid unnecessary and time-consuming copies of
      *     the allele fragment data, the allele fragment data pointer should
      *     be exclusively maintained by the `AlleleFragment` object during
-     *     the call to this method. If needed, the returned pointer can be 
-     *     used for backup purpouse.
+     *     the call to this method. If needed, the returned pointer can be
+     *     used for backup purposes.
      *
      * @return the shared pointer to the original data for backup
      */
@@ -174,16 +174,56 @@ public:
     bool has_context_free(const SID& mutation) const;
 
     /**
-     * @brief Applied a new SID mutation
+     * @brief Add a SID
      *
-     * This method tries to apply a new SID mutation. It succeeds
-     * if no other SID mutations are contained in the context.
+     * This method tries to add a SID into the fragment creating
+     * a new copy for it if it is referenced more than once. It
+     * succeeds if no other SIDs are contained in its context.
      *
      * @param mutation is the SID mutation to be applied
      * @return `true` if and only if the mutation application
      *          has succeeded
      */
-    bool apply(const SID& mutation);
+    bool insert_in_object(const SID& mutation);
+
+    /**
+     * @brief Add a SID
+     *
+     * This method tries to add a SID into the fragment without creating
+     * a new copy of it even when it is referenced more than once. It
+     * succeeds if no other SIDs are contained in its context.
+     *
+     * @param mutation is the SID mutation to be applied
+     * @return `true` if and only if the mutation application
+     *          has succeeded
+     */
+    bool insert_in_reference(const SID& mutation);
+
+    /**
+     * @brief Remove a SID
+     *
+     * This method tries to remove a SID from a fragment creating
+     * a new fragment if it is referenced more than once. It succeeds
+     * if the allele fragment contains a SID in the specified position.
+     *
+     * @param genomic_position is the genomic position containing the
+     *          SID mutation to be removed
+     * @return `true` if and only if the removal has succeeded
+     */
+    bool remove_from_object_at(const GenomicPosition& genomic_position);
+
+    /**
+     * @brief Remove a SID
+     *
+     * This method tries to remove a SID from a fragment creating
+     * a new fragment if it is referenced more than once. It succeeds
+     * if the allele fragment contains the SID.
+     *
+     * @param mutation is the SID to be removed
+     * @return `true` if and only if `SID` was in allele fragment and has
+     *      been removed from it
+     */
+    bool remove_from_object(const SID& mutation);
 
     /**
      * @brief Remove a SID mutation
@@ -196,7 +236,18 @@ public:
      *          SID mutation to be removed
      * @return `true` if and only if the removal has succeeded
      */
-    bool remove_mutation(const GenomicPosition& genomic_position);
+    bool remove_from_reference_at(const GenomicPosition& genomic_position);
+
+    /**
+     * @brief Remove a SID mutation
+     *
+     * This method tries to remove a SID mutation from the allele fragment.
+     *
+     * @param mutation is the SID to be removed
+     * @return `true` if and only if `SID` was in allele fragment and has
+     *      been removed from it
+     */
+    bool remove_from_reference(const SID& mutation);
 
     /**
      * @brief Check whether a SID is included among the fragment allele mutations
@@ -217,6 +268,13 @@ public:
      *      in `genomic_region`
      */
     AlleleFragment copy(const GenomicRegion& genomic_region) const;
+
+    /**
+     * @brief Make a deep copy of the allele fragment
+     *
+     * @return A deep copy of the allele fragment
+     */
+    AlleleFragment deep_copy() const;
 
     /**
      * @brief Split an allele fragment
@@ -436,16 +494,57 @@ public:
     bool has_context_free(const SID& mutation) const;
 
     /**
-     * @brief Apply a new SID mutation
+     * @brief Add a SID into one of the referenced fragments
      *
-     * This method tries to apply a new SID mutation. It succeeds
-     * if no other SIDs are contained in the context.
+     * This method tries to add a SID to one of the referenced fragments
+     * creating a new copy for it if it is referenced more than once.
+     * It succeeds if no other SIDs are contained in its context.
      *
-     * @param mutation is the SID to applied
-     * @return `true` if and only if the SID application
+     * @param mutation is the SID to insert
+     * @return `true` if and only if the SID insertion
      *          has succeeded
      */
-    bool apply(const SID& mutation);
+    bool insert_in_object(const SID& mutation);
+
+    /**
+     * @brief Add a SID into one of the referenced fragments
+     *
+     * This method tries to add a SID to one of the referenced fragments
+     * without creating a new copy of it even when it is referenced
+     * more than once. It succeeds if no other SIDs are contained in its
+     * context.
+     *
+     * @param mutation is the SID to insert
+     * @return `true` if and only if the SID insertion has succeeded
+     */
+    bool insert_in_reference(const SID& mutation);
+
+    /**
+     * @brief Remove a SID
+     *
+     * This method tries to remove a SID from one of the allele's fragments
+     * creating a new copy of it if it is referenced more than once. It
+     * succeeds if the allele fragment contains a SID in the specified
+     * position.
+     *
+     * @param genomic_position is the genomic position containing the
+     *          SID mutation to be removed
+     * @return `true` if and only if the removal has succeeded
+     */
+    bool remove_from_object_at(const GenomicPosition& genomic_position);
+
+    /**
+     * @brief Remove a SID
+     *
+     * This method tries to remove a SID from one of the allele's fragments
+     * creating a new copy of it if it is referenced more than once. It
+     * succeeds if the allele fragment contains the SID.
+     *
+     * @param mutation is the SID to be removed
+     * @return `true` if and only if `SID` was in allele and has
+     *      been removed from it
+     */
+    bool remove_from_object(const SID& mutation);
 
     /**
      * @brief Remove a SID mutation
@@ -458,7 +557,18 @@ public:
      *          SID mutation to be removed
      * @return `true` if and only if the removal has succeeded
      */
-    bool remove_mutation(const GenomicPosition& genomic_position);
+    bool remove_from_reference_at(const GenomicPosition& genomic_position);
+
+    /**
+     * @brief Remove a SID mutation
+     *
+     * This method tries to remove a SID mutation from the allele.
+     *
+     * @param mutation is the SID to be removed
+     * @return `true` if and only if `SID` was in allele and has
+     *      been removed from it
+     */
+    bool remove_from_reference(const SID& mutation);
 
     /**
      * @brief Copy part of an allele
@@ -528,6 +638,13 @@ public:
      *      objects, but misses the original SID mutations
      */
     Allele copy_structure() const;
+
+    /**
+     * @brief Make a deep copy of the allele
+     *
+     * @return A deep copy of the allele
+     */
+    Allele deep_copy() const;
 
     /**
      * @brief Save an allele in an archive

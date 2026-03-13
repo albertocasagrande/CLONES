@@ -2,8 +2,8 @@
  * @file mutation_engine.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a class to place mutations on a descendants forest
- * @version 1.26
- * @date 2026-02-06
+ * @version 1.27
+ * @date 2026-03-13
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -591,14 +591,14 @@ class MutationEngine
         }
 
         // try to apply the selected SID
-        return cell_mutations.apply(mutation);
+        return cell_mutations.insert_in_reference(mutation);
     }
 
     /**
-     * @brief Get the number of indiced SBSs of a given type
+     * @brief Get the number of indexed SBSs of a given type
      *
      * @param mutation_type is the type of the aimed SBS
-     * @return the number of indiced SBSs of type `mutation_type`
+     * @return the number of indexed SBSs of type `mutation_type`
      */
     inline size_t count_available(const SBSType& mutation_type) const
     {
@@ -606,10 +606,10 @@ class MutationEngine
     }
 
     /**
-     * @brief Get the number of indiced indels of a given type
+     * @brief Get the number of indexed indels of a given type
      *
      * @param mutation_type is the type of the aimed SBS
-     * @return the number of indiced SBSs of type `mutation_type`
+     * @return the number of indexed SBSs of type `mutation_type`
      */
     inline size_t count_available(const IDType& mutation_type) const
     {
@@ -692,7 +692,7 @@ class MutationEngine
                         << "\".";
                     warning(WarningType::NO_MUT_FOR_CONTEXT, oss.str());
                 }
-                
+
                 if constexpr(std::is_base_of_v<IDType, MUTATION_TYPE>) {
                     oss << "No mutations for repetition pattern \""
                         << it->second << "\".";
@@ -748,7 +748,7 @@ class MutationEngine
             // get name and probability of the current signature
             const auto& signature_name = exposure_it->first;
             const auto& signature_prob = exposure_it->second;
-            
+
             // update exposure pointer
             ++exposure_it;
 
@@ -914,7 +914,7 @@ class MutationEngine
 
         const CNA& const_cna = cna;
 
-        return chr_mutations.apply(const_cna);
+        return chr_mutations.insert_in_object(const_cna);
     }
 
     /**
@@ -1015,7 +1015,25 @@ class MutationEngine
     }
 
     /**
-     * @brief Place the mutations on the genomes of a descendants forest node
+     * @brief Remove the SIDs occurring for the first time on a node from genome mutations
+     *
+     * @param node is the node whose SIDs must be removed
+     * @param genome_mutations is the genome mutations from which the node's SIDs must be removed
+     */
+    static void remove_from_reference_node_SIDs(const PhylogeneticForest::node& node,
+                                        GenomeMutations& genome_mutations)
+    {
+        auto mutation_list = node.novel_mutations();
+
+        for (auto it=mutation_list.begin(); it != mutation_list.end(); ++it) {
+            if (it.get_type() == MutationList::MutationType::SID_TURN) {
+                genome_mutations.remove_from_reference(it.get_last_SID());
+            }
+        }
+    }
+
+    /**
+     * @brief Place the mutations on the genomes of a descendant forest node
      *
      * This method recursively places the mutations on the nodes of a descendants
      * forest. All the genome mutations associated to the forest leaves are
@@ -1030,7 +1048,7 @@ class MutationEngine
      * @param[in,out] visited_nodes is the number of visited nodes
      * @param[in,out] progress_bar is a progress bar pointer
      */
-    void place_mutations(PhylogeneticForest::node& node, const GenomeMutations& ancestor_mutations,
+    void place_mutations(PhylogeneticForest::node& node, GenomeMutations& ancestor_mutations,
                          const std::map<Mutants::SpeciesId, PassengerRates>& passenger_rates,
                          std::map<Mutants::MutantId, DriverMutations>& driver_mutations,
                          size_t& visited_nodes, UI::ProgressBar *progress_bar)
@@ -1040,10 +1058,9 @@ class MutationEngine
         const size_t context_stack_size = context_stack.size();
         const size_t rs_stack_size = rs_stack.size();
 
-        CellGenomeMutations cell_mutations(static_cast<const Mutants::Cell&>(node),
-                                           ancestor_mutations);
+        GenomeMutations node_mutations{ancestor_mutations};
 
-        place_driver_mutations(node, cell_mutations, driver_mutations);
+        place_driver_mutations(node, node_mutations, driver_mutations);
 
         auto rates_it = passenger_rates.find(node.get_species_id());
         if (rates_it == passenger_rates.end()) {
@@ -1051,9 +1068,9 @@ class MutationEngine
 
             throw std::runtime_error("Unknown species \""+ species_name +"\"");
         }
-        place_passengers<SBSType>(node, cell_mutations, rates_it->second);
-        place_passengers<IDType>(node, cell_mutations, rates_it->second);
-        place_CNAs(node, cell_mutations, rates_it->second.cna);
+        place_passengers<SBSType>(node, node_mutations, rates_it->second);
+        place_passengers<IDType>(node, node_mutations, rates_it->second);
+        place_CNAs(node, node_mutations, rates_it->second.cna);
 
         ++visited_nodes;
         if (progress_bar != nullptr) {
@@ -1065,20 +1082,25 @@ class MutationEngine
         }
 
         if (node.is_leaf()) {
-            auto mut_ptr = std::make_shared<CellGenomeMutations>();
+            const auto mutations_private_copy = node_mutations.deep_copy();
 
-            std::swap(cell_mutations, *mut_ptr);
+            const Mutants::Cell& cell = static_cast<const Mutants::Cell&>(node);
+            auto mut_ptr = std::make_shared<CellGenomeMutations>(cell, mutations_private_copy);
 
             auto& phylo_forest = node.get_forest();
-            auto cell_id = static_cast<const Mutants::Cell&>(node).get_id();
+            const auto cell_id = cell.get_id();
 
-            phylo_forest.leaves_mutations[cell_id] = mut_ptr;
+            phylo_forest.leaves_mutations.emplace(cell_id, mut_ptr);
         } else {
             for (auto child: node.children()) {
-                place_mutations(child, cell_mutations, passenger_rates, driver_mutations,
+                place_mutations(child, node_mutations, passenger_rates, driver_mutations,
                                 visited_nodes, progress_bar);
             }
         }
+
+        // SIDs must be removed from the ancestor's mutations because
+        // CNAs may have created private fragments in `node_mutations`
+        remove_from_reference_node_SIDs(node, ancestor_mutations);
 
         if (!infinite_sites_model) {
             // reverse context index extractions
@@ -1857,14 +1879,14 @@ public:
                         {
                             const auto& mutation = mut_it.get_last_SID();
 
-                            sample_common_mutations.apply(mutation);
+                            sample_common_mutations.insert_in_object(mutation);
                             break;
                         }
                         case MutationList::CNA_TURN:
                         {
                             const auto& mutation = mut_it.get_last_CNA();
 
-                            sample_common_mutations.apply(mutation);
+                            sample_common_mutations.insert_in_object(mutation);
                             break;
                         }
                         case MutationList::WGD_TURN:

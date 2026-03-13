@@ -2,8 +2,8 @@
  * @file genome_mutations.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines genome and chromosome data structures
- * @version 1.12
- * @date 2026-02-06
+ * @version 1.13
+ * @date 2026-03-13
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -180,14 +180,14 @@ private:
      * @brief Make data exclusive
      *
      * When the data pointer is not exclusive and is referenced by many different
-     * chromosomes, the method copy of the original data member into a data
+     * chromosomes, the method copies the original data member into a data
      * object exclusively pointed by the current `ChromosomeMutations` object.
      *
-     * @warning In order to avoid unneccessary and time-consuming copies of the
+     * @warning In order to avoid unnecessary and time-consuming copies of the
      *     chromosome mutation data, the chromosome mutation data pointer should
      *     be exclusively maintained by the `ChromosomeMutations` object during
      *     the call to this method. If needed, the returned pointer can be used
-     *     for backup purpouse.
+     *     for backup purposes.
      *
      * @return the shared pointer to the original data for backup
      */
@@ -199,10 +199,10 @@ private:
      * This method is meant to be used to retrieve an allele that is going
      * to be changed. It guarantees that the data member is exclusive.
      *
-     * @warning In order to avoid unneccessary and time-consuming copies of the
+     * @warning In order to avoid unnecessary and time-consuming copies of the
      *     chromosome mutation data, the chromosome mutation data pointer should
      *     be exclusively maintained by the `ChromosomeMutations` object during
-     *     the call to this method. For backup purpouse, use the second component
+     *     the call to this method. For backup purposes, use the second component
      *     of the returned pair.
      *
      * @param allele_id is the identifier of the allele to find
@@ -213,6 +213,32 @@ private:
      */
     std::pair<Allele*, std::shared_ptr<Data>>
     get_modifiable_allele(const AlleleId& allele_id);
+
+    /**
+     * @brief Get an allele in a chromosome
+     *
+     * @tparam T
+     * @param chr_mutations is the object from which the allele is requested
+     * @param allele_id is the identifier of the allele to find
+     * @return a reference to the allele
+     * @throw std::out_of_range `allele_id` is not a valid allele identifier for the
+     *          chromosome
+     */
+    template<typename T>
+    static auto& get_allele_impl(T& chr_mutations, const AlleleId& allele_id)
+    {
+        auto it = chr_mutations.get_alleles().find(allele_id);
+
+        if (it == chr_mutations.get_alleles().end()) {
+            std::ostringstream oss;
+
+            oss << "Chromosome " << GenomicPosition::chrtos(chr_mutations.id())
+                <<  " has not allele " << Allele::format_id(allele_id) << ".";
+            throw std::out_of_range(oss.str());
+        }
+
+        return it->second;
+    }
 public:
     /**
      * @brief The empty constructor
@@ -269,6 +295,16 @@ public:
     /**
      * @brief Get the chromosome alleles
      *
+     * @return a reference to chromosome alleles
+     */
+    inline std::map<AlleleId, Allele>& get_alleles()
+    {
+        return _data->alleles;
+    }
+
+    /**
+     * @brief Get the chromosome alleles
+     *
      * @return a constant reference to chromosome alleles
      */
     inline const std::map<AlleleId, Allele>& get_alleles() const
@@ -280,11 +316,27 @@ public:
      * @brief Get an allele in the chromosome
      *
      * @param allele_id is the identifier of the allele to find
+     * @return a reference to the allele
+     * @throw std::out_of_range `allele_id` is not a valid allele identifier for the
+     *          chromosome
+     */
+    inline Allele& get_allele(const AlleleId& allele_id)
+    {
+        return get_allele_impl(*this, allele_id);
+    }
+
+    /**
+     * @brief Get an allele in the chromosome
+     *
+     * @param allele_id is the identifier of the allele to find
      * @return a constant reference to the allele
      * @throw std::out_of_range `allele_id` is not a valid allele identifier for the
      *          chromosome
      */
-    const Allele& get_allele(const AlleleId& allele_id) const;
+    inline const Allele& get_allele(const AlleleId& allele_id) const
+    {
+        return get_allele_impl(*this, allele_id);
+    }
 
     /**
      * @brief Get the CNAs occurred in the chromosome
@@ -329,8 +381,8 @@ public:
      * @return `true` if and only if the chromosome have an allele having `allele_id`
      *          as allele identifier and the whole `genomic_region` is contained
      *          in this allele
-     * @throw std::domain_error `genomic_region` does not lays in this chromosome
-     * @throw std::out_of_range the chromosome has not the allele `allele_id`
+     * @throw std::domain_error `genomic_region` does not lie in this chromosome
+     * @throw std::out_of_range the chromosome does not contain the allele `allele_id`
      */
     bool allele_contains(const AlleleId& allele_id, const GenomicRegion& genomic_region) const;
 
@@ -375,7 +427,7 @@ public:
      * @param mutation is a mutation
      * @return `true` if and only if the allele does not contains
      *      SID mutations in the one-base neighborhood of `mutation`
-     * @throw std::domain_error `mutation` does not lays in the chromosome
+     * @throw std::domain_error `mutation` does not lie in the chromosome
      */
     bool has_context_free(const SID& mutation) const;
 
@@ -394,7 +446,7 @@ public:
      * @param[in] nature is the nature of the amplification
      * @return `true` if and only if the all the fragments touching `genomic_region`
      *      have `allele_id` among their allele ids and the region has been amplified
-     * @throw std::domain_error `genomic_region` does not lays in this chromosome
+     * @throw std::domain_error `genomic_region` does not lie in this chromosome
      */
     bool amplify_region(const GenomicRegion& genomic_region, const AlleleId& allele_id,
                         AlleleId& new_allele_id,
@@ -413,7 +465,7 @@ public:
      * @param[in] nature is the nature of the amplification
      * @return `true` if and only if the all the fragments touching `genomic_region`
      *      have `allele_id` among their allele ids and the region has been amplified
-     * @throw std::domain_error `genomic_region` does not lays in this chromosome
+     * @throw std::domain_error `genomic_region` does not lie in this chromosome
      */
     inline bool amplify_region(const GenomicRegion& genomic_region, const AlleleId& allele_id,
                                const Mutation::Nature& nature=Mutation::UNDEFINED)
@@ -436,33 +488,39 @@ public:
      * @param nature is the nature of the deletion
      * @return `true` if and only if the all the fragments touching `genomic_region`
      *      have `allele_id` among their allele ids and the allele has been removed
-     * @throw std::domain_error `genomic_region` does not lays in this chromosome
+     * @throw std::domain_error `genomic_region` does not lie in this chromosome
      */
     bool remove_region(const GenomicRegion& genomic_region, const AlleleId& allele_id,
                        const Mutation::Nature& nature=Mutation::UNDEFINED);
 
     /**
-     * @brief Apply a CNA
+     * @brief Add a CNA
      *
-     * This function applies a CNA. Whenever the `CNA::dest` member of the
-     * parameter is set to `RANDOM_ALLELE`, the function change its value to
-     * the destination allele identifier.
+     * This method tries to add a CNA to one of the chromosome's alleles
+     * creating a new copy of the allele if it is referenced more than once.
+     * Whenever the `CNA::dest` member of the parameter is set to `RANDOM_ALLELE`,
+     * the function change its value to the destination allele identifier.
+     * It returns `true` if and only if the CNA has been successfully added.
      *
      * @param[in,out] cna is the CNA to be applied
      * @return `true` if and only if the CNA has been successfully applied
      */
-    inline bool apply(CNA& cna)
+    inline bool insert_in_object(CNA& cna)
     {
         return apply_CNA(cna);
     }
 
     /**
-     * @brief Apply a CNA
+     * @brief Add a CNA
+     *
+     * This method tries to add a CNA to one of the chromosome's alleles
+     * creating a new copy of the allele if it is referenced more than once.
+     * It returns `true` if and only if the CNA has been successfully added.
      *
      * @param[in] cna is the CNA to be applied
      * @return `true` if and only if the CNA has been successfully applied
      */
-    inline bool apply(const CNA& cna)
+    inline bool insert_in_object(const CNA& cna)
     {
         auto cna_copy{cna};
 
@@ -470,40 +528,81 @@ public:
     }
 
     /**
-     * @brief Apply a SID mutation in a context free position
+     * @brief Add a SID
      *
-     * This method tries to apply a SID mutation. If the chromosome contains another
-     * SID mutation occurring in the mutational context of the specified SID, then
-     * the application fails.
+     * This method tries to add a SID to one of the chromosome's alleles
+     * creating a new copy of the allele if it is referenced more than once.
+     * If the chromosome contains another mutation in the mutational context
+     * of the new SID, then the application fails.
      *
      * @param mutation is the SID mutation to be applied in the chromosome
      * @param allele_id is the identifier of the allele in which the SID mutation
      *      must be placed
-     * @return `true` if and only if the chromosome do not contain any other
+     * @return `true` if and only if the chromosome does not contain any other
      *      SID mutations in `mutation`'s mutational context
-     * @throw std::domain_error `mutation` does not lays in the chromosome
-     * @throw std::out_of_range the chromosome has not the allele
-     *      `allele_id` or `mutation` does not lay in the allele
+     * @throw std::domain_error `mutation` does not lie in the chromosome
+     * @throw std::out_of_range the chromosome does not have the allele
+     *      `allele_id` or `mutation` does not lie in the allele
      */
-    bool apply(const SID& mutation, const AlleleId& allele_id);
+    bool insert_in_object(const SID& mutation, const AlleleId& allele_id);
 
     /**
-     * @brief Apply a SID mutation in a context free position
+     * @brief Add a SID
      *
-     * This method tries to apply a SID mutation. If the chromosome contains another
-     * SID mutation occurring in the mutational context of the specified SID, then
-     * the application fails.
+     * This method tries to add a SID to one of the chromosome's alleles
+     * creating a new copy of the allele if it is referenced more than once.
+     * If the chromosome contains another mutation in the mutational context
+     * of the new SID, then the application fails.
      *
      * @param mutation_spec is the SID mutation to be applied in the chromosome
-     * @return `true` if and only if the chromosome do not contain any other
+     * @return `true` if and only if the chromosome does not contain any other
      *      SID mutations in `mutation`'s mutational context
-     * @throw std::domain_error `mutation` does not lays in the chromosome
-     * @throw std::out_of_range the chromosome has not the allele
-     *      `allele_id` or `mutation` does not lay in the allele
+     * @throw std::domain_error `mutation` does not lie in the chromosome
+     * @throw std::out_of_range the chromosome does not have the allele
+     *      `allele_id` or `mutation` does not lie in the allele
      */
-    inline bool apply(const MutationSpec<SID>& mutation_spec)
+    inline bool insert_in_object(const MutationSpec<SID>& mutation_spec)
     {
-        return apply(static_cast<const SID&>(mutation_spec), mutation_spec.allele_id);
+        return insert_in_object(static_cast<const SID&>(mutation_spec), mutation_spec.allele_id);
+    }
+
+    /**
+     * @brief Add a SID
+     *
+     * This method tries to add a SID to one of the chromosome's alleles
+     * without creating a new copy of the allele even when it is referenced
+     * more than once. If the chromosome contains another mutation in the mutational
+     * context of the new SID, then the application fails.
+     *
+     * @param mutation is the SID mutation to be applied in the chromosome
+     * @param allele_id is the identifier of the allele in which the SID mutation
+     *      must be placed
+     * @return `true` if and only if the chromosome does not contain any other
+     *      SID mutations in `mutation`'s mutational context
+     * @throw std::domain_error `mutation` does not lie in the chromosome
+     * @throw std::out_of_range the chromosome does not contain the allele
+     *      `allele_id` or `mutation` does not lie in the allele
+     */
+    bool insert_in_reference(const SID& mutation, const AlleleId& allele_id);
+
+    /**
+     * @brief Add a SID
+     *
+     * This method tries to add a SID to one of the chromosome's alleles
+     * without creating a new copy of the allele even when it is referenced
+     * more than once. If the chromosome contains another mutation in the mutational
+     * context of the new SID, then the application fails.
+     *
+     * @param mutation_spec is the SID mutation to be applied in the chromosome
+     * @return `true` if and only if the chromosome does not contain any other
+     *      SID mutations in `mutation`'s mutational context
+     * @throw std::domain_error `mutation` does not lie in the chromosome
+     * @throw std::out_of_range the chromosome does not contain the allele
+     *      `allele_id` or `mutation` does not lie in the allele
+     */
+    inline bool insert_in_reference(const MutationSpec<SID>& mutation_spec)
+    {
+        return insert_in_reference(static_cast<const SID&>(mutation_spec), mutation_spec.allele_id);
     }
 
     /**
@@ -517,6 +616,13 @@ public:
      *      the current objects, but misses the original SID mutations
      */
     ChromosomeMutations copy_structure() const;
+
+    /**
+     * @brief Make a deep copy of the chromosome mutations
+     *
+     * @return A deep copy of the chromosome mutations
+     */
+    ChromosomeMutations deep_copy() const;
 
     /**
      * @brief Duplicate genome alleles
@@ -540,6 +646,39 @@ public:
                     const size_t& min_allelic_size=0) const;
 
     /**
+     * @brief Remove a SID
+     *
+     * This method tries to remove a SID from one of the chromosome's alleles
+     * creating a new copy of it if it is referenced more than once. It succeeds
+     * if the chromosome contains a SID in the specified position.
+     *
+     * @param genomic_position is the position of the SID mutation to be
+     *      removed
+     * @return `true` if and only if a SID occurred at `genomic_position`
+     * @throw std::domain_error `genomic_position` does not lie in the
+     *      chromosome
+     */
+    bool remove_from_object_at(const GenomicPosition& genomic_position);
+
+    /**
+     * @brief Remove a SID
+     *
+     * This method tries to remove a SID from one of the chromosome's alleles
+     * creating a new copy of it if it is referenced more than once. It succeeds
+     * if the chromosome contains the SID.
+     *
+     * @param mutation_spec is the SID mutation to be removed from the
+     *      chromosome
+     * @return `true` if and only if a SID occurred at `genomic_position`
+     * @throw std::domain_error `genomic_position` does not lie in the
+     *      chromosome
+     * @throw std::out_of_range the chromosome does not contain the
+     *      specified allele or `genomic_position` does not lie in the
+     *      allele
+     */
+    bool remove_from_object(const MutationSpec<SID>& mutation_spec);
+
+    /**
      * @brief Remove a SID mutation
      *
      * This method tries to remove a SID mutation from the chromosome.
@@ -547,12 +686,20 @@ public:
      * @param genomic_position is the position of the SID mutation to be
      *      removed
      * @return `true` if and only if a SID occurred at `genomic_position`
-     * @throw std::domain_error `genomic_position` does not lays in the
+     * @throw std::domain_error `genomic_position` does not lie in the
      *      chromosome
-     * @throw std::out_of_range the chromosome has not the allele
-     *      `allele_id` or `genomic_position` does not lay in the allele
      */
-    bool remove_mutation(const GenomicPosition& genomic_position);
+    bool remove_from_reference_at(const GenomicPosition& genomic_position);
+
+    /**
+     * @brief Remove a SID mutation
+     *
+     * This method tries to remove a SID mutation from the chromosome.
+     *
+     * @param mutation_spec is the SID mutation to be removed from the chromosome
+     * @return `true` if and only if `mutation_spec` occurred in the chromosome
+     */
+    bool remove_from_reference(const MutationSpec<SID>& mutation_spec);
 
     /**
      * @brief Check whether a SID mutation is included among the chromosome mutations
@@ -768,8 +915,8 @@ public:
      * @param genomic_region is the region on which the check is performed
      * @return `true` if and only if the whole `genomic_region` is contained
      *          in the allele `allele_id` of the corresponding chromosome
-     * @throw std::domain_error `genomic_region` does not lays in this chromosome
-     * @throw std::out_of_range the chromosome has not the allele `allele_id`
+     * @throw std::domain_error `genomic_region` does not lie in this chromosome
+     * @throw std::out_of_range the chromosome does not contain the allele `allele_id`
      */
     bool allele_contains(const AlleleId& allele_id, const GenomicRegion& genomic_region) const;
 
@@ -788,7 +935,7 @@ public:
      * @param[in] nature is the nature of the amplification
      * @return `true` if and only if the all the fragments touching `genomic_region`
      *      have `allele_id` among their allele ids and the region has been amplified
-     * @throw std::domain_error `genomic_region` does not lays in this chromosome
+     * @throw std::domain_error `genomic_region` does not lie in this chromosome
      */
     bool amplify_region(const GenomicRegion& genomic_region, const AlleleId& allele_id,
                         AlleleId& new_allele_id,
@@ -807,7 +954,7 @@ public:
      * @param[in] nature is the nature of the amplification
      * @return `true` if and only if the all the fragments touching `genomic_region`
      *      have `allele_id` among their allele ids and the region has been amplified
-     * @throw std::domain_error `genomic_region` does not lays in this chromosome
+     * @throw std::domain_error `genomic_region` does not lie in this chromosome
      */
     inline bool amplify_region(const GenomicRegion& genomic_region, const AlleleId& allele_id,
                                const Mutation::Nature& nature=Mutation::UNDEFINED)
@@ -835,27 +982,33 @@ public:
                        const Mutation::Nature& nature=Mutation::UNDEFINED);
 
     /**
-     * @brief Apply a CNA
+     * @brief Add a CNA
      *
-     * This function applies a CNA. Whenever the `CNA::dest` member of the
-     * parameter is set to `RANDOM_ALLELE`, the function change its value to
-     * the destination allele identifier.
+     * This method tries to add a CNA to one of the genome's chromosomes
+     * creating a new copy of the chromosome if it is referenced more than once.
+     * Whenever the `CNA::dest` member of the parameter is set to `RANDOM_ALLELE`,
+     * the function change its value to the destination allele identifier.
+     * It returns `true` if and only if the CNA has been successfully added.
      *
      * @param[in,out] cna is the CNA to be applied
      * @return `true` if and only if the CNA has been successfully applied
      */
-    inline bool apply(CNA& cna)
+    inline bool insert_in_object(CNA& cna)
     {
         return apply_CNA(cna);
     }
 
     /**
-     * @brief Apply a CNA
+     * @brief Add a CNA
+     *
+     * This method tries to add a CNA to one of the genome's chromosomes
+     * creating a new copy of the chromosome if it is referenced more than once.
+     * It returns `true` if and only if the CNA has been successfully added.
      *
      * @param[in] cna is the CNA to be applied
      * @return `true` if and only if the CNA has been successfully applied
      */
-    inline bool apply(const CNA& cna)
+    inline bool insert_in_object(const CNA& cna)
     {
         auto cna_copy{cna};
 
@@ -863,48 +1016,126 @@ public:
     }
 
     /**
-     * @brief Apply a SID mutation in a context free position
+     * @brief Add a SID
      *
-     * This method tries to apply a SID mutation. If the chromosome contains another
-     * SID mutation occurring in the mutational context of the specified SID, then
-     * the application fails.
+     * This method tries to add a SID to one of the genome's chromosome
+     * creating a new copy of the chromosome if it is referenced more than once.
+     * If the genome contains another mutation in the mutational context
+     * of the new SID, then the application fails.
      *
      * @param mutation is the SID mutation to be applied in the chromosome
      * @param allele_id is the identifier of the allele in which the SID mutation
      *      must be placed
-     * @return `true` if and only if the chromosome do not contain any other
+     * @return `true` if and only if the chromosome does not contain any other
      *      SID mutations in `mutation`'s mutational context
-     * @throw std::domain_error `mutation` does not lays in the chromosome
-     * @throw std::out_of_range the chromosome has not the allele
-     *      `allele_id` or `mutation` does not lay in the allele
+     * @throw std::domain_error `mutation` does not lie in the chromosome
+     * @throw std::out_of_range the chromosome does not contain the allele
+     *      `allele_id` or `mutation` does not lie in the allele
      */
-    bool apply(const SID& mutation, const AlleleId& allele_id);
+    bool insert_in_object(const SID& mutation, const AlleleId& allele_id);
 
     /**
-     * @brief Apply a SID mutation in a context free position
+     * @brief Apply a SID mutation in a context-free position
      *
      * This method tries to apply a SID mutation. If the chromosome contains another
      * SID mutation occurring in the mutational context of the specified SID, then
      * the application fails.
      *
      * @param mutation_spec is the SID mutation to be applied in the chromosome
-     * @return `true` if and only if the chromosome do not contain any other
+     * @return `true` if and only if the chromosome does not contain any other
      *      SID mutations in `mutation`'s mutational context
-     * @throw std::domain_error `mutation` does not lays in the chromosome
-     * @throw std::out_of_range the chromosome has not the allele
-     *      `allele_id` or `mutation` does not lay in the allele
+     * @throw std::domain_error `mutation` does not lie in the chromosome
+     * @throw std::out_of_range the chromosome does not contain the allele
+     *      `allele_id` or `mutation` does not lie in the allele
      */
-    bool apply(const MutationSpec<SID>& mutation_spec);
+    bool insert_in_object(const MutationSpec<SID>& mutation_spec);
 
     /**
-     * @brief Remove a SID mutation
+     * @brief Add a SID
      *
-     * This method tries to remove a SID mutation from the chromosome.
+     * This method tries to add a SID to one of the genome's chromosome
+     * creating a new copy of the chromosome if it is referenced more than once.
+     * If the genome contains another mutation in the mutational context
+     * of the new SID, then the application fails.
+     *
+     * @param mutation is the SID mutation to be applied in the chromosome
+     * @param allele_id is the identifier of the allele in which the SID mutation
+     *      must be placed
+     * @return `true` if and only if the chromosome does not contain any other
+     *      SID mutations in `mutation`'s mutational context
+     * @throw std::domain_error `mutation` does not lie in the chromosome
+     * @throw std::out_of_range the chromosome does not contain the allele
+     *      `allele_id` or `mutation` does not lie in the allele
+     */
+    bool insert_in_reference(const SID& mutation, const AlleleId& allele_id);
+
+    /**
+     * @brief Add a SID
+     *
+     * This method tries to add a SID to one of the genome's chromosomes
+     * without creating a new copy of the chromosome even when it is referenced
+     * more than once. If the chromosome contains another mutation in the mutational
+     * context of the new SID, then the application fails.
+     *
+     * @param mutation_spec is the SID mutation to be applied in the chromosome
+     * @return `true` if and only if the chromosome does not contain any other
+     *      SID mutations in `mutation`'s mutational context
+     * @throw std::domain_error `mutation` does not lie in the chromosome
+     * @throw std::out_of_range the chromosome does not contain the allele
+     *      `allele_id` or `mutation` does not lie in the allele
+     */
+    bool insert_in_reference(const MutationSpec<SID>& mutation_spec);
+
+    /**
+     * @brief Remove a SID
+     *
+     * This method tries to remove a SID from one of the genome's chromosomes
+     * creating a new copy of it if it is referenced more than once. It succeeds
+     * if the genome contains a SID in the specified position.
      *
      * @param genomic_position is the position of the SID to be removed
+     *      from the genome
      * @return `true` if and only if a SID occurred at `genomic_position`
      */
-    bool remove_mutation(const GenomicPosition& genomic_position);
+    bool remove_from_object_at(const GenomicPosition& genomic_position);
+
+    /**
+     * @brief Remove a SID
+     *
+     * This method tries to remove a SID from one of the genome's chromosomes
+     * creating a new copy of it if it is referenced more than once. It succeeds
+     * if the genome contains the SID.
+     *
+     * @param mutation_spec is the SID mutation to be removed from the genome
+     * @return `true` if and only if a SID occurred at `genomic_position`
+     */
+    bool remove_from_object(const MutationSpec<SID>& mutation_spec);
+
+    /**
+     * @brief Remove a SID
+     *
+     * This method tries to remove a SID from one of the genome's chromosomes
+     * without creating a new copy of it even when it is referenced more than
+     * once. It succeeds if the genome contains  a SID in the specified
+     * position.
+     *
+     * @param genomic_position is the position of the SID to be removed
+     *      from the genome
+     * @return `true` if and only if a SID occurred at `genomic_position`
+     */
+    bool remove_from_reference_at(const GenomicPosition& genomic_position);
+
+    /**
+     * @brief Remove a SID
+     *
+     * This method tries to remove a SID from one of the genome's chromosomes
+     * without creating a new copy of it even when it is referenced more than
+     * once. It succeeds if the genome contains the SID.
+     *
+     * @param mutation_spec is the SID mutation to be removed from the genome
+     * @return `true` if and only if `mutation_spec` occurred in the genome
+     */
+    bool remove_from_reference(const MutationSpec<SID>& mutation_spec);
 
     /**
      * @brief Check whether a mutation context is free
@@ -912,7 +1143,7 @@ public:
      * @param mutation is a mutation
      * @return `true` if and only if the allele does not contains
      *      SID mutations in the one-base neighborhood of `mutation`
-     * @throw std::domain_error `mutation` does not lays in the genome
+     * @throw std::domain_error `mutation` does not lie in the genome
      */
     bool has_context_free(const SID& mutation) const;
 
@@ -933,11 +1164,18 @@ public:
      * It returns a `GenomeMutations` object that has the same chromosomes and
      * alleles of the current objects, but misses the original SNVs and indels.
      *
-     * @return a `GenomeMutations` object that has the same chromsomes and
+     * @return a `GenomeMutations` object that has the same chromosomes and
      *      alleles of the current objects, but misses the original SNVs and
      *      indels
      */
     GenomeMutations copy_structure() const;
+
+    /**
+     * @brief Make a deep copy of the genome mutations
+     *
+     * @return A deep copy of the genome mutations
+     */
+    GenomeMutations deep_copy() const;
 
     /**
      * @brief Duplicate genome alleles
@@ -1125,7 +1363,7 @@ std::ostream& operator<<(std::ostream& os, const CLONES::Mutations::ChromosomeMu
  * @brief Write genome mutations data in a stream
  *
  * @param os is the output stream
- * @param genome_mutations is a genome mutations
+ * @param genome_mutations is genome mutations
  * @return a reference to output stream
  */
 std::ostream& operator<<(std::ostream& os, const CLONES::Mutations::GenomeMutations& genome_mutations);

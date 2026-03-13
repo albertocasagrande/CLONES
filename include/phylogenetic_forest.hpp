@@ -2,8 +2,8 @@
  * @file phylogenetic_forest.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines classes and function for phylogenetic forests
- * @version 1.7
- * @date 2026-02-06
+ * @version 1.8
+ * @date 2026-03-13
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -130,6 +130,14 @@ public:
          * @param cell_id is the cell id of a cell in the forest
          */
         node(PhylogeneticForest* forest, const Mutants::CellId cell_id);
+
+        /**
+         * @brief Get the mutation that occurred for the first time in this node
+         *
+         * @return a constant reference to the list of the mutation that occurred
+         *      for the first time in this node
+         */
+        MutationList novel_mutations() const;
 
         /**
          * @brief Get the parent node

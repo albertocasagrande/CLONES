@@ -2,8 +2,8 @@
  * @file phylogenetic_forest.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements classes and function for phylogenetic forests
- * @version 1.10
- * @date 2026-02-06
+ * @version 1.11
+ * @date 2026-03-13
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -52,6 +52,16 @@ PhylogeneticForest::const_node::const_node(const PhylogeneticForest* forest, con
 PhylogeneticForest::node::node(PhylogeneticForest* forest, const Mutants::CellId cell_id):
     Mutants::DescendantsForest::_node<PhylogeneticForest>(forest, cell_id)
 {}
+
+MutationList PhylogeneticForest::node::novel_mutations() const
+{
+    auto found = forest->novel_mutations.find(cell_id);
+    if (found == forest->novel_mutations.end()) {
+        return MutationList();
+    }
+
+    return found->second;
+}
 
 void PhylogeneticForest::node::add_new_mutation(const MutationSpec<SID>& mutation)
 {
@@ -297,14 +307,14 @@ PhylogeneticForest::get_normal_genomes(const bool& with_preneoplastic) const
                     {
                         const auto& mutation = mut_it.get_last_SID();
 
-                        cell_genome.apply(mutation);
+                        cell_genome.insert_in_object(mutation);
                         break;
                     }
                     case MutationList::CNA_TURN:
                     {
                         const auto& mutation = mut_it.get_last_CNA();
 
-                        cell_genome.apply(mutation);
+                        cell_genome.insert_in_object(mutation);
                         break;
                     }
                     case MutationList::WGD_TURN:
