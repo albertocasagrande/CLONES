@@ -2,8 +2,8 @@
  * @file mutation_list.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a class to represent mutation lists
- * @version 1.3
- * @date 2026-02-06
+ * @version 1.4
+ * @date 2026-05-25
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -296,7 +296,7 @@ struct MutationList
 
     /**
      * @brief Get the number of mutations
-     * 
+     *
      * @return the number of mutations
      */
     inline size_t size() const
@@ -359,7 +359,7 @@ struct DriverMutations : public MutationList
     inline void save(ARCHIVE& archive) const
     {
         static_cast<const MutationList*>(this)->save(archive);
-    
+
         archive & name;
     }
 
@@ -373,8 +373,8 @@ struct DriverMutations : public MutationList
     template<typename ARCHIVE, std::enable_if_t<std::is_base_of_v<Archive::Basic::In, ARCHIVE>, bool> = true>
     inline static DriverMutations load(ARCHIVE& archive)
     {
-        DriverMutations d_mutations; 
-        
+        DriverMutations d_mutations;
+
         static_cast<MutationList&>(d_mutations) = MutationList::load(archive);
         archive & d_mutations.name;
 

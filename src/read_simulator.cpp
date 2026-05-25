@@ -2,8 +2,8 @@
  * @file read_simulator.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements classes to simulate sequencing
- * @version 1.6
- * @date 2026-02-06
+ * @version 1.7
+ * @date 2026-05-25
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -135,7 +135,7 @@ const BaseCoverage& ChrCoverage::get_coverage(const GenomicPosition& position) c
     check_in(position, chr_id);
 
     if (position.position == 0 && coverage.size() < position.position) {
-        throw std::out_of_range("Position must lay in the interval [1,"
+        throw std::out_of_range("Position must lie in the interval [1,"
                                 + std::to_string(coverage.size())
                                 + "]: requested coverage of position "
                                 + std::to_string(position.position)
@@ -311,7 +311,7 @@ void check_in(const SID& mutation, const ChromosomeId& chr_id)
 
         std::ostringstream oss;
 
-        oss << mutation << " does not lay in the chromosome "
+        oss << mutation << " does not lie in the chromosome "
             << GenomicPosition::chrtos(chr_id) << ".";
 
         throw std::domain_error(oss.str());
@@ -382,7 +382,7 @@ void update_data(std::map<SID, SIDData>& a, const std::map<SID, SIDData>& b)
             // found an SID not laying before b_it->first
 
             if (!before(b_it->first, a_it->first)) {
-                // if the found SID does not lay after b_it->first,
+                // if the found SID does not lie after b_it->first,
                 // then it is in the same SID
 
                 a_it->second.update(b_it->second);

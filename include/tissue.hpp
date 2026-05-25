@@ -2,8 +2,8 @@
  * @file tissue.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines tissue class
- * @version 1.2
- * @date 2026-02-17
+ * @version 1.3
+ * @date 2026-05-25
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -111,11 +111,11 @@ class Tissue {
     }
 
     /**
-     * @brief Count the number of cells in a neighborwood in a species
+     * @brief Count the number of cells in a neighborhood in a species
      *
-     * @param position is the central position of the neighborwood
+     * @param position is the central position of the neighborhood
      * @param species_id is the identifier of the searched species
-     * @return the number of cells in a neighborwood of `position` having
+     * @return the number of cells in a neighborhood of `position` having
      *      `species_id` as the identifier of their species
      */
     size_t count_neighbors_in(const PositionInTissue position, const SpeciesId& species_id) const;
@@ -197,7 +197,7 @@ public:
             using iterator_category =   std::random_access_iterator_tag;
 
             /**
-             * @brief An empty construtor
+             * @brief An empty constructor
              */
             const_iterator();
 
@@ -428,7 +428,7 @@ public:
         /**
          * @brief Test whether the referenced cell is available for an event
          *
-         * @param event_type is the event type for which the avaiability is tested
+         * @param event_type is the event type for which the availability is tested
          * @return `true` if and only if the referenced cell is available for an event
          */
         bool is_available_for(const CellEventType& event_type) const

@@ -2,8 +2,8 @@
  * @file logics.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a logic about the simulation
- * @version 1.1
- * @date 2026-02-06
+ * @version 1.2
+ * @date 2026-05-25
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -81,7 +81,7 @@ public:
      *   must be evaluated
      * @param context is the context in which the variable must be
      *   evaluated
-     * @return The variable evalutation, i.e., the cardinality of the
+     * @return The variable evaluation, i.e., the cardinality of the
      *   species in the context
      */
     template<typename CONTEXT>
@@ -639,8 +639,8 @@ struct Formula
 
     Type type;  //!< The type of the formulas
     std::shared_ptr<Relation> rel;  //!< The relation is this formula is a relation
-    std::shared_ptr<Formula> lhs;   //!< The left hand-side subformula
-    std::shared_ptr<Formula> rhs;   //!< The right hand-side subformula
+    std::shared_ptr<Formula> lhs;   //!< The left hand-side sub-formula
+    std::shared_ptr<Formula> rhs;   //!< The right hand-side sub-formula
 
     /**
      * @brief The empty constructor
@@ -735,7 +735,7 @@ struct Formula
 private:
 
     /**
-     * @brief A constructor for a formula having two sub-fomulas
+     * @brief A constructor for a formula having two sub-formulas
      *
      * @param type is the type of the new formula
      * @param lhs is the left hand-side of the new formula
@@ -744,7 +744,7 @@ private:
     Formula(const Type& type, const Formula& lhs, const Formula& rhs);
 
     /**
-     * @brief A constructor for a formula having two sub-fomulas
+     * @brief A constructor for a formula having two sub-formulas
      *
      * @param type is the type of the new formula
      * @param lhs is the left hand-side of the new formula
@@ -753,18 +753,18 @@ private:
     Formula(const Type& type, Formula&& lhs, Formula&& rhs);
 
     /**
-     * @brief A constructor for a formula having one sub-fomula
+     * @brief A constructor for a formula having one sub-formula
      *
      * @param type is the type of the new formula
-     * @param subformula is the subformula
+     * @param subformula is the sub-formula
      */
     Formula(const Type& type, const Formula& subformula);
 
     /**
-     * @brief A constructor for a formula having one sub-fomula
+     * @brief A constructor for a formula having one sub-formula
      *
      * @param type is the type of the new formula
-     * @param subformula is the subformula
+     * @param subformula is the sub-formula
      */
     Formula(const Type& type, Formula&& subformula);
 };

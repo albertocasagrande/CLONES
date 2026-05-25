@@ -2,8 +2,8 @@
  * @file genome_mutations.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements genome and chromosome data structures
- * @version 1.21
- * @date 2026-05-22
+ * @version 1.22
+ * @date 2026-05-25
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -260,7 +260,7 @@ bool ChromosomeMutations::has_context_free(const SID& mutation) const
     if (!contains(mutation)) {
         std::ostringstream oss;
 
-        oss << mutation << " is does not lie in the chromsome "
+        oss << mutation << " is does not lie in the chromosome "
             << id() << ".";
         throw std::domain_error(oss.str());
     }

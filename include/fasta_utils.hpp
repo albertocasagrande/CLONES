@@ -2,8 +2,8 @@
  * @file fasta_utils.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines support utilities for FASTA files
- * @version 1.1
- * @date 2026-02-06
+ * @version 1.3
+ * @date 2026-05-25
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -103,7 +103,7 @@ struct NCBISeqNameDecoder : public SeqNameDecoder
 };
 
 /**
- * @brief The list of sequence name decorders
+ * @brief The list of sequence name decoders
  *
  * The elements in this list are used by the function
  * `CLONES::IO::FASTA::is_chromosome_header(...)`.

@@ -2,8 +2,8 @@
  * @file irb_tree.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines indexed red-black trees
- * @version 1.4
- * @date 2026-05-22
+ * @version 1.5
+ * @date 2026-05-25
  *
  * @copyright Copyright (c) 2024-2025
  *
@@ -386,7 +386,7 @@ class IRBTree
          *      reversed in-order visits when `side` is `IRBNode::LEFT` or
          *      `IRBNode::RIGHT`, respectively
          */
-        const IRBNode* torwards(const Side& side) const
+        const IRBNode* towards(const Side& side) const
         {
             if (child[side] != nullptr) {
                 const Side opposite_side = get_opposite_side(side);
@@ -416,7 +416,7 @@ class IRBTree
          */
         inline const IRBNode* successor() const
         {
-            return torwards(RIGHT);
+            return towards(RIGHT);
         }
 
         /**
@@ -435,7 +435,7 @@ class IRBTree
          */
         inline const IRBNode* predecessor() const
         {
-            return torwards(LEFT);
+            return towards(LEFT);
         }
 
         /**
@@ -454,7 +454,7 @@ class IRBTree
          *      reversed in-order visits when `side` is `IRBNode::LEFT` or
          *      `IRBNode::RIGHT`, respectively
          */
-        IRBNode* torwards(const Side& side)
+        IRBNode* towards(const Side& side)
         {
             if (child[side] != nullptr) {
                 const Side sibling = get_opposite_side(side);
@@ -484,7 +484,7 @@ class IRBTree
          */
         inline IRBNode* successor()
         {
-            return torwards(RIGHT);
+            return towards(RIGHT);
         }
 
         /**
@@ -502,7 +502,7 @@ class IRBTree
          */
         inline IRBNode* predecessor()
         {
-            return torwards(LEFT);
+            return towards(LEFT);
         }
 
         /**

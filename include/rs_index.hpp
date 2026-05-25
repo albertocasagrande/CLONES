@@ -2,8 +2,8 @@
  * @file rs_index.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a class to compute the repeated substring index
- * @version 1.4
- * @date 2026-02-06
+ * @version 1.5
+ * @date 2026-05-25
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -326,7 +326,7 @@ struct RSIndex
     /**
      * @brief Upgrade the (h-1)-suffix array to a (h)-suffix array
      *
-     * @param h is the length of the prefices sorted in the (h)-suffix array
+     * @param h is the length of the prefixes sorted in the (h)-suffix array
      * @param h_suffix_array is a (h-1)-suffix array
      * @param h_classes is the vector of the classes of the (h-1)-suffix array
      * @param num_of_classes is the number of classes of the (h-1)-suffix array
@@ -417,7 +417,7 @@ struct RSIndex
      *      the repeated sequence
      * @param begin is the position of the repeated sequence first base
      *      in the chromosome
-     * @param index is the index of the repetition in the repetion map
+     * @param index is the index of the repetition in the repetition map
      * @param num_of_repetitions is the number of repetition of the unit
      * @param unit is the pointer to the unit first base in the sequence
      * @param unit_size is the unit size
@@ -800,8 +800,8 @@ struct RSIndex
     /**
      * @brief Add to the index all the repetitions in a chromosome
      *
-     * @param[in] chr_id is the identifier of a chrosomome
-     * @param[in] chr_sequence is the nucleotide sequence of a chrosomome
+     * @param[in] chr_id is the identifier of a chromosome
+     * @param[in] chr_sequence is the nucleotide sequence of a chromosome
      * @param[in,out] progress_bar is the progress bar
      */
     void collect_data_from(const ChromosomeId& chr_id, const std::string& chr_sequence,

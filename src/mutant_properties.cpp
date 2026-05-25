@@ -2,8 +2,8 @@
  * @file mutant_properties.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements the mutant properties
- * @version 1.1
- * @date 2026-02-06
+ * @version 1.2
+ * @date 2026-05-25
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -291,10 +291,10 @@ MethylationSignature MutantProperties::index_to_signature(const size_t& index, c
 namespace std
 {
 
-std::ostream& operator<<(std::ostream& out, const CLONES::Mutants::EpigeneticRates& epigentic_rates)
+std::ostream& operator<<(std::ostream& out, const CLONES::Mutants::EpigeneticRates& epigenetic_rates)
 {
-    out << "{\"on\": " << epigentic_rates.get_methylation_rate()
-            << ",\"off\": " << epigentic_rates.get_demethylation_rate() << "}";
+    out << "{\"on\": " << epigenetic_rates.get_methylation_rate()
+            << ",\"off\": " << epigenetic_rates.get_demethylation_rate() << "}";
     return out;
 }
 

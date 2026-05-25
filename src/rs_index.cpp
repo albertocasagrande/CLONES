@@ -2,8 +2,8 @@
  * @file rs_index.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements a class to compute the repeated substring index
- * @version 1.3
- * @date 2026-02-06
+ * @version 1.4
+ * @date 2026-05-25
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -637,7 +637,7 @@ RSIndex RSIndex::build_index(const std::filesystem::path& genome_fasta,
 
 void RSIndex::restore()
 {
-    for (auto& [unit_nucleotipe, r_map]: *homo_map) {
+    for (auto& [unit_nucleotide, r_map]: *homo_map) {
         for (auto& [num_of_repeats, r_storage]: r_map) {
             r_storage.restore();
         }

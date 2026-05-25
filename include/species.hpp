@@ -2,8 +2,8 @@
  * @file species.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines species representation
- * @version 1.3
- * @date 2026-03-04
+ * @version 1.4
+ * @date 2026-05-25
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -290,7 +290,7 @@ public:
     }
 
     /**
-     * @brief Test whether a cell in the species is avaiable for an event
+     * @brief Test whether a cell in the species is available for an event
      *
      * @param cell_id is the id of the cell to be tested
      * @param event_type is the event type for which the availability is tested
