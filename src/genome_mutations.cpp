@@ -2,7 +2,7 @@
  * @file genome_mutations.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements genome and chromosome data structures
- * @version 1.22
+ * @version 1.23
  * @date 2026-05-25
  *
  * @copyright Copyright (c) 2023-2026
@@ -589,9 +589,9 @@ GenomeMutations::Length GenomeMutations::size() const
     return size;
 }
 
-GenomeMutations::Length GenomeMutations::allelic_size() const
+GenomeMutations::AllelicSizeType GenomeMutations::allelic_size() const
 {
-    Length allelic_size{0};
+    AllelicSizeType allelic_size{0};
 
     for (const auto& [chr_id, chromosome]: chromosomes) {
         allelic_size += chromosome.allelic_size();

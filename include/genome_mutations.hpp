@@ -2,7 +2,7 @@
  * @file genome_mutations.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines genome and chromosome data structures
- * @version 1.17
+ * @version 1.18
  * @date 2026-05-22
  *
  * @copyright Copyright (c) 2023-2026
@@ -74,6 +74,11 @@ class ChromosomeMutations
      * @brief The chromosome length type
      */
     using Length = GenomicRegion::Length;
+
+    /**
+     * @brief The allelic size type
+     */
+    using AllelicSizeType = size_t;
 private:
 
     /**
@@ -87,7 +92,7 @@ private:
     {
         ChromosomeId identifier;    //!< the chromosome identifier
         Length length;              //!< the chromosome length
-        Length allelic_length;      //!< the sum of the lengths of all the alleles
+        AllelicSizeType allelic_length;      //!< the sum of the lengths of all the alleles
 
         std::map<AlleleId, Allele> alleles;  //!< the chromosome alleles
 
@@ -288,7 +293,7 @@ public:
      *
      * @return the chromosome allelic size
      */
-    inline const ChromosomeMutations::Length& allelic_size() const
+    inline const ChromosomeMutations::AllelicSizeType& allelic_size() const
     {
         return _data->allelic_length;
     }
@@ -823,6 +828,11 @@ public:
     using Length = size_t;
 
     /**
+     * @brief The allelic size type
+     */
+    using AllelicSizeType = size_t;
+
+    /**
      * @brief The empty constructor
      */
     GenomeMutations();
@@ -898,7 +908,7 @@ public:
      *
      * @return the genome allelic size
      */
-    GenomeMutations::Length allelic_size() const;
+    GenomeMutations::AllelicSizeType allelic_size() const;
 
     /**
      * @brief Get the mutations of genome chromosomes
