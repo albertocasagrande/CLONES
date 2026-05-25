@@ -2,8 +2,8 @@
  * @file genome_mutations.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements genome and chromosome data structures
- * @version 1.20
- * @date 2026-02-06
+ * @version 1.21
+ * @date 2026-05-22
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -111,21 +111,6 @@ std::list<AlleleId> ChromosomeMutations::get_alleles_with_context_free_for(const
     }
 
     return context_free_alleles;
-}
-
-const Allele& ChromosomeMutations::get_allele(const AlleleId& allele_id) const
-{
-    auto it = get_alleles().find(allele_id);
-
-    if (it == get_alleles().end()) {
-        std::ostringstream oss;
-
-        oss << "Chromosome " << GenomicPosition::chrtos(id())
-            <<  " has not allele " << Allele::format_id(allele_id) << ".";
-        throw std::out_of_range(oss.str());
-    }
-
-    return it->second;
 }
 
 std::shared_ptr<ChromosomeMutations::Data> ChromosomeMutations::make_data_exclusive()
@@ -275,7 +260,7 @@ bool ChromosomeMutations::has_context_free(const SID& mutation) const
     if (!contains(mutation)) {
         std::ostringstream oss;
 
-        oss << mutation << " is does not lays in the chromosome "
+        oss << mutation << " is does not lie in the chromsome "
             << id() << ".";
         throw std::domain_error(oss.str());
     }
@@ -294,37 +279,6 @@ bool ChromosomeMutations::has_context_free(const SID& mutation) const
     return some_allele_contains_pos;
 }
 
-bool ChromosomeMutations::apply_CNA(CNA& cna)
-{
-    const auto cna_region = cna.get_region();
-    switch(cna.type) {
-        case CNA::Type::AMPLIFICATION:
-            return amplify_region(cna_region, cna.source,
-                                  cna.dest, cna.nature);
-        case CNA::Type::DELETION:
-            return remove_region(cna_region, cna.dest,
-                                 cna.nature);
-        default:
-            throw std::runtime_error("Unsupported CNA type");
-    }
-}
-
-bool ChromosomeMutations::apply(const SID& mutation, const AlleleId& allele_id)
-{
-    if (!contains(mutation)) {
-        throw std::domain_error("The genomic position of the SID is not in the chromosome");
-    }
-
-    auto [allele, data_backup] = get_modifiable_allele(allele_id);
-    if (!allele->apply(mutation)) {
-        // revert to the original data member
-        _data = data_backup;
-
-        return false;
-    }
-
-    return true;
-}
 
 bool ChromosomeMutations::apply_contained(const MutationList& mutation_list)
 {
@@ -335,14 +289,14 @@ bool ChromosomeMutations::apply_contained(const MutationList& mutation_list)
         switch(list_it.get_type()) {
             case MutationList::SID_TURN:
                 if (list_it.get_last_SID().chr_id == id()) {
-                    if (!apply(list_it.get_last_SID())) {
+                    if (!insert_in_object(list_it.get_last_SID())) {
                         success = false;
                     }
                 }
                 break;
             case MutationList::CNA_TURN:
                 if (list_it.get_last_CNA().chr_id == id()) {
-                    if (!apply(list_it.get_last_CNA())) {
+                    if (!insert_in_object(list_it.get_last_CNA())) {
                         success = false;
                     }
                 }
@@ -359,7 +313,50 @@ bool ChromosomeMutations::apply_contained(const MutationList& mutation_list)
     return success;
 }
 
-bool ChromosomeMutations::remove_mutation(const GenomicPosition& genomic_position)
+bool ChromosomeMutations::apply_CNA(CNA& cna)
+{
+    const auto cna_region = cna.get_region();
+    switch(cna.type) {
+        case CNA::Type::AMPLIFICATION:
+            return amplify_region(cna_region, cna.source,
+                                  cna.dest, cna.nature);
+        case CNA::Type::DELETION:
+            return remove_region(cna_region, cna.dest,
+                                 cna.nature);
+        default:
+            throw std::runtime_error("Unsupported CNA type");
+    }
+}
+
+bool ChromosomeMutations::insert_in_object(const SID& mutation, const AlleleId& allele_id)
+{
+    if (!contains(mutation)) {
+        throw std::domain_error("The genomic position of the SID is not in the chromosome");
+    }
+
+    auto [allele, data_backup] = get_modifiable_allele(allele_id);
+    if (!allele->insert_in_object(mutation)) {
+        // revert to the original data member
+        _data = data_backup;
+
+        return false;
+    }
+
+    return true;
+}
+
+bool ChromosomeMutations::insert_in_reference(const SID& mutation, const AlleleId& allele_id)
+{
+    if (!contains(mutation)) {
+        throw std::domain_error("The genomic position of the SID is not in the chromosome");
+    }
+
+    auto& allele = get_allele(allele_id);
+
+    return allele.insert_in_reference(mutation);
+}
+
+bool ChromosomeMutations::remove_from_object_at(const GenomicPosition& genomic_position)
 {
     if (!contains(genomic_position)) {
         throw std::domain_error("The genomic position of the SID is not in the chromosome");
@@ -369,7 +366,7 @@ bool ChromosomeMutations::remove_mutation(const GenomicPosition& genomic_positio
     auto backup_data = make_data_exclusive();
 
     for (auto& [allele_id, allele]: _data->alleles) {
-        if (allele.remove_mutation(genomic_position)) {
+        if (allele.remove_from_object_at(genomic_position)) {
             return true;
         }
     }
@@ -378,6 +375,55 @@ bool ChromosomeMutations::remove_mutation(const GenomicPosition& genomic_positio
     _data = backup_data;
 
     return false;
+}
+
+bool ChromosomeMutations::remove_from_object(const MutationSpec<SID>& mutation_spec)
+{
+    if (!contains(mutation_spec)) {
+        throw std::domain_error("The genomic position of the SID is not in the chromosome");
+    }
+
+    // save original data pointer for possible backup
+    auto backup_data = make_data_exclusive();
+
+    auto found = _data->alleles.find(mutation_spec.allele_id);
+
+    if (found != _data->alleles.end()) {
+        if (found->second.remove_from_object(mutation_spec)) {
+            return true;
+        }
+    }
+
+    // revert to the original data member since nothing has changed
+    _data = backup_data;
+
+    return false;
+}
+
+bool ChromosomeMutations::remove_from_reference_at(const GenomicPosition& genomic_position)
+{
+    if (!contains(genomic_position)) {
+        return false;
+    }
+
+    for (auto& [allele_id, allele]: _data->alleles) {
+        if (allele.remove_from_reference_at(genomic_position)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool ChromosomeMutations::remove_from_reference(const MutationSpec<SID>& mutation_spec)
+{
+    auto found = _data->alleles.find(mutation_spec.allele_id);
+
+    if (found == _data->alleles.end()) {
+        return false;
+    }
+
+    return (found->second.remove_from_reference(mutation_spec));
 }
 
 bool ChromosomeMutations::includes(const SID& mutation) const
@@ -393,6 +439,23 @@ bool ChromosomeMutations::includes(const SID& mutation) const
     }
 
     return false;
+}
+
+ChromosomeMutations ChromosomeMutations::deep_copy() const
+{
+    ChromosomeMutations copy;
+
+    copy._data->identifier = id();
+    copy._data->length = size();
+    copy._data->allelic_length = allelic_size();
+    copy._data->CNAs = _data->CNAs;
+    copy._data->next_allele_id = _data->next_allele_id;
+
+    for (const auto& [allele_id, allele] : get_alleles()) {
+        copy._data->alleles.emplace(allele_id, allele.deep_copy());
+    }
+
+    return copy;
 }
 
 ChromosomeMutations ChromosomeMutations::copy_structure() const
@@ -644,33 +707,35 @@ bool GenomeMutations::remove_region(const GenomicRegion& genomic_region, const A
     return chr_it->second.remove_region(genomic_region, allele_id, nature);
 }
 
-bool GenomeMutations::apply_CNA(CNA& cna)
+
+bool GenomeMutations::apply_to_reference(const MutationList& mutation_list)
 {
-    const auto cna_region = cna.get_region();
-    switch(cna.type) {
-        case CNA::Type::AMPLIFICATION:
-            return amplify_region(cna_region, cna.source,
-                                  cna.dest, cna.nature);
-        case CNA::Type::DELETION:
-            return remove_region(cna_region, cna.dest,
-                                 cna.nature);
-        default:
-            throw std::runtime_error("Unsupported CNA type");
+    bool success{true};
+
+    for (auto list_it = mutation_list.begin();
+            list_it != mutation_list.end(); ++list_it) {
+        switch(list_it.get_type()) {
+            case MutationList::SID_TURN:
+                if (!insert_in_reference(list_it.get_last_SID())) {
+                    success = false;
+                }
+                break;
+            case MutationList::CNA_TURN:
+                if (!insert_in_object(list_it.get_last_CNA())) {
+                    success = false;
+                }
+                break;
+            case MutationList::WGD_TURN:
+                duplicate_alleles();
+                break;
+            default:
+                throw std::runtime_error("GenomeMutations::apply_to_"
+                                         "reference(const MutationList&):"
+                                         " Unsupported mutation type");
+        }
     }
-}
 
-bool GenomeMutations::apply(const SID& mutation, const AlleleId& allele_id)
-{
-    auto chr_it = find_chromosome(chromosomes, mutation.chr_id);
-
-    return chr_it->second.apply(mutation, allele_id);
-}
-
-bool GenomeMutations::apply(const MutationSpec<SID>& mutation_spec)
-{
-    auto chr_it = find_chromosome(chromosomes, mutation_spec.chr_id);
-
-    return chr_it->second.apply(mutation_spec);
+    return success;
 }
 
 bool GenomeMutations::apply(const MutationList& mutation_list)
@@ -681,12 +746,12 @@ bool GenomeMutations::apply(const MutationList& mutation_list)
             list_it != mutation_list.end(); ++list_it) {
         switch(list_it.get_type()) {
             case MutationList::SID_TURN:
-                if (!apply(list_it.get_last_SID())) {
+                if (!insert_in_object(list_it.get_last_SID())) {
                     success = false;
                 }
                 break;
             case MutationList::CNA_TURN:
-                if (!apply(list_it.get_last_CNA())) {
+                if (!insert_in_object(list_it.get_last_CNA())) {
                     success = false;
                 }
                 break;
@@ -702,11 +767,75 @@ bool GenomeMutations::apply(const MutationList& mutation_list)
     return success;
 }
 
-bool GenomeMutations::remove_mutation(const GenomicPosition& genomic_position)
+bool GenomeMutations::apply_CNA(CNA& cna)
+{
+    const auto cna_region = cna.get_region();
+    switch(cna.type) {
+        case CNA::Type::AMPLIFICATION:
+            return amplify_region(cna_region, cna.source,
+                                  cna.dest, cna.nature);
+        case CNA::Type::DELETION:
+            return remove_region(cna_region, cna.dest,
+                                 cna.nature);
+        default:
+            throw std::runtime_error("Unsupported CNA type");
+    }
+}
+
+bool GenomeMutations::insert_in_object(const SID& mutation, const AlleleId& allele_id)
+{
+    auto chr_it = find_chromosome(chromosomes, mutation.chr_id);
+
+    return chr_it->second.insert_in_object(mutation, allele_id);
+}
+
+bool GenomeMutations::insert_in_object(const MutationSpec<SID>& mutation_spec)
+{
+    auto chr_it = find_chromosome(chromosomes, mutation_spec.chr_id);
+
+    return chr_it->second.insert_in_object(mutation_spec);
+}
+
+bool GenomeMutations::insert_in_reference(const SID& mutation, const AlleleId& allele_id)
+{
+    auto chr_it = find_chromosome(chromosomes, mutation.chr_id);
+
+    return chr_it->second.insert_in_reference(mutation, allele_id);
+}
+
+bool GenomeMutations::insert_in_reference(const MutationSpec<SID>& mutation_spec)
+{
+    auto chr_it = find_chromosome(chromosomes, mutation_spec.chr_id);
+
+    return chr_it->second.insert_in_reference(mutation_spec);
+}
+
+bool GenomeMutations::remove_from_object_at(const GenomicPosition& genomic_position)
 {
     auto chr_it = find_chromosome(chromosomes, genomic_position.chr_id);
 
-    return chr_it->second.remove_mutation(genomic_position);
+    return chr_it->second.remove_from_object_at(genomic_position);
+}
+
+bool GenomeMutations::remove_from_object(const MutationSpec<SID>& mutation_spec)
+{
+    auto chr_it = find_chromosome(chromosomes, mutation_spec.chr_id);
+
+    return chr_it->second.remove_from_object(mutation_spec);
+}
+
+bool GenomeMutations::remove_from_reference_at(const GenomicPosition& genomic_position)
+{
+    auto chr_it = find_chromosome(chromosomes, genomic_position.chr_id);
+
+    return chr_it->second.remove_from_reference_at(genomic_position);
+}
+
+bool GenomeMutations::remove_from_reference(const MutationSpec<SID>& mutation_spec)
+{
+    auto chr_it = find_chromosome(chromosomes, mutation_spec.chr_id);
+
+    return chr_it->second.remove_from_reference(mutation_spec);
 }
 
 bool GenomeMutations::has_context_free(const SID& mutation) const
@@ -733,6 +862,17 @@ GenomeMutations GenomeMutations::copy_structure() const
 
     for (const auto& [chr_id, chromosome] : chromosomes) {
         copy.chromosomes.emplace(chr_id, chromosome.copy_structure());
+    }
+
+    return copy;
+}
+
+GenomeMutations GenomeMutations::deep_copy() const
+{
+    GenomeMutations copy;
+
+    for (const auto& [chr_id, chromosome] : chromosomes) {
+        copy.chromosomes.emplace(chr_id, chromosome.deep_copy());
     }
 
     return copy;

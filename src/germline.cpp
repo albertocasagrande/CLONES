@@ -2,8 +2,8 @@
  * @file germline.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements the functions to generate and load germline mutations
- * @version 1.6
- * @date 2026-02-06
+ * @version 1.7
+ * @date 2026-05-22
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -172,7 +172,7 @@ GermlineMutations::generate(const std::filesystem::path& reference_fasta_filenam
                         // This assume no deletion
                         AlleleId allele_id = generator.rand_gen()%num_of_alleles;
 
-                        if (chr_mutations.apply(snv, allele_id)) {
+                        if (chr_mutations.insert_in_object(snv, allele_id)) {
                             --mutations_in_chr;
                             --generator.mutations_not_placed;
                         }
@@ -472,11 +472,11 @@ void add_SID(GenomeMutations& mutations, const std::string& line,
     const auto mutation = get_SID_from_line(line, column_separators);
 
     if (allele_ids[0] == 1) {
-        mutations.apply(mutation, 0);
+        mutations.insert_in_object(mutation, 0);
     }
 
     if (num_of_alleles>1 && allele_ids.size()>1 && allele_ids[1]==1) {
-        mutations.apply(mutation, 1);
+        mutations.insert_in_object(mutation, 1);
     }
 }
 

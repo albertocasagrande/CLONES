@@ -2,8 +2,8 @@
  * @file irb_tree.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines indexed red-black trees
- * @version 1.3
- * @date 2026-02-06
+ * @version 1.4
+ * @date 2026-05-22
  *
  * @copyright Copyright (c) 2024-2025
  *
@@ -46,7 +46,7 @@ namespace CLONES
  * field accounts the number of nodes in the subtree rooted in the specific node.
  * Finding the i-th key in the tree can be achieved by using the `subtree_size`
  * fields in time \f$O(\log \texttt{size()})\f$.
- *
+ * 
  * [1] Thomas H. Cormen, Charles E. Leiserson, Ronald L. Rivest, Clifford Stein:
  *     Introduction to Algorithms, 3rd Edition. MIT Press 2009,
  *     ISBN 978-0-262-03384-8, pp. I-XIX, 1-1292

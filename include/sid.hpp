@@ -2,8 +2,8 @@
  * @file sid.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines SNV, Insertion, and Deletion mutations
- * @version 1.3
- * @date 2026-02-06
+ * @version 1.4
+ * @date 2026-05-22
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -264,7 +264,7 @@ struct less<CLONES::Mutations::SID>
 
 /**
  * @brief Test if two SIDs are the same
- * 
+ *
  * @param lhs is the left hand side of the comparison
  * @param rhs is the right hand side of the comparison
  * @return true iff `lhs` and `rhs` are the same mutation
@@ -274,7 +274,7 @@ bool operator==(const CLONES::Mutations::SID &lhs,
 
 /**
  * @brief Test if two SIDs differ
- * 
+ *
  * @param lhs is the left hand side of the comparison
  * @param rhs is the right hand side of the comparison
  * @return true iff `lhs` and `rhs` are not the same mutation

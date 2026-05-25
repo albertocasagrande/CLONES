@@ -2,8 +2,8 @@
  * @file phylogenetic_forest.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements classes and function for phylogenetic forests
- * @version 1.17
- * @date 2026-02-06
+ * @version 1.18
+ * @date 2026-05-22
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -57,6 +57,16 @@ PhylogeneticForest::const_node::const_node(const PhylogeneticForest* forest, con
 PhylogeneticForest::node::node(PhylogeneticForest* forest, const Mutants::CellId cell_id):
     Mutants::DescendantForest::_node<PhylogeneticForest>(forest, cell_id)
 {}
+
+MutationList PhylogeneticForest::node::novel_mutations() const
+{
+    auto found = forest->arising_mutations.find(cell_id);
+    if (found == forest->arising_mutations.end()) {
+        return MutationList();
+    }
+
+    return found->second;
+}
 
 const MutationList& PhylogeneticForest::const_node::pre_neoplastic_mutations() const
 {
@@ -205,13 +215,13 @@ CellGenomeMutations PhylogeneticForest::get_cell_mutations(const Mutants::CellId
     }
 
     if (with_pre_neoplastic) {
-        node_mutations.apply(pre_neoplastic_mutations.at(node.get_id()));
+        node_mutations.apply_to_reference(pre_neoplastic_mutations.at(node.get_id()));
     }
-    node_mutations.apply(arising_mutations.at(node.get_id()));
+    node_mutations.apply_to_reference(arising_mutations.at(node.get_id()));
 
     // browse the branch down to the node and apply the arising mutations
     while (!cell_id_stack.empty()) {
-        node_mutations.apply(arising_mutations.at(cell_id_stack.top()));
+        node_mutations.apply_to_reference(arising_mutations.at(cell_id_stack.top()));
 
         cell_id_stack.pop();
     }
@@ -242,7 +252,7 @@ PhylogeneticForest::get_wild_type_genomes(const bool with_pre_neoplastic,
         CellGenomeMutations root_mutations{root_cell, germinal};
 
         if (with_pre_neoplastic) {
-            root_mutations.apply(root.pre_neoplastic_mutations());
+            root_mutations.apply_to_reference(root.pre_neoplastic_mutations());
         }
 
         wild_type_genomes.emplace(root_id, std::move(root_mutations));

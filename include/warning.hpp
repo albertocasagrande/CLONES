@@ -2,8 +2,8 @@
  * @file warning.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines warning functions
- * @version 1.1
- * @date 2026-02-06
+ * @version 1.2
+ * @date 2026-05-22
  *
  * @copyright Copyright (c) 2025
  *
@@ -53,7 +53,7 @@ namespace CLONES
 
     /**
      * @brief The default warning function
-     * 
+     *
      * @param type is the warning type
      * @param message is the warning message
      */

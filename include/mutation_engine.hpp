@@ -2,8 +2,8 @@
  * @file mutation_engine.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a class to place mutations on a descendant forest
- * @version 1.34
- * @date 2026-02-06
+ * @version 1.35
+ * @date 2026-05-22
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -531,7 +531,7 @@ class MutationEngine
         }
 
         // try to apply the selected SID
-        return cell_mutations.apply(mutation);
+        return cell_mutations.insert_in_reference(mutation);
     }
 
     /**
@@ -867,7 +867,7 @@ class MutationEngine
             return false;
         }
 
-        return chr_mutations.apply(cna);
+        return chr_mutations.insert_in_object(cna);
     }
 
     /**
@@ -969,6 +969,24 @@ class MutationEngine
     }
 
     /**
+     * @brief Remove the SIDs occurring for the first time on a node from genome mutations
+     *
+     * @param node is the node whose SIDs must be removed
+     * @param genome_mutations is the genome mutations from which the node's SIDs must be removed
+     */
+    static void remove_from_reference_node_SIDs(const PhylogeneticForest::node& node,
+                                        GenomeMutations& genome_mutations)
+    {
+        auto mutation_list = node.novel_mutations();
+
+        for (auto it=mutation_list.begin(); it != mutation_list.end(); ++it) {
+            if (it.get_type() == MutationList::MutationType::SID_TURN) {
+                genome_mutations.remove_from_reference(it.get_last_SID());
+            }
+        }
+    }
+
+    /**
      * @brief Place the mutations on the genomes of a descendant forest node
      *
      * This method recursively places the mutations on the nodes of a descendants
@@ -977,7 +995,7 @@ class MutationEngine
      * to the cell sample.
      *
      * @param[in] node is a phylogenetic forest node representing a cell
-     * @param[in,out] node_mutations is the genomic mutation of `node`'s ancestor. At the
+     * @param[in,out] ancestor_mutations is the genomic mutation of `node`'s ancestor. At the
      *      end of the call, it contains the genomic mutations of `node`
      * @param[in] passenger_rates is the map associating species ids to their passenger rates
      * @param[in] driver_mutations is the map associating mutant ids and mutations
@@ -985,7 +1003,7 @@ class MutationEngine
      * @param[in,out] visited_nodes is the number of visited nodes
      * @param[in,out] progress_bar is a progress bar pointer
      */
-    void place_mutations(PhylogeneticForest::node& node, GenomeMutations& node_mutations,
+    void place_mutations(PhylogeneticForest::node& node, GenomeMutations& ancestor_mutations,
                          const std::map<Mutants::SpeciesId, Timed<PassengerRates>>& passenger_rates,
                          std::map<Mutants::MutantId, DriverMutations>& driver_mutations,
                          size_t& visited_nodes, UI::ProgressBar *progress_bar)
@@ -996,6 +1014,8 @@ class MutationEngine
         const size_t rs_stack_size = rs_stack.size();
 
         node.arising_mutations() = MutationList();
+
+        GenomeMutations node_mutations{ancestor_mutations};
 
         place_driver_mutations(node, node_mutations, driver_mutations);
 
@@ -1026,17 +1046,15 @@ class MutationEngine
             ++sample_statistics.number_of_cells;
             sample_statistics.total_allelic_size += node_mutations.allelic_size();
         } else {
-            auto children = node.children();
-
-            for (auto child_it = children.begin(); child_it != children.end()-1; ++child_it) {
-                GenomeMutations child_mutations{node_mutations};
-
-                place_mutations(*child_it, child_mutations, passenger_rates, driver_mutations,
+            for (auto child : node.children()) {
+                place_mutations(child, node_mutations, passenger_rates, driver_mutations,
                                 visited_nodes, progress_bar);
             }
-            place_mutations(children.back(), node_mutations, passenger_rates, driver_mutations,
-                            visited_nodes, progress_bar);
         }
+
+        // SIDs must be removed from the ancestor's mutations because
+        // CNAs may have created private fragments in `node_mutations`
+        remove_from_reference_node_SIDs(node, ancestor_mutations);
 
         if (!infinite_sites_model) {
             // reverse context index extractions

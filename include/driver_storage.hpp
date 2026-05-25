@@ -2,8 +2,8 @@
  * @file driver_storage.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines class to load and store driver mutations
- * @version 1.3
- * @date 2026-02-06
+ * @version 1.4
+ * @date 2026-05-22
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -49,7 +49,7 @@ class DriverStorage
 public:
     /**
      * @brief The mutation entry type in the code-mutation map
-     * 
+     *
      * This class represent the co-domain in the code-mutation map.
      * It maintains the mutation and the set of all the tumour type
      * for which it appears as a driver mutation.

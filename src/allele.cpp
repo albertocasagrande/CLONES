@@ -2,8 +2,8 @@
  * @file allele.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements allele representation
- * @version 1.7
- * @date 2026-02-06
+ * @version 1.8
+ * @date 2026-05-22
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -80,7 +80,7 @@ bool AlleleFragment::has_context_free(const SID& mutation) const
     return true;
 }
 
-bool AlleleFragment::apply(const SID& mutation)
+bool AlleleFragment::insert_in_object(const SID& mutation)
 {
     if (!contains(mutation)) {
         throw std::out_of_range("The allele fragment does not "
@@ -98,11 +98,26 @@ bool AlleleFragment::apply(const SID& mutation)
     return false;
 }
 
-bool AlleleFragment::remove_mutation(const GenomicPosition& genomic_position)
+bool AlleleFragment::insert_in_reference(const SID& mutation)
 {
-    if (!contains(genomic_position)) {
+    if (!contains(mutation)) {
         throw std::out_of_range("The allele fragment does not "
                                 "contain mutation region");
+    }
+
+    if (has_context_free(mutation)) {
+        (_data->mutations)[mutation] = std::make_shared<SID>(mutation);
+
+        return true;
+    }
+
+    return false;
+}
+
+bool AlleleFragment::remove_from_object_at(const GenomicPosition& genomic_position)
+{
+    if (!contains(genomic_position)) {
+        return false;
     }
 
     auto backup_data = make_data_exclusive();
@@ -117,6 +132,58 @@ bool AlleleFragment::remove_mutation(const GenomicPosition& genomic_position)
     _data->mutations.extract(it);
 
     return true;
+}
+
+bool AlleleFragment::remove_from_object(const SID& mutation)
+{
+    if (!contains(mutation)) {
+        return false;
+    }
+
+    auto backup_data = make_data_exclusive();
+
+    auto it = _data->mutations.find(mutation);
+    if (it != _data->mutations.end()) {
+        if (*(it->second)==mutation) {
+            _data->mutations.extract(it);
+
+            return true;
+        }
+    }
+
+    _data = backup_data;
+
+    return false;
+}
+
+bool AlleleFragment::remove_from_reference_at(const GenomicPosition& genomic_position)
+{
+    auto it = _data->mutations.find(genomic_position);
+    if (it == _data->mutations.end()) {
+        return false;
+    }
+
+    _data->mutations.extract(it);
+
+    return true;
+}
+
+bool AlleleFragment::remove_from_reference(const SID& mutation)
+{
+    if (!contains(mutation)) {
+        return false;
+    }
+
+    auto it = _data->mutations.find(mutation);
+    if (it != _data->mutations.end()) {
+        if (*(it->second)==mutation) {
+            _data->mutations.extract(it);
+
+            return true;
+        }
+    }
+
+    return false;
 }
 
 bool AlleleFragment::includes(const SID& mutation) const
@@ -186,6 +253,15 @@ AlleleFragment AlleleFragment::copy(const GenomicRegion& genomic_region) const
     return new_fragment;
 }
 
+AlleleFragment AlleleFragment::deep_copy() const
+{
+    AlleleFragment new_fragment(static_cast<const GenomicRegion&>(*this));
+
+    new_fragment._data->mutations = _data->mutations;
+
+    return new_fragment;
+}
+
 bool AlleleFragment::has_driver_mutations_in(const GenomicRegion& genomic_region) const
 {
     auto final_position = genomic_region.end();
@@ -223,9 +299,10 @@ Allele::Allele(const AlleleId& identifier, const GenomicRegion& genomic_region,
     this->history.push_back(identifier);
 }
 
-template<typename KEY, typename VALUE>
+template<typename KEY, typename VALUE, typename QUERY_VALUE,
+         std::enable_if_t<std::is_convertible_v<QUERY_VALUE, KEY>, bool> = true>
 typename std::map<KEY, VALUE>::const_iterator
-find_not_after(const std::map<KEY, VALUE>& value_map, const KEY& key)
+find_not_after(const std::map<KEY, VALUE>& value_map, const QUERY_VALUE& key)
 {
     auto it = value_map.upper_bound(key);
 
@@ -236,9 +313,10 @@ find_not_after(const std::map<KEY, VALUE>& value_map, const KEY& key)
     return it;
 }
 
-template<typename KEY, typename VALUE>
+template<typename KEY, typename VALUE, typename QUERY_VALUE,
+         std::enable_if_t<std::is_convertible_v<QUERY_VALUE, KEY>, bool> = true>
 typename std::map<KEY, VALUE>::iterator
-find_not_after(std::map<KEY, VALUE>& value_map, const KEY& key)
+find_not_after(std::map<KEY, VALUE>& value_map, const QUERY_VALUE& key)
 {
     auto it = value_map.upper_bound(key);
 
@@ -287,7 +365,7 @@ bool Allele::has_context_free(const SID& mutation) const
     return it->second.has_context_free(mutation);
 }
 
-bool Allele::apply(const SID& mutation)
+bool Allele::insert_in_object(const SID& mutation)
 {
     if (!has_context_free(mutation)) {
         return false;
@@ -296,18 +374,66 @@ bool Allele::apply(const SID& mutation)
     auto it = find_not_after(fragments, static_cast<const GenomicPosition&>(mutation));
 
     if (it != fragments.end() && it->second.contains(mutation)) {
-        return it->second.apply(mutation);
+        return it->second.insert_in_object(mutation);
     }
 
     return false;
 }
 
-bool Allele::remove_mutation(const GenomicPosition& genomic_position)
+bool Allele::insert_in_reference(const SID& mutation)
+{
+    if (!has_context_free(mutation)) {
+        return false;
+    }
+
+    auto it = find_not_after(fragments, static_cast<const GenomicPosition&>(mutation));
+
+    if (it != fragments.end() && it->second.contains(mutation)) {
+        return it->second.insert_in_reference(mutation);
+    }
+
+    return false;
+}
+
+bool Allele::remove_from_object_at(const GenomicPosition& genomic_position)
 {
     auto it = find_not_after(fragments, genomic_position);
 
     if (it != fragments.end() && it->second.contains(genomic_position)) {
-        return it->second.remove_mutation(genomic_position);
+        return it->second.remove_from_object_at(genomic_position);
+    }
+
+    return false;
+}
+
+bool Allele::remove_from_object(const SID& mutation)
+{
+    auto it = find_not_after(fragments, mutation);
+
+    if (it != fragments.end() && it->second.contains(mutation)) {
+        return it->second.remove_from_object(mutation);
+    }
+
+    return false;
+}
+
+bool Allele::remove_from_reference_at(const GenomicPosition& genomic_position)
+{
+    auto it = find_not_after(fragments, genomic_position);
+
+    if (it != fragments.end() && it->second.contains(genomic_position)) {
+        return it->second.remove_from_reference_at(genomic_position);
+    }
+
+    return false;
+}
+
+bool Allele::remove_from_reference(const SID& mutation)
+{
+    auto it = find_not_after(fragments, mutation);
+
+    if (it != fragments.end() && it->second.contains(mutation)) {
+        return it->second.remove_from_reference(mutation);
     }
 
     return false;
@@ -330,6 +456,19 @@ Allele Allele::copy(const AlleleId& new_allele_id, const GenomicRegion& genomic_
     return new_sequence;
 }
 
+Allele Allele::deep_copy() const
+{
+    Allele copy;
+
+    copy.history = history;
+
+    for (const auto& [pos, fragment] : fragments) {
+        copy.fragments.emplace(pos, fragment.deep_copy());
+    }
+
+    return copy;
+}
+
 bool Allele::has_driver_mutations_in(const GenomicRegion& genomic_region) const
 {
     auto it = find_not_after(fragments, genomic_region.get_initial_position());
@@ -343,7 +482,6 @@ bool Allele::has_driver_mutations_in(const GenomicRegion& genomic_region) const
 
     return false;
 }
-
 
 bool Allele::remove(const GenomicRegion& genomic_region)
 {
