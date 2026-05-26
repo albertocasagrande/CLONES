@@ -162,7 +162,8 @@ public:
 
                 iterator_stack.pop();
 
-                if (only_leaves) {
+                const_node node{forest, node_label.first};
+                if (only_leaves && !node.is_leaf()) {
                     this->operator++();
                 }
             } else {
