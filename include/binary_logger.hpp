@@ -231,7 +231,7 @@ public:
      *
      * @param simulation is the simulation whose snapshot is requested
      */
-    void snapshot(const Simulation& simulation);
+    void snapshot(const TissueSimulation& simulation);
 
     /**
      * @brief Flush archive data

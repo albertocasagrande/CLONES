@@ -45,7 +45,7 @@ namespace CLONESSim = CLONES::Mutants::Evolutions;
 namespace CLONESDrv = CLONES::Mutants;
 
 
-BOOST_PYTHON_FUNCTION_OVERLOADS(run_up_to_overloads, SimulationWrapper::static_run_up_to, 2, 4)
+BOOST_PYTHON_FUNCTION_OVERLOADS(run_up_to_overloads, TissueSimulationWrapper::static_run_up_to, 2, 4)
 
 BOOST_PYTHON_MODULE(CLONES)
 {
@@ -82,20 +82,20 @@ BOOST_PYTHON_MODULE(CLONES)
         .add_property("id", make_function(&CLONESDrv::MutantProperties::get_id, return_value_policy<copy_const_reference>()))
     ;
 
-    class_<SimulationWrapper, std::shared_ptr<SimulationWrapper>>("Simulation", no_init)
-        .def("__init__", make_constructor(SimulationWrapper::create, default_call_policies(),
+    class_<TissueSimulationWrapper, std::shared_ptr<TissueSimulationWrapper>>("TissueSimulation", no_init)
+        .def("__init__", make_constructor(TissueSimulationWrapper::create, default_call_policies(),
                                           (arg("minutes_between_snapshot")=5, arg("random_seed")=0)))
-        .def("run_up_to", &SimulationWrapper::static_run_up_to,
+        .def("run_up_to", &TissueSimulationWrapper::static_run_up_to,
              run_up_to_overloads((arg("wrapper"), arg("time"), arg("quiet")=false, arg("plot")=false)))
-        .def("get_time", make_function(&SimulationWrapper::get_time, return_value_policy<copy_const_reference>()))
-        .def("add_mutant", &SimulationWrapper::add_mutant)
-        .def("schedule_mutation", &SimulationWrapper::schedule_mutation)
-        .def("place_cell", &SimulationWrapper::place_cell)
-        .def("set_tissue", &SimulationWrapper::set_tissue)
-        .def("rename_log_directory", &SimulationWrapper::rename_log_directory)
-        .add_property("death_activation_level", &SimulationWrapper::get_death_activation_level,
-                      &SimulationWrapper::set_death_activation_level)
-        .add_property("storage_enabled", &SimulationWrapper::get_storage_enabled,
-                      &SimulationWrapper::set_storage_enabled)
+        .def("get_time", make_function(&TissueSimulationWrapper::get_time, return_value_policy<copy_const_reference>()))
+        .def("add_mutant", &TissueSimulationWrapper::add_mutant)
+        .def("schedule_mutation", &TissueSimulationWrapper::schedule_mutation)
+        .def("place_cell", &TissueSimulationWrapper::place_cell)
+        .def("set_tissue", &TissueSimulationWrapper::set_tissue)
+        .def("rename_log_directory", &TissueSimulationWrapper::rename_log_directory)
+        .add_property("death_activation_level", &TissueSimulationWrapper::get_death_activation_level,
+                      &TissueSimulationWrapper::set_death_activation_level)
+        .add_property("storage_enabled", &TissueSimulationWrapper::get_storage_enabled,
+                      &TissueSimulationWrapper::set_storage_enabled)
     ;
 }

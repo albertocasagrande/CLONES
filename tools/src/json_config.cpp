@@ -403,7 +403,7 @@ get_timed_mutation(const std::map<std::string, CLONES::Mutants::MutantProperties
 
     const auto& mutated_mutant = mutants.at(timed_mutation_json["mutated mutant"].template get<std::string>());
 
-    SimulationEventWrapper mutation({orig_mutant, mutated_mutant});
+    TissueSimulationEventWrapper mutation({orig_mutant, mutated_mutant});
 
     return {time, mutation};
 }
@@ -433,7 +433,7 @@ get_cell_event_type_by_name(const std::string& event_name)
 }
 
 const CLONES::Mutants::Evolutions::Species&
-find_species_by_name(const CLONES::Mutants::Evolutions::Simulation& simulation,
+find_species_by_name(const CLONES::Mutants::Evolutions::TissueSimulation& simulation,
                                 const std::string& name)
 {
     for (const auto& species : simulation.tissue()) {
@@ -446,7 +446,7 @@ find_species_by_name(const CLONES::Mutants::Evolutions::Simulation& simulation,
 }
 
 CLONES::Mutants::Evolutions::TimedEvent
-get_timed_rate_update(const CLONES::Mutants::Evolutions::Simulation& simulation,
+get_timed_rate_update(const CLONES::Mutants::Evolutions::TissueSimulation& simulation,
                       const nlohmann::json& timed_rate_update_json)
 {
     using namespace CLONES::Mutants::Evolutions;
@@ -468,7 +468,7 @@ get_timed_rate_update(const CLONES::Mutants::Evolutions::Simulation& simulation,
     const auto rate_name = timed_rate_update_json["rate name"].template get<std::string>();
     CLONES::Mutants::CellEventType cell_event_type = get_cell_event_type_by_name(rate_name);
 
-    SimulationEventWrapper rate_update({species.get_id(), cell_event_type,
+    TissueSimulationEventWrapper rate_update({species.get_id(), cell_event_type,
                                         get_rate(timed_rate_update_json["rate"])});
 
     return {time, rate_update};
@@ -491,11 +491,11 @@ get_timed_sampling(const nlohmann::json& timed_sampling_json)
     auto sample_specification = ConfigReader::get_sample_specification(timed_sampling_json["sample"]);
 
     Sampling sampling(sample_specification);
-    return {time, SimulationEventWrapper(sampling)};
+    return {time, TissueSimulationEventWrapper(sampling)};
 }
 
 CLONES::Mutants::Evolutions::TimedEvent
-ConfigReader::get_timed_event(const CLONES::Mutants::Evolutions::Simulation& simulation,
+ConfigReader::get_timed_event(const CLONES::Mutants::Evolutions::TissueSimulation& simulation,
                               const std::map<std::string, CLONES::Mutants::MutantProperties> mutants,
                               const nlohmann::json& timed_event_json)
 {

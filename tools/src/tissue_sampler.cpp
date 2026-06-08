@@ -36,7 +36,7 @@
 
 #include "common.hpp"
 
-#include "simulation.hpp"
+#include "tissue_simulation.hpp"
 
 class TissueSampler : public BasicExecutable
 {

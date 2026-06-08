@@ -48,7 +48,7 @@ namespace Mutants
 namespace Evolutions
 {
 class Tissue;
-class Simulation;
+class TissueSimulation;
 }
 
 namespace Logics
@@ -121,7 +121,7 @@ public:
     }
 
     friend class CLONES::Mutants::Evolutions::Tissue;
-    friend class CLONES::Mutants::Evolutions::Simulation;
+    friend class CLONES::Mutants::Evolutions::TissueSimulation;
     friend std::ostream& operator<<(std::ostream& os, const Variable& variable);
 private:
 

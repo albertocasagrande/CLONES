@@ -31,7 +31,7 @@
 #ifndef __CLONES_ENDING_CONDITIONS__
 #define __CLONES_ENDING_CONDITIONS__
 
-#include "simulation.hpp"
+#include "tissue_simulation.hpp"
 
 namespace CLONES
 {
@@ -43,13 +43,13 @@ namespace Evolutions
 {
 
 /**
- * @brief Simulation time test
+ * @brief TissueSimulation time test
  *
  * The objects of this class have a method testing the time
  * simulated by a simulation. If it is below a threshold,
  * then the test returns `false`; otherwise, it returns `true`.
  */
-struct TimeTest : public Simulation::BasicTest
+struct TimeTest : public TissueSimulation::BasicTest
 {
     const Time threshold; //!< The time threshold
 
@@ -67,7 +67,7 @@ struct TimeTest : public Simulation::BasicTest
      * @return `false` if and only if the time simulated by `simulation`
      *          is lower than the test threshold
      */
-    inline bool operator()(const Simulation& simulation) override
+    inline bool operator()(const TissueSimulation& simulation) override
     {
         return threshold < simulation.get_time();
     }
@@ -78,7 +78,7 @@ struct TimeTest : public Simulation::BasicTest
      * @param simulation is the considered simulation
      * @return the percentage of the completed simulation
      */
-    inline uint8_t percentage(const Simulation& simulation) override
+    inline uint8_t percentage(const TissueSimulation& simulation) override
     {
         return static_cast<uint8_t>((100*simulation.get_time()/threshold));
     }
@@ -91,7 +91,7 @@ struct TimeTest : public Simulation::BasicTest
  * cells in a species. If this number is below a threshold,
  * then the test returns `false`; otherwise, it returns `true`.
  */
-struct SpeciesCountTest : public Simulation::BasicTest
+struct SpeciesCountTest : public TissueSimulation::BasicTest
 {
     const SpeciesId species_id; //!< The species id
     const size_t threshold;  //!< The size threshold
@@ -112,7 +112,7 @@ struct SpeciesCountTest : public Simulation::BasicTest
      * @return `false` if and only if the number of cells of the
      *          considered species is below the test threshold
      */
-    bool operator()(const Simulation& simulation) override;
+    bool operator()(const TissueSimulation& simulation) override;
 
     /**
      * @brief Return the percentage of the completed simulation
@@ -120,7 +120,7 @@ struct SpeciesCountTest : public Simulation::BasicTest
      * @param simulation is the considered simulation
      * @return the percentage of the completed simulation
      */
-    uint8_t percentage(const Simulation& simulation) override;
+    uint8_t percentage(const TissueSimulation& simulation) override;
 };
 
 /**
@@ -130,7 +130,7 @@ struct SpeciesCountTest : public Simulation::BasicTest
  * cells of a mutant. If this number is below a threshold,
  * then the test returns `false`; otherwise, it returns `true`.
  */
-struct CloneCountTest : public Simulation::BasicTest
+struct CloneCountTest : public TissueSimulation::BasicTest
 {
     const MutantId mutant_id;  //!< The mutant id
     const size_t threshold;  //!< The size threshold
@@ -151,7 +151,7 @@ struct CloneCountTest : public Simulation::BasicTest
      * @return `false` if and only if the number of cells of the
      *          considered mutant is below the test threshold
      */
-    bool operator()(const Simulation& simulation) override;
+    bool operator()(const TissueSimulation& simulation) override;
 
     /**
      * @brief Return the percentage of the completed simulation
@@ -159,7 +159,7 @@ struct CloneCountTest : public Simulation::BasicTest
      * @param simulation is the considered simulation
      * @return the percentage of the completed simulation
      */
-    uint8_t percentage(const Simulation& simulation) override;
+    uint8_t percentage(const TissueSimulation& simulation) override;
 };
 
 /**
@@ -170,7 +170,7 @@ struct CloneCountTest : public Simulation::BasicTest
  * is below a threshold, then the test returns `false`; otherwise,
  * it returns `true`.
  */
-class EventCountTest : public Simulation::BasicTest
+class EventCountTest : public TissueSimulation::BasicTest
 {
     /**
      * @brief Get the number of events tested by this object
@@ -178,7 +178,7 @@ class EventCountTest : public Simulation::BasicTest
      * @param simulation is the considered simulation
      * @return the number of events tested by this object
      */
-    size_t get_event_number(const Simulation& simulation) const;
+    size_t get_event_number(const TissueSimulation& simulation) const;
 
     const CellEventType event_type; //!< The cell event
     const SpeciesId species_id;     //!< The id of the species in which the events occurred
@@ -225,7 +225,7 @@ public:
      * @return `false` if and only if the number of cells of the
      *          considered species is below the test threshold
      */
-    bool operator()(const Simulation& simulation) override;
+    bool operator()(const TissueSimulation& simulation) override;
 
     /**
      * @brief Return the percentage of the completed simulation
@@ -233,10 +233,10 @@ public:
      * @param simulation is the considered simulation
      * @return the percentage of the completed simulation
      */
-    uint8_t percentage(const Simulation& simulation) override;
+    uint8_t percentage(const TissueSimulation& simulation) override;
 };
 
-class FormulaTest : public Simulation::BasicTest
+class FormulaTest : public TissueSimulation::BasicTest
 {
     Logics::Formula formula;
     size_t formula_distance;
@@ -257,7 +257,7 @@ public:
      * @return `false` if and only if the simulation does not
      *      satisfies the formula of the test
      */
-    bool operator()(const Simulation& simulation) override;
+    bool operator()(const TissueSimulation& simulation) override;
 
     /**
      * @brief Return the percentage of the completed simulation
@@ -265,7 +265,7 @@ public:
      * @param simulation is the considered simulation
      * @return the percentage of the completed simulation
      */
-    uint8_t percentage(const Simulation& simulation) override;
+    uint8_t percentage(const TissueSimulation& simulation) override;
 };
 
 }   // Evolutions

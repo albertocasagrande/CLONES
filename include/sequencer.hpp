@@ -109,7 +109,7 @@ public:
      * @param[in] reverse is a Boolean flag for simulating reverse read
      * @return the quality scores of the read in Sanger FASTQ format
      */
-    virtual std::string simulate_seq(Mutations::SequencingSimulations::Read& read,
+    virtual std::string simulate_seq(Mutations::SequencingTissueSimulations::Read& read,
                                      const Mutations::GenomicPosition& position,
                                      const bool& reverse=false) = 0;
 
@@ -489,7 +489,7 @@ public:
      * @param[in] reverse is a Boolean flag for simulating reverse read
      * @return the quality scores of the read in Sanger FASTQ format
      */
-    std::string simulate_seq(Mutations::SequencingSimulations::Read& read,
+    std::string simulate_seq(Mutations::SequencingTissueSimulations::Read& read,
                              const Mutations::GenomicPosition& position,
                              const bool& reverse=false) override
     {
@@ -658,7 +658,7 @@ public:
      *      read
      * @return the quality scores of the read in Sanger FASTQ format
      */
-    std::string simulate_seq(Mutations::SequencingSimulations::Read& read,
+    std::string simulate_seq(Mutations::SequencingTissueSimulations::Read& read,
                              const Mutations::GenomicPosition& position,
                              const bool& reverse=false) override
     {

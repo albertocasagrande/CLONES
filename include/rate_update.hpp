@@ -47,9 +47,9 @@ namespace Evolutions
 /**
  * @brief A structure to represent liveness rate update
  */
-struct RateUpdate : public SimulationEvent
+struct RateUpdate : public TissueSimulationEvent
 {
-    using Type = SimulationEvent::Type;
+    using Type = TissueSimulationEvent::Type;
 
     SpeciesId species_id;   //!< The involved species id
     CellEventType event_type;          //!< The liveness event type

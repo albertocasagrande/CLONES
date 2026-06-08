@@ -37,7 +37,7 @@
 #include "binary_logger.hpp"
 #include "tissue.hpp"
 
-#include "simulation.hpp"
+#include "tissue_simulation.hpp"
 #include "utils.hpp"
 
 namespace CLONES
@@ -280,7 +280,7 @@ void BinaryLogger::record_initial_cell(const CellInTissue& cell)
 }
 
 
-void BinaryLogger::snapshot(const Simulation& simulation)
+void BinaryLogger::snapshot(const TissueSimulation& simulation)
 {
     Archive::Binary::Out archive(get_snapshot_path());
 

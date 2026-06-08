@@ -34,7 +34,7 @@
 
 #include "phylogenetic_forest.hpp"
 
-#include "simulation.hpp"
+#include "tissue_simulation.hpp"
 
 namespace CLONES
 {

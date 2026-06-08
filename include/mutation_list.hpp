@@ -34,7 +34,7 @@
 #include <list>
 #include <string>
 
-#include "simulation.hpp"
+#include "tissue_simulation.hpp"
 #include "sid.hpp"
 #include "cna.hpp"
 #include "mutation_spec.hpp"

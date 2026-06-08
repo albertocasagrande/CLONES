@@ -73,7 +73,7 @@ namespace Mutations
  * @brief The sequencing simulation namespace
  */
 
-namespace SequencingSimulations
+namespace SequencingTissueSimulations
 {
 
 using BaseCoverage = uint16_t;
@@ -1240,7 +1240,7 @@ private:
     /**
      * @brief A structure to maintain read simulation data
      */
-    struct ReadSimulationData
+    struct ReadTissueSimulationData
     {
         size_t non_covered_allelic_size;   //!< Allelic size to cover yet
         size_t missing_templates;          //!< Number of templates to be placed
@@ -1248,8 +1248,8 @@ private:
         /**
          * @brief The empty constructor
          */
-        ReadSimulationData():
-            ReadSimulationData{0,0}
+        ReadTissueSimulationData():
+            ReadTissueSimulationData{0,0}
         {}
 
         /**
@@ -1258,7 +1258,7 @@ private:
          * @param[in] non_covered_allelic_size is the allelic size to cover yet
          * @param[in] missing_templates is the number of templates to be placed
          */
-        ReadSimulationData(const size_t& non_covered_allelic_size,
+        ReadTissueSimulationData(const size_t& non_covered_allelic_size,
                            const size_t& missing_templates):
             non_covered_allelic_size{non_covered_allelic_size},
             missing_templates{missing_templates}
@@ -1490,7 +1490,7 @@ private:
     template<typename SEQUENCER,
              std::enable_if_t<std::is_base_of_v<CLONES::Sequencers::BasicSequencer, SEQUENCER>, bool> = true>
     void generate_fragment_reads(SEQUENCER& sequencer,
-                                 ReadSimulationData& sample_simulation_data,
+                                 ReadTissueSimulationData& sample_simulation_data,
                                  ChrSampleStatistics& chr_statistics,
                                  const CLONES::IO::FASTA::ChromosomeData<CLONES::IO::FASTA::Sequence>& chr_data,
                                  const std::string& sample_name,
@@ -1581,7 +1581,7 @@ private:
              std::enable_if_t<std::is_base_of_v<CLONES::Sequencers::BasicSequencer, SEQUENCER>, bool> = true>
     void
     generate_chromosome_reads(SEQUENCER& sequencer,
-                              ReadSimulationData& sample_simulation_data,
+                              ReadTissueSimulationData& sample_simulation_data,
                               ChrSampleStatistics& chr_statistics,
                               const CLONES::IO::FASTA::ChromosomeData<CLONES::IO::FASTA::Sequence>& chr_data,
                               const std::string& sample_name,
@@ -1650,7 +1650,7 @@ private:
     template<typename SEQUENCER,
              std::enable_if_t<std::is_base_of_v<CLONES::Sequencers::BasicSequencer, SEQUENCER>, bool> = true>
     ChrSampleStatistics&
-    generate_chr_tumour_reads(SEQUENCER& sequencer, ReadSimulationData& sample_simulation_data,
+    generate_chr_tumour_reads(SEQUENCER& sequencer, ReadTissueSimulationData& sample_simulation_data,
                               ChrSampleStatistics& chr_statistics,
                               const CLONES::IO::FASTA::ChromosomeData<CLONES::IO::FASTA::Sequence>& chr_data,
                               const SequencingTargets::SampleTarget& sample_target,
@@ -1698,7 +1698,7 @@ private:
     template<typename SEQUENCER,
              std::enable_if_t<std::is_base_of_v<CLONES::Sequencers::BasicSequencer, SEQUENCER>, bool> = true>
     ChrSampleStatistics&
-    generate_chr_wild_type_reads(SEQUENCER& sequencer, ReadSimulationData& sample_simulation_data,
+    generate_chr_wild_type_reads(SEQUENCER& sequencer, ReadTissueSimulationData& sample_simulation_data,
                                  ChrSampleStatistics& chr_statistics,
                                  const CLONES::IO::FASTA::ChromosomeData<CLONES::IO::FASTA::Sequence>& chr_data,
                                  const SequencingTargets::SampleTarget& sample_target,
@@ -1748,7 +1748,7 @@ private:
     template<typename SEQUENCER,
              std::enable_if_t<std::is_base_of_v<CLONES::Sequencers::BasicSequencer, SEQUENCER>, bool> = true>
     ChrSampleStatistics
-    generate_chromosome_reads(SEQUENCER& sequencer, ReadSimulationData& sample_simulation_data,
+    generate_chromosome_reads(SEQUENCER& sequencer, ReadTissueSimulationData& sample_simulation_data,
                               ChrSampleStatistics chr_statistics,
                               const CLONES::IO::FASTA::ChromosomeData<CLONES::IO::FASTA::Sequence>& chr_data,
                               const SequencingTargets::SampleTarget& sample_target,
@@ -1804,7 +1804,7 @@ private:
     template<typename SEQUENCER,
              std::enable_if_t<std::is_base_of_v<CLONES::Sequencers::BasicSequencer, SEQUENCER>, bool> = true>
     void generate_chromosome_reads(SEQUENCER& sequencer, SampleSetStatistics& statistics,
-                                   std::map<Mutants::Evolutions::TissueSampleId, ReadSimulationData>& simulation_data,
+                                   std::map<Mutants::Evolutions::TissueSampleId, ReadTissueSimulationData>& simulation_data,
                                    const CLONES::IO::FASTA::ChromosomeData<CLONES::IO::FASTA::Sequence>& chr_data,
                                    const SequencingTargets& targets, const size_t& total_steps, size_t& steps,
                                    const bool& missed_SID_statistics, const bool& germinal_statistics,
@@ -1886,13 +1886,13 @@ private:
      * @return the list of the initial sample read simulation data. The order
      *       of the returned list matches that of `mutations_list`
      */
-    std::map<Mutants::Evolutions::TissueSampleId, ReadSimulationData>
+    std::map<Mutants::Evolutions::TissueSampleId, ReadTissueSimulationData>
     get_initial_data(const SequencingTargets& targets,
                      const std::set<ChromosomeId>& chromosome_ids,
                      const double& coverage)
     {
         // compute complete and non relevant allelic sizes
-        std::map<Mutants::Evolutions::TissueSampleId, ReadSimulationData> simulation_data;
+        std::map<Mutants::Evolutions::TissueSampleId, ReadTissueSimulationData> simulation_data;
         std::map<Mutants::Evolutions::TissueSampleId, size_t> non_relevant;
 
         const auto& forest = targets.forest();
@@ -1901,7 +1901,7 @@ private:
             const auto sample_id = leaf.get_sample().get_id();
 
             size_t& non_relevant_in_sample = non_relevant[sample_id];
-            ReadSimulationData& sample_data = simulation_data[sample_id];
+            ReadTissueSimulationData& sample_data = simulation_data[sample_id];
             for (const auto& [chr_id, cell_chr]: leaf_mutations.get_chromosomes()) {
                 const size_t allelic_size = cell_chr.allelic_size();
 
@@ -1916,7 +1916,7 @@ private:
         const auto& wild_type_genomes = targets.wild_type_genomes();
         for (const auto& [sample_id, sample_target]: targets.sample_targets()) {
             size_t& non_relevant_in_sample = non_relevant[sample_id];
-            ReadSimulationData& sample_data = simulation_data[sample_id];
+            ReadTissueSimulationData& sample_data = simulation_data[sample_id];
             for (const auto& [cell_id, num_of_cells]: sample_target.num_of_wild_types) {
                 const auto& wild_type_genome = wild_type_genomes.at(cell_id);
                 for (const auto& [chr_id, cell_chr]: wild_type_genome.get_chromosomes()) {
@@ -2472,7 +2472,7 @@ public:
     }
 };
 
-}   // SequencingSimulations
+}   // SequencingTissueSimulations
 
 }   // Mutations
 

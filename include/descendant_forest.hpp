@@ -576,7 +576,7 @@ public:
      *
      * @param simulation is a simulation
      */
-    DescendantForest(const Evolutions::Simulation& simulation);
+    DescendantForest(const Evolutions::TissueSimulation& simulation);
 
     /**
      * @brief Construct a descendant forest by using a tissue sample of a simulation
@@ -584,7 +584,7 @@ public:
      * @param simulation is a simulation
      * @param tissue_samples is a list of tissue samples coming from the simulation
      */
-    DescendantForest(const Evolutions::Simulation& simulation,
+    DescendantForest(const Evolutions::TissueSimulation& simulation,
                       const std::list<Evolutions::TissueSample>& tissue_samples);
 
     /**

@@ -210,26 +210,26 @@ class TestClone(unittest.TestCase):
             self.assertEqual(B.get_rate("-", CLONES.CellEventType.DEATH), 0.01)
 
 
-class TestSimulation(unittest.TestCase):
+class TestTissueSimulation(unittest.TestCase):
     def test_init(self):
         try:
-            CLONES.Simulation()
+            CLONES.TissueSimulation()
         except BaseException:
-            self.fail('CLONES.Simulation() raised an unexpected exeception!')
+            self.fail('CLONES.TissueSimulation() raised an unexpected exeception!')
 
         try:
-            CLONES.Simulation(5)
+            CLONES.TissueSimulation(5)
         except BaseException:
-            self.fail('CLONES.Simulation(5) raised an unexpected exeception!')
+            self.fail('CLONES.TissueSimulation(5) raised an unexpected exeception!')
 
         try:
-            CLONES.Simulation(5, 1)
+            CLONES.TissueSimulation(5, 1)
         except BaseException:
-            self.fail('CLONES.Simulation(5, 1) raised an unexpected'
+            self.fail('CLONES.TissueSimulation(5, 1) raised an unexpected'
                       + ' exeception!')
 
     def test_set_tissue(self):
-        sim = CLONES.Simulation()
+        sim = CLONES.TissueSimulation()
 
         try:
             sim.set_tissue("Liver", [100, 100])
@@ -259,12 +259,12 @@ class TestSimulation(unittest.TestCase):
             sim.set_tissue("Liver", [100, -100])
 
     def test_get_time(self):
-        sim = CLONES.Simulation()
+        sim = CLONES.TissueSimulation()
 
         self.assertEqual(sim.get_time(), 0)
 
     def test_add_mutant(self):
-        sim = CLONES.Simulation()
+        sim = CLONES.TissueSimulation()
 
         A = CLONES.Clone("A", [[0.01, 0.01]])
         A.set_rates("-", {CLONES.CellEventType.DEATH: 0.1,
@@ -285,7 +285,7 @@ class TestSimulation(unittest.TestCase):
             sim.add_mutant("A")
 
     def test_place_cell(self):
-        sim = CLONES.Simulation()
+        sim = CLONES.TissueSimulation()
 
         A = CLONES.Clone("A", [[0.01, 0.01]])
         A.set_rates("-", {CLONES.CellEventType.DEATH: 0.1,
@@ -308,7 +308,7 @@ class TestSimulation(unittest.TestCase):
             sim.place_cell(A, "-", [50, 150])
 
     def test_schedule_mutation(self):
-        sim = CLONES.Simulation()
+        sim = CLONES.TissueSimulation()
 
         sim.set_tissue("Liver", [100, 100])
 
@@ -349,7 +349,7 @@ class TestSimulation(unittest.TestCase):
                       + ' an unexpected exeception!')
 
     def test_run_up_to(self):
-        sim = CLONES.Simulation()
+        sim = CLONES.TissueSimulation()
 
         sim.set_tissue("Liver", [100, 100])
 
@@ -373,7 +373,7 @@ class TestSimulation(unittest.TestCase):
         sim.run_up_to(0, quiet=True)
 
     def test_death_activation_level(self):
-        sim = CLONES.Simulation()
+        sim = CLONES.TissueSimulation()
 
         try:
             value = sim.death_activation_level

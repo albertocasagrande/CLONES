@@ -1,7 +1,7 @@
 /**
  * @file simulation_wrapper.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
- * @brief Implements the Python wrapper class and functions for `Simulation`
+ * @brief Implements the Python wrapper class and functions for `TissueSimulation`
  * @version 1.0
  * @date 2026-02-06
  *
@@ -39,15 +39,15 @@
 #include "SDL_plot.hpp"
 #endif
 
-SimulationWrapper::_SimulationWrapper::_SimulationWrapper(int random_seed):
+TissueSimulationWrapper::_TissueSimulationWrapper::_TissueSimulationWrapper(int random_seed):
     simulation(random_seed)
 {}
 
-SimulationWrapper::SimulationWrapper(int random_seed):
-    obj_ptr(std::make_shared<SimulationWrapper::_SimulationWrapper>(random_seed))
+TissueSimulationWrapper::TissueSimulationWrapper(int random_seed):
+    obj_ptr(std::make_shared<TissueSimulationWrapper::_TissueSimulationWrapper>(random_seed))
 {}
 
-void SimulationWrapper::schedule_mutation(const CLONES::Mutants::MutantProperties& src,
+void TissueSimulationWrapper::schedule_mutation(const CLONES::Mutants::MutantProperties& src,
                                           const CLONES::Mutants::MutantProperties& dst,
                                           const CLONES::Time time)
 {
@@ -71,13 +71,13 @@ struct PythonEndTest : public CLONES::Mutants::Evolutions::TimeTest
      * @param simulation is the considered simulation
      * @return `true` if and only if a signal has been sent to the Python process
      */
-    inline bool operator()(const CLONES::Mutants::Evolutions::Simulation& simulation)
+    inline bool operator()(const CLONES::Mutants::Evolutions::TissueSimulation& simulation)
     {
         return CLONES::Mutants::Evolutions::TimeTest::operator()(simulation) || PyErr_CheckSignals() == -1;
     }
 };
 
-void SimulationWrapper::run_up_to(const CLONES::Time& final_time, const bool quiet,
+void TissueSimulationWrapper::run_up_to(const CLONES::Time& final_time, const bool quiet,
                                   const bool plot)
 {
     using namespace CLONES::UI;
@@ -121,14 +121,14 @@ void SimulationWrapper::run_up_to(const CLONES::Time& final_time, const bool qui
     }
 }
 
-const CLONES::Time& SimulationWrapper::get_time() const
+const CLONES::Time& TissueSimulationWrapper::get_time() const
 {
     std::shared_lock lock(obj_ptr->s_mutex);
 
     return obj_ptr->simulation.get_time();
 }
 
-void SimulationWrapper::add_mutant(const CLONES::Mutants::MutantProperties& mutant)
+void TissueSimulationWrapper::add_mutant(const CLONES::Mutants::MutantProperties& mutant)
 {
     std::unique_lock lock(obj_ptr->s_mutex);
 
@@ -167,7 +167,7 @@ from_Python_list_to_position(boost::python::list const& position, const uint8_t 
 }
 
 
-void SimulationWrapper::place_cell(const CLONES::Mutants::MutantProperties& mutant,
+void TissueSimulationWrapper::place_cell(const CLONES::Mutants::MutantProperties& mutant,
                                    const std::string& methylation_signature,
                                    boost::python::list const& position)
 {
@@ -181,7 +181,7 @@ void SimulationWrapper::place_cell(const CLONES::Mutants::MutantProperties& muta
 
 }
 
-void SimulationWrapper::set_tissue(const std::string& name, boost::python::list const& sizes_list)
+void TissueSimulationWrapper::set_tissue(const std::string& name, boost::python::list const& sizes_list)
 {
     namespace bp = boost::python;
     using namespace CLONES::Mutants::Evolutions;

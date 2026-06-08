@@ -1,5 +1,5 @@
 /**
- * @file simulation.hpp
+ * @file tissue_simulation.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a tumour evolution simulation
  * @version 1.3
@@ -66,7 +66,7 @@ namespace Evolutions
 /**
  * @brief A tumour evolution simulation
  */
-class Simulation
+class TissueSimulation
 {
 public:
     /**
@@ -151,7 +151,7 @@ protected:
 
     TissueStatistics statistics;     //!< The tissue simulation statistics
 
-    Time time;                       //!< Simulation time
+    Time time;                       //!< TissueSimulation time
     std::mt19937_64 random_gen;      //!< Pseudo-random generator
 
     TimedEventQueue timed_event_queue;   //!< The timed event queue
@@ -334,7 +334,7 @@ protected:
     collect_cell_proxies_in(const CLONES::Mutants::RectangleSet& rectangle);
 public:
     /**
-     * @brief Simulation test
+     * @brief TissueSimulation test
      */
     struct BasicTest
     {
@@ -344,7 +344,7 @@ public:
          * @param simulation is the considered simulation
          * @return a Boolean value
          */
-        virtual bool operator()(const Simulation& simulation) = 0;
+        virtual bool operator()(const TissueSimulation& simulation) = 0;
 
         /**
          * @brief Return the percentage of the completed simulation
@@ -352,7 +352,7 @@ public:
          * @param simulation is the considered simulation
          * @return the percentage of the completed simulation
          */
-        virtual uint8_t percentage(const Simulation& simulation) = 0;
+        virtual uint8_t percentage(const TissueSimulation& simulation) = 0;
 
         virtual ~BasicTest()
         {}
@@ -368,7 +368,7 @@ public:
      *
      * @param random_seed is the simulation random seed
      */
-    explicit Simulation(int random_seed=0);
+    explicit TissueSimulation(int random_seed=0);
 
     /**
      * @brief A simulation constructor
@@ -376,14 +376,14 @@ public:
      * @param log_directory is the simulation log directory
      * @param random_seed is the simulation random seed
      */
-    explicit Simulation(const std::filesystem::path& log_directory, int random_seed=0);
+    explicit TissueSimulation(const std::filesystem::path& log_directory, int random_seed=0);
 
     /**
      * @brief A swap constructor
      *
      * @param orig is the original simulation
      */
-    Simulation(Simulation&& orig);
+    TissueSimulation(TissueSimulation&& orig);
 
     /**
      * @brief A copy operator
@@ -391,7 +391,7 @@ public:
      * @param orig is the original simulation
      * @return A reference of the updated object
      */
-    Simulation& operator=(Simulation&& orig);
+    TissueSimulation& operator=(TissueSimulation&& orig);
 
     /**
      * @brief Schedule a timed mutation
@@ -401,7 +401,7 @@ public:
      * @param time is the mutation timing
      * @return a reference to the updated simulation
      */
-    Simulation& schedule_mutation(const MutantProperties& src,
+    TissueSimulation& schedule_mutation(const MutantProperties& src,
                                   const MutantProperties& dst, const Time time);
 
     /**
@@ -412,7 +412,7 @@ public:
      * @param time is the mutation timing
      * @return a reference to the updated simulation
      */
-    Simulation& schedule_mutation(const std::string& src, const std::string& dst, const Time time);
+    TissueSimulation& schedule_mutation(const std::string& src, const std::string& dst, const Time time);
 
     /**
      * @brief Schedule a timed event
@@ -420,7 +420,7 @@ public:
      * @param timed_event is the timed event to schedule
      * @return a reference to the updated simulation
      */
-    Simulation& schedule_timed_event(const TimedEvent& timed_event);
+    TissueSimulation& schedule_timed_event(const TimedEvent& timed_event);
 
     /**
      * @brief Select the next event
@@ -446,7 +446,7 @@ public:
      * @param dst_mutant_name is the name of the mutated cell mutant
      * @return a reference to the updated simulation
      */
-    Simulation& simulate_mutation(const PositionInTissue& position,
+    TissueSimulation& simulate_mutation(const PositionInTissue& position,
                                         const std::string& dst_mutant_name);
 
     /**
@@ -460,7 +460,7 @@ public:
      * @param dst_mutant_id is the identifier of the mutated cell mutant
      * @return a reference to the updated simulation
      */
-    Simulation& simulate_mutation(const PositionInTissue& position,
+    TissueSimulation& simulate_mutation(const PositionInTissue& position,
                                         const MutantId& dst_mutant_id);
 
     /**
@@ -475,7 +475,7 @@ public:
      * @return a reference to the updated simulation
      */
     template<typename PLOT_WINDOW>
-    Simulation& simulate(const CellEvent& event, UI::TissuePlotter<PLOT_WINDOW>* plotter);
+    TissueSimulation& simulate(const CellEvent& event, UI::TissuePlotter<PLOT_WINDOW>* plotter);
 
     /**
      * @brief Simulate an event
@@ -489,7 +489,7 @@ public:
      * @return a reference to the updated simulation
      */
     template<typename PLOT_WINDOW>
-    inline Simulation& simulate(const CellEvent& event, UI::TissuePlotter<PLOT_WINDOW>& plotter)
+    inline TissueSimulation& simulate(const CellEvent& event, UI::TissuePlotter<PLOT_WINDOW>& plotter)
     {
         return simulate(event, &plotter);
     }
@@ -500,7 +500,7 @@ public:
      * @param event is the event to be simulated
      * @return a reference to the updated simulation
      */
-    inline Simulation& simulate(const CellEvent& event)
+    inline TissueSimulation& simulate(const CellEvent& event)
     {
         return simulate<UI::Plot2DWindow>(event, nullptr);
     }
@@ -516,7 +516,7 @@ public:
      * @return a reference to the updated simulation
      */
     template<typename PLOT_WINDOW>
-    Simulation& run_up_to_next_event(UI::TissuePlotter<PLOT_WINDOW>* plotter);
+    TissueSimulation& run_up_to_next_event(UI::TissuePlotter<PLOT_WINDOW>* plotter);
 
     /**
      * @brief Simulate up to the next event
@@ -529,7 +529,7 @@ public:
      * @return a reference to the updated simulation
      */
     template<typename PLOT_WINDOW>
-    inline Simulation& run_up_to_next_event(UI::TissuePlotter<PLOT_WINDOW>& plotter)
+    inline TissueSimulation& run_up_to_next_event(UI::TissuePlotter<PLOT_WINDOW>& plotter)
     {
         return run_up_to_next_event(&plotter);
     }
@@ -542,7 +542,7 @@ public:
      *
      * @return a reference to the updated simulation
      */
-    inline Simulation& run_up_to_next_event()
+    inline TissueSimulation& run_up_to_next_event()
     {
         return run_up_to_next_event<UI::Plot2DWindow>(nullptr);
     }
@@ -566,7 +566,7 @@ public:
     template<class SIMULATION_TEST, typename PLOT_WINDOW, typename INDICATOR_TYPE,
              std::enable_if_t<std::is_base_of_v<BasicTest, SIMULATION_TEST> &&
                               std::is_base_of_v<UI::Plot2DWindow, PLOT_WINDOW>, bool> = true>
-    Simulation& run(SIMULATION_TEST& done, UI::TissuePlotter<PLOT_WINDOW>* plotter,
+    TissueSimulation& run(SIMULATION_TEST& done, UI::TissuePlotter<PLOT_WINDOW>* plotter,
                     INDICATOR_TYPE* indicator)
     {
         // the tissue() call checks whether a tissue has been
@@ -618,7 +618,7 @@ public:
     template<class SIMULATION_TEST, typename PLOT_WINDOW, typename INDICATOR_TYPE,
              std::enable_if_t<std::is_base_of_v<BasicTest, SIMULATION_TEST> &&
                               std::is_base_of_v<UI::Plot2DWindow, PLOT_WINDOW>, bool> = true>
-    inline Simulation& run(SIMULATION_TEST& done, UI::TissuePlotter<PLOT_WINDOW>& plotter,
+    inline TissueSimulation& run(SIMULATION_TEST& done, UI::TissuePlotter<PLOT_WINDOW>& plotter,
                            INDICATOR_TYPE& indicator)
     {
         return run(done, &plotter, &indicator);
@@ -638,7 +638,7 @@ public:
      */
     template<class SIMULATION_TEST, typename INDICATOR_TYPE,
              std::enable_if_t<std::is_base_of_v<BasicTest, SIMULATION_TEST>, bool> = true>
-    inline Simulation& run(SIMULATION_TEST& done, INDICATOR_TYPE& indicator)
+    inline TissueSimulation& run(SIMULATION_TEST& done, INDICATOR_TYPE& indicator)
     {
         return run<SIMULATION_TEST, UI::Plot2DWindow, INDICATOR_TYPE>(done, nullptr, &indicator);
     }
@@ -659,7 +659,7 @@ public:
     template<class SIMULATION_TEST, typename PLOT_WINDOW,
              std::enable_if_t<std::is_base_of_v<BasicTest, SIMULATION_TEST> &&
                               std::is_base_of_v<UI::Plot2DWindow, PLOT_WINDOW>, bool> = true>
-    inline Simulation& run(SIMULATION_TEST& done, UI::TissuePlotter<PLOT_WINDOW>& plotter)
+    inline TissueSimulation& run(SIMULATION_TEST& done, UI::TissuePlotter<PLOT_WINDOW>& plotter)
     {
         return run<SIMULATION_TEST, PLOT_WINDOW, UI::ProgressBar>(done, &plotter, nullptr);
     }
@@ -677,7 +677,7 @@ public:
      */
     template<class SIMULATION_TEST,
              std::enable_if_t<std::is_base_of_v<BasicTest, SIMULATION_TEST>, bool> = true>
-    inline Simulation& run(SIMULATION_TEST& done)
+    inline TissueSimulation& run(SIMULATION_TEST& done)
     {
         return run<SIMULATION_TEST, UI::Plot2DWindow, UI::ProgressBar>(done, nullptr, nullptr);
     }
@@ -873,7 +873,7 @@ public:
      * @param mutant_properties is the mutant properties of the mutant
      * @return a reference to the updated object
      */
-    Simulation& add_mutant(const MutantProperties& mutant_properties);
+    TissueSimulation& add_mutant(const MutantProperties& mutant_properties);
 
     /**
      * @brief Place a cell in the simulated tissue
@@ -882,7 +882,7 @@ public:
      * @param position is the cell position in the tissue
      * @return a reference to the updated object
      */
-    inline Simulation& place_cell(const SpeciesProperties& species_properties,
+    inline TissueSimulation& place_cell(const SpeciesProperties& species_properties,
                                   const PositionInTissue& position)
     {
         return place_cell(species_properties.get_id(), position);
@@ -895,7 +895,7 @@ public:
      * @param position is the cell position in the tissue
      * @return a reference to the updated object
      */
-    Simulation& place_cell(const SpeciesId& species_id, const PositionInTissue& position);
+    TissueSimulation& place_cell(const SpeciesId& species_id, const PositionInTissue& position);
 
     /**
      * @brief Set a new simulation tissue
@@ -907,7 +907,7 @@ public:
      * @param sizes are the sizes of the tissue
      * @return a reference to the updated object
      */
-    Simulation& set_tissue(const std::string& name, const std::vector<AxisSize>& sizes);
+    TissueSimulation& set_tissue(const std::string& name, const std::vector<AxisSize>& sizes);
 
     /**
      * @brief Get the simulation tissue
@@ -964,7 +964,7 @@ public:
      *
      * @param random_seed is the simulation random seed
      */
-    inline Simulation& random_generator_seed(int random_seed)
+    inline TissueSimulation& random_generator_seed(int random_seed)
     {
         random_gen.seed(random_seed);
 
@@ -1129,7 +1129,7 @@ public:
     template<typename ARCHIVE, std::enable_if_t<std::is_base_of_v<Archive::Basic::Out, ARCHIVE>, bool> = true>
     inline void save(ARCHIVE& archive) const
     {
-        ARCHIVE::write_header(archive, "CLONES Tissue Simulation", 0);
+        ARCHIVE::write_header(archive, "CLONES Tissue TissueSimulation", 0);
 
         archive & tissues
                 & lineage_graph
@@ -1154,11 +1154,11 @@ public:
      * @return the loaded simulation
      */
     template<typename ARCHIVE, std::enable_if_t<std::is_base_of_v<Archive::Basic::In, ARCHIVE>, bool> = true>
-    static Simulation load(ARCHIVE& archive)
+    static TissueSimulation load(ARCHIVE& archive)
     {
-        ARCHIVE::read_header(archive, "CLONES Tissue Simulation", 0);
+        ARCHIVE::read_header(archive, "CLONES Tissue TissueSimulation", 0);
 
-        Simulation simulation;
+        TissueSimulation simulation;
 
         archive & simulation.tissues
                 & simulation.lineage_graph
@@ -1186,13 +1186,13 @@ public:
         return simulation;
     }
 
-    ~Simulation();
+    ~TissueSimulation();
 };
 
 /* Template implementations */
 
 template<typename INDICATOR>
-void Simulation::snapshot_on_time(INDICATOR *indicator)
+void TissueSimulation::snapshot_on_time(INDICATOR *indicator)
 {
     using namespace std::chrono;
 
@@ -1204,7 +1204,7 @@ void Simulation::snapshot_on_time(INDICATOR *indicator)
 }
 
 template<typename INDICATOR>
-void Simulation::make_snapshot(INDICATOR *indicator)
+void TissueSimulation::make_snapshot(INDICATOR *indicator)
 {
     last_snapshot_time = system_clock::now();
 
@@ -1220,7 +1220,7 @@ void Simulation::make_snapshot(INDICATOR *indicator)
 
 template<typename PLOT_WINDOW>
 inline
-Simulation& Simulation::run_up_to_next_event(UI::TissuePlotter<PLOT_WINDOW>* plotter)
+TissueSimulation& TissueSimulation::run_up_to_next_event(UI::TissuePlotter<PLOT_WINDOW>* plotter)
 {
     CellEvent event = select_next_event();
 
@@ -1228,7 +1228,7 @@ Simulation& Simulation::run_up_to_next_event(UI::TissuePlotter<PLOT_WINDOW>* plo
 }
 
 template<typename PLOT_WINDOW>
-Simulation& Simulation::simulate(const CellEvent& event, UI::TissuePlotter<PLOT_WINDOW>* plotter)
+TissueSimulation& TissueSimulation::simulate(const CellEvent& event, UI::TissuePlotter<PLOT_WINDOW>* plotter)
 {
     time += event.delay;
 

@@ -39,7 +39,7 @@
 #include <nlohmann/json.hpp>
 
 #include "common.hpp"
-#include "simulation.hpp"
+#include "tissue_simulation.hpp"
 #include "ending_conditions.hpp"
 #include "progress_bar.hpp"
 
@@ -48,7 +48,7 @@
 #endif
 
 
-CLONES::Mutants::Evolutions::Simulation simulation;
+CLONES::Mutants::Evolutions::TissueSimulation simulation;
 CLONES::UI::ProgressBar *bar;
 
 void termination_handling(int signal_num)

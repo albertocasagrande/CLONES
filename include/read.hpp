@@ -46,7 +46,7 @@ namespace Mutations
 /**
  * @brief The sequencing simulation namespace
  */
-namespace SequencingSimulations
+namespace SequencingTissueSimulations
 {
 
 /**
@@ -452,7 +452,7 @@ public:
     }
 };
 
-}   // SequencingSimulations
+}   // SequencingTissueSimulations
 
 }   // Mutations
 

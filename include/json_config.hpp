@@ -36,7 +36,7 @@
 
 #include <nlohmann/json.hpp>
 
-#include "simulation.hpp"
+#include "tissue_simulation.hpp"
 #include "position_set.hpp"
 #include "mutation_engine.hpp"
 #include "timed_event.hpp"
@@ -212,7 +212,7 @@ public:
      * @return the time event described in `timed_event_json`
      */
     static CLONES::Mutants::Evolutions::TimedEvent
-    get_timed_event(const CLONES::Mutants::Evolutions::Simulation& simulation,
+    get_timed_event(const CLONES::Mutants::Evolutions::TissueSimulation& simulation,
                     const std::map<std::string, CLONES::Mutants::MutantProperties> name2mutant,
                     const nlohmann::json& timed_event_json);
 

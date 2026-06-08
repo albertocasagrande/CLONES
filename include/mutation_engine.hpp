@@ -1615,7 +1615,7 @@ public:
     MutationEngine& add(const Time& time, const MutationalExposure& exposure)
     {
         if (time<0) {
-            throw std::domain_error("Simulation time is a non-negative value");
+            throw std::domain_error("TissueSimulation time is a non-negative value");
         }
 
         for (const auto& [m_type, mt_exposure] : split_exposures(exposure)) {

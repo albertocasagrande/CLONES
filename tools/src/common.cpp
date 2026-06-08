@@ -92,12 +92,12 @@ BasicExecutable::get_last_snapshot_path(const std::string& simulation_dir,
 }
 
 
-CLONES::Mutants::Evolutions::Simulation
+CLONES::Mutants::Evolutions::TissueSimulation
 BasicExecutable::load_species_simulation(const std::filesystem::path snapshot_path, const bool quiet)
 {
     CLONES::Archive::Binary::In archive(snapshot_path);
 
-    CLONES::Mutants::Evolutions::Simulation simulation;
+    CLONES::Mutants::Evolutions::TissueSimulation simulation;
 
     if (quiet) {
         archive & simulation;

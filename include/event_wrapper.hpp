@@ -50,9 +50,9 @@ namespace Evolutions
 /**
  * @brief A structure to represent a generic simulation event
  */
-struct SimulationEventWrapper
+struct TissueSimulationEventWrapper
 {
-    using Type = SimulationEvent::Type;
+    using Type = TissueSimulationEvent::Type;
 
     Type type;  //!< The type of the simulation event
     std::shared_ptr<void> event;    //!< The pointer to the real event
@@ -62,21 +62,21 @@ struct SimulationEventWrapper
      *
      * @param mutation is the event to wrap
      */
-    SimulationEventWrapper(const Mutation& mutation);
+    TissueSimulationEventWrapper(const Mutation& mutation);
 
     /**
      * @brief A constructor that wraps a liveness rate event
      *
      * @param rate_update is the event to wrap
      */
-    SimulationEventWrapper(const RateUpdate& rate_update);
+    TissueSimulationEventWrapper(const RateUpdate& rate_update);
 
     /**
      * @brief A constructor that wraps a sampling event
      *
      * @param sampling is the event to wrap
      */
-    SimulationEventWrapper(const Sampling& sampling);
+    TissueSimulationEventWrapper(const Sampling& sampling);
 
     /**
      * @brief Get the wrapped event
@@ -136,7 +136,7 @@ struct SimulationEventWrapper
      * @return the loaded timed event
      */
     template<typename ARCHIVE, std::enable_if_t<std::is_base_of_v<Archive::Basic::In, ARCHIVE>, bool> = true>
-    static SimulationEventWrapper load(ARCHIVE& archive)
+    static TissueSimulationEventWrapper load(ARCHIVE& archive)
     {
         Type type;
 
@@ -147,19 +147,19 @@ struct SimulationEventWrapper
                 {
                     auto mutation = Mutation::load(archive);
 
-                    return SimulationEventWrapper(mutation);
+                    return TissueSimulationEventWrapper(mutation);
                 }
             case Type::LIVENESS_RATE_UPDATE:
                 {
                     auto rate_update = RateUpdate::load(archive);
 
-                    return SimulationEventWrapper(rate_update);
+                    return TissueSimulationEventWrapper(rate_update);
                 }
             case Type::SAMPLING:
                 {
                     auto sampling = Sampling(SampleSpecification::load(archive));
 
-                    return SimulationEventWrapper(sampling);
+                    return TissueSimulationEventWrapper(sampling);
                 }
             default:
                 throw std::runtime_error("Unsupported event type");
@@ -181,7 +181,7 @@ struct SimulationEventWrapper
  * @return `true` if and only if the two wrappers represent
  *      the same event
  */
-bool operator==(const CLONES::Mutants::Evolutions::SimulationEventWrapper& lhs,
-                const CLONES::Mutants::Evolutions::SimulationEventWrapper& rhs);
+bool operator==(const CLONES::Mutants::Evolutions::TissueSimulationEventWrapper& lhs,
+                const CLONES::Mutants::Evolutions::TissueSimulationEventWrapper& rhs);
 
 #endif // __CLONES_EVENT_WRAPPER__

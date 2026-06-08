@@ -47,14 +47,14 @@ SpeciesCountTest::SpeciesCountTest(const SpeciesId& species_id, const size_t& th
     species_id(species_id), threshold(threshold)
 {}
 
-bool SpeciesCountTest::operator()(const Simulation& simulation)
+bool SpeciesCountTest::operator()(const TissueSimulation& simulation)
 {
     const auto& species = simulation.tissue().get_species(species_id);
 
     return threshold <= species.num_of_cells();
 }
 
-uint8_t SpeciesCountTest::percentage(const Simulation& simulation)
+uint8_t SpeciesCountTest::percentage(const TissueSimulation& simulation)
 {
     const auto& species = simulation.tissue().get_species(species_id);
 
@@ -65,14 +65,14 @@ CloneCountTest::CloneCountTest(const MutantId& mutant_id, const size_t& threshol
     mutant_id(mutant_id), threshold(threshold)
 {}
 
-bool CloneCountTest::operator()(const Simulation& simulation)
+bool CloneCountTest::operator()(const TissueSimulation& simulation)
 {
     const auto& mutant_species = simulation.tissue().get_mutant_species(mutant_id);
 
     return threshold <= mutant_species.num_of_cells();
 }
 
-uint8_t CloneCountTest::percentage(const Simulation& simulation)
+uint8_t CloneCountTest::percentage(const TissueSimulation& simulation)
 {
     const auto mutant_species = simulation.tissue().get_mutant_species(mutant_id);
 
@@ -111,7 +111,7 @@ size_t get_epigenetic_events_to(const SpeciesStatistics& s_stats, const SpeciesI
     return s_stats.num_of_epigenetic_events();
 }
 
-size_t EventCountTest::get_event_number(const Simulation& simulation) const
+size_t EventCountTest::get_event_number(const TissueSimulation& simulation) const
 {
     const auto& t_stats = simulation.get_statistics();
 
@@ -134,12 +134,12 @@ size_t EventCountTest::get_event_number(const Simulation& simulation) const
     }
 }
 
-bool EventCountTest::operator()(const Simulation& simulation)
+bool EventCountTest::operator()(const TissueSimulation& simulation)
 {
     return threshold <= get_event_number(simulation);
 }
 
-uint8_t EventCountTest::percentage(const Simulation& simulation)
+uint8_t EventCountTest::percentage(const TissueSimulation& simulation)
 {
     return static_cast<uint8_t>((100*get_event_number(simulation)/threshold));
 }
@@ -148,7 +148,7 @@ FormulaTest::FormulaTest(const Logics::Formula& formula):
     formula(formula), formula_distance(0)
 {}
 
-bool FormulaTest::operator()(const Simulation& simulation)
+bool FormulaTest::operator()(const TissueSimulation& simulation)
 {
     if (formula_distance==0) {
         formula_distance = formula.sat_distance(simulation);
@@ -157,7 +157,7 @@ bool FormulaTest::operator()(const Simulation& simulation)
     return formula.evaluate(simulation);
 }
 
-uint8_t FormulaTest::percentage(const Simulation& simulation)
+uint8_t FormulaTest::percentage(const TissueSimulation& simulation)
 {
     auto dist = formula.sat_distance(simulation);
 

@@ -46,9 +46,9 @@ namespace Evolutions
 /**
  * @brief A structure to represent genomic mutation
  */
-struct Mutation : public SimulationEvent
+struct Mutation : public TissueSimulationEvent
 {
-    using Type = SimulationEvent::Type;
+    using Type = TissueSimulationEvent::Type;
 
     MutantId initial_id;   //!< The initial mutant identifier
     MutantId final_id;     //!< The final mutant identifier

@@ -47,9 +47,9 @@ namespace Evolutions
 /**
  * @brief A structure to represent tissue sampling event
  */
-struct Sampling : public SampleSpecification, public SimulationEvent
+struct Sampling : public SampleSpecification, public TissueSimulationEvent
 {
-    using Type = SimulationEvent::Type;
+    using Type = TissueSimulationEvent::Type;
 
     /**
      * @brief A constructor

@@ -51,9 +51,9 @@ namespace Evolutions
 /**
  * @brief A structure to represent timed genomic mutation
  */
-struct TimedEvent : public SimulationEventWrapper
+struct TimedEvent : public TissueSimulationEventWrapper
 {
-    using Type = SimulationEvent::Type;
+    using Type = TissueSimulationEvent::Type;
 
     Time time;  //!< The event time
 
@@ -63,7 +63,7 @@ struct TimedEvent : public SimulationEventWrapper
      * @param time is the simulation time of the event
      * @param event is the event
      */
-    TimedEvent(const Time& time, const SimulationEventWrapper& event);
+    TimedEvent(const Time& time, const TissueSimulationEventWrapper& event);
 
     /**
      * @brief Save a timed event in an archive
@@ -75,7 +75,7 @@ struct TimedEvent : public SimulationEventWrapper
     void save(ARCHIVE& archive) const
     {
         archive & time
-                & static_cast<const SimulationEventWrapper&>(*this);
+                & static_cast<const TissueSimulationEventWrapper&>(*this);
     }
 
     /**
@@ -92,7 +92,7 @@ struct TimedEvent : public SimulationEventWrapper
 
         archive & time;
 
-        return {time, SimulationEventWrapper::load(archive)};
+        return {time, TissueSimulationEventWrapper::load(archive)};
     }
 };
 
@@ -126,8 +126,8 @@ inline bool operator==(const CLONES::Mutants::Evolutions::TimedEvent& lhs,
     using namespace CLONES::Mutants::Evolutions;
 
     return (lhs.time == rhs.time)
-            && (static_cast<const SimulationEventWrapper&>(lhs)
-                ==static_cast<const SimulationEventWrapper&>(rhs));
+            && (static_cast<const TissueSimulationEventWrapper&>(lhs)
+                ==static_cast<const TissueSimulationEventWrapper&>(rhs));
 }
 
 #endif // __CLONES_TIMED_EVENT__

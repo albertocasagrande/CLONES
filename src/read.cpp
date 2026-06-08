@@ -41,7 +41,7 @@ namespace Mutations
 /**
  * @brief The sequencing simulation namespace
  */
-namespace SequencingSimulations
+namespace SequencingTissueSimulations
 {
 
 void Read::MutationIterator::set_current_mutation()
@@ -546,7 +546,7 @@ void Read::alter_base(const size_t pos, const char base)
     }
 }
 
-}   // SequencingSimulations
+}   // SequencingTissueSimulations
 
 }   // Mutations
 

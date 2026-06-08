@@ -111,7 +111,7 @@ void BasicLogger::record_initial_cell(const CellInTissue& cell)
     (void)cell;
 }
 
-void BasicLogger::snapshot(const Simulation& simulation)
+void BasicLogger::snapshot(const TissueSimulation& simulation)
 {
     (void)simulation;
 }

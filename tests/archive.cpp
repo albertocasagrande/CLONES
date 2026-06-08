@@ -38,7 +38,7 @@
 #include <boost/mpl/list.hpp>
 
 #include "archive.hpp"
-#include "simulation.hpp"
+#include "tissue_simulation.hpp"
 #include "ending_conditions.hpp"
 #include "logger.hpp"
 #include "utils.hpp"
@@ -46,10 +46,10 @@
 struct ArchiveFixture {
     long double time_horizon;
 
-    CLONES::Mutants::Evolutions::Simulation simulation;
+    CLONES::Mutants::Evolutions::TissueSimulation tissue_simulation;
 
     ArchiveFixture():
-        time_horizon(70), simulation()
+        time_horizon(70), tissue_simulation()
     {
         using namespace CLONES::Mutants;
 
@@ -65,23 +65,23 @@ struct ArchiveFixture {
         B["+"].set_rates({{CellEventType::DEATH, 0.01},
                           {CellEventType::DUPLICATION, 0.02}});
 
-        simulation.set_tissue("Liver", {1000,1000})
+        tissue_simulation.set_tissue("Liver", {1000,1000})
                   .add_mutant(A)
                   .add_mutant(B)
                   .place_cell(B["-"], {250, 500})
                   .schedule_mutation(B,A,50);
 
-        simulation.death_activation_level = 100;
-        simulation.storage_enabled = false;
+        tissue_simulation.death_activation_level = 100;
+        tissue_simulation.storage_enabled = false;
 
         CLONES::Mutants::Evolutions::TimeTest done(time_horizon);
 
-        simulation.run(done);
+        tissue_simulation.run(done);
     }
 
     ~ArchiveFixture()
     {
-        std::filesystem::remove_all(simulation.get_logger().get_directory());
+        std::filesystem::remove_all(tissue_simulation.get_logger().get_directory());
     }
 };
 
@@ -231,7 +231,7 @@ bool operator==(const CLONES::Mutants::Evolutions::Tissue& a, const CLONES::Muta
     return true;
 }
 
-bool operator==(const CLONES::Mutants::Evolutions::Simulation& a, const CLONES::Mutants::Evolutions::Simulation& b)
+bool operator==(const CLONES::Mutants::Evolutions::TissueSimulation& a, const CLONES::Mutants::Evolutions::TissueSimulation& b)
 {
     return a.get_time()==b.get_time() &&
            a.tissue()==b.tissue() &&
@@ -415,9 +415,9 @@ BOOST_AUTO_TEST_CASE(binary_timed_mutation)
 {
     using namespace CLONES::Mutants::Evolutions;
 
-    std::vector<TimedEvent> to_save{{5,SimulationEventWrapper(Mutation(0,1))},
-                                    {3.5,SimulationEventWrapper(Mutation(1,7))},
-                                    {8.1,SimulationEventWrapper(Mutation(2,1))}};
+    std::vector<TimedEvent> to_save{{5,TissueSimulationEventWrapper(Mutation(0,1))},
+                                    {3.5,TissueSimulationEventWrapper(Mutation(1,7))},
+                                    {8.1,TissueSimulationEventWrapper(Mutation(2,1))}};
 
     auto filename = get_a_temporary_path();
     {
@@ -446,9 +446,9 @@ BOOST_AUTO_TEST_CASE(binary_timed_mutation_queue)
 {
     using namespace CLONES::Mutants::Evolutions;
 
-    std::vector<TimedEvent> to_save{{5,SimulationEventWrapper(Mutation(0,1))},
-                                    {3.5,SimulationEventWrapper(Mutation(1,7))},
-                                    {8.1,SimulationEventWrapper(Mutation(2,1))}};
+    std::vector<TimedEvent> to_save{{5,TissueSimulationEventWrapper(Mutation(0,1))},
+                                    {3.5,TissueSimulationEventWrapper(Mutation(1,7))},
+                                    {8.1,TissueSimulationEventWrapper(Mutation(2,1))}};
 
     using PriorityQueue = std::priority_queue<TimedEvent,
                                               std::vector<TimedEvent>,
@@ -531,7 +531,7 @@ BOOST_AUTO_TEST_CASE(binary_tissue)
     {
         CLONES::Archive::Binary::Out o_archive(filename);
 
-        o_archive & simulation.tissue();
+        o_archive & tissue_simulation.tissue();
     }
 
     {
@@ -539,13 +539,13 @@ BOOST_AUTO_TEST_CASE(binary_tissue)
 
         Tissue in_tissue = Tissue::load(i_archive);
 
-        BOOST_CHECK(simulation.tissue()==in_tissue);
+        BOOST_CHECK(tissue_simulation.tissue()==in_tissue);
     }
 
     std::filesystem::remove(filename);
 }
 
-BOOST_AUTO_TEST_CASE(simulation_statistics)
+BOOST_AUTO_TEST_CASE(tissue_simulation_statistics)
 {
     using namespace CLONES::Mutants::Evolutions;
 
@@ -554,7 +554,7 @@ BOOST_AUTO_TEST_CASE(simulation_statistics)
     {
         CLONES::Archive::Binary::Out o_archive(filename);
 
-        o_archive & simulation.get_statistics();
+        o_archive & tissue_simulation.get_statistics();
     }
 
     {
@@ -566,7 +566,7 @@ BOOST_AUTO_TEST_CASE(simulation_statistics)
     std::filesystem::remove(filename);
 }
 
-BOOST_AUTO_TEST_CASE(simulation_tissue)
+BOOST_AUTO_TEST_CASE(tissue_simulation_tissue)
 {
     using namespace CLONES::Mutants::Evolutions;
 
@@ -575,15 +575,15 @@ BOOST_AUTO_TEST_CASE(simulation_tissue)
     {
         CLONES::Archive::Binary::Out o_archive(filename);
 
-        o_archive & simulation;
+        o_archive & tissue_simulation;
     }
 
     {
         CLONES::Archive::Binary::In i_archive(filename);
 
-        Simulation in_simulation = Simulation::load(i_archive);
+        TissueSimulation in_simulation = TissueSimulation::load(i_archive);
 
-        BOOST_CHECK(simulation==in_simulation);
+        BOOST_CHECK(tissue_simulation==in_simulation);
     }
 
     std::filesystem::remove(filename);

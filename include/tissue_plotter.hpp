@@ -286,7 +286,7 @@ public:
 	 * @param frames_per_second is the number of frames per second
 	 */
 	explicit TissuePlotter(const Mutants::Evolutions::Tissue& tissue, const unsigned int frames_per_second=10):
-		TissuePlotter<PLOT_WINDOW>(tissue, "CLONES Simulation"+((tissue.get_name()=="")?"":" - "+tissue.get_name()), frames_per_second)
+		TissuePlotter<PLOT_WINDOW>(tissue, "CLONES TissueSimulation"+((tissue.get_name()=="")?"":" - "+tissue.get_name()), frames_per_second)
 	{
 	}
 

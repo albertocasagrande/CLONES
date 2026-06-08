@@ -537,7 +537,7 @@ public:
         return species;
     }
 
-    friend class Simulation;
+    friend class TissueSimulation;
 
     friend void swap(Species& a, Species& b);
 };

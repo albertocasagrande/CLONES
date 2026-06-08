@@ -39,8 +39,8 @@ namespace Mutants
 namespace Evolutions
 {
 
-TimedEvent::TimedEvent(const Time& time, const SimulationEventWrapper& event):
-    SimulationEventWrapper(event), time(time)
+TimedEvent::TimedEvent(const Time& time, const TissueSimulationEventWrapper& event):
+    TissueSimulationEventWrapper(event), time(time)
 {}
 
 }   // Evolutions

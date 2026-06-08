@@ -45,7 +45,7 @@ namespace Evolutions
 /**
  * @brief A structure to represent basic simulation events
  */
-struct SimulationEvent
+struct TissueSimulationEvent
 {
     /**
      * @brief The simulation event types
@@ -58,10 +58,10 @@ struct SimulationEvent
 
     virtual Type type() const = 0;
 
-    virtual ~SimulationEvent();
+    virtual ~TissueSimulationEvent();
 };
 
-extern const std::map<SimulationEvent::Type, const char*> simulation_event_names;
+extern const std::map<TissueSimulationEvent::Type, const char*> simulation_event_names;
 
 }   // Evolutions
 

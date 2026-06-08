@@ -44,7 +44,7 @@ namespace CLONES
 namespace Mutations
 {
 
-namespace SequencingSimulations
+namespace SequencingTissueSimulations
 {
 
 SequencingTargets::SampleTarget::SampleTarget():

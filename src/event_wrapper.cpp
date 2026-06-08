@@ -39,18 +39,18 @@ namespace Mutants
 namespace Evolutions
 {
 
-SimulationEventWrapper::SimulationEventWrapper(const Mutation& mutation):
-    type(SimulationEvent::Type::MUTATION),
+TissueSimulationEventWrapper::TissueSimulationEventWrapper(const Mutation& mutation):
+    type(TissueSimulationEvent::Type::MUTATION),
     event(std::make_shared<Mutation>(mutation))
 {}
 
-SimulationEventWrapper::SimulationEventWrapper(const RateUpdate& rate_update):
-    type(SimulationEvent::Type::LIVENESS_RATE_UPDATE),
+TissueSimulationEventWrapper::TissueSimulationEventWrapper(const RateUpdate& rate_update):
+    type(TissueSimulationEvent::Type::LIVENESS_RATE_UPDATE),
     event(std::make_shared<RateUpdate>(rate_update))
 {}
 
-SimulationEventWrapper::SimulationEventWrapper(const Sampling& sampling):
-    type(SimulationEvent::Type::SAMPLING),
+TissueSimulationEventWrapper::TissueSimulationEventWrapper(const Sampling& sampling):
+    type(TissueSimulationEvent::Type::SAMPLING),
     event(std::make_shared<Sampling>(sampling))
 {}
 
@@ -61,8 +61,8 @@ SimulationEventWrapper::SimulationEventWrapper(const Sampling& sampling):
 }   // CLONES
 
 
-bool operator==(const CLONES::Mutants::Evolutions::SimulationEventWrapper& lhs,
-                const CLONES::Mutants::Evolutions::SimulationEventWrapper& rhs)
+bool operator==(const CLONES::Mutants::Evolutions::TissueSimulationEventWrapper& lhs,
+                const CLONES::Mutants::Evolutions::TissueSimulationEventWrapper& rhs)
 {
     using namespace CLONES::Mutants::Evolutions;
 
@@ -71,14 +71,14 @@ bool operator==(const CLONES::Mutants::Evolutions::SimulationEventWrapper& lhs,
     }
 
     switch(lhs.type) {
-        case SimulationEvent::Type::MUTATION:
+        case TissueSimulationEvent::Type::MUTATION:
             {
                 const auto& m_lhs = lhs.get_event<Mutation>();
                 const auto& m_rhs = rhs.get_event<Mutation>();
 
                 return (m_lhs == m_rhs);
             }
-        case SimulationEvent::Type::LIVENESS_RATE_UPDATE:
+        case TissueSimulationEvent::Type::LIVENESS_RATE_UPDATE:
             {
                 const auto& ru_lhs = lhs.get_event<RateUpdate>();
                 const auto& ru_rhs = rhs.get_event<RateUpdate>();

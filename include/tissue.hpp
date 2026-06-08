@@ -58,7 +58,7 @@ namespace Evolutions
  */
 using AxisSize = uint16_t;
 
-class Simulation;
+class TissueSimulation;
 
 /**
  * @brief A class to represent tissues
@@ -959,7 +959,7 @@ public:
 
     template<typename TISSUE_TYPE>
     friend class BaseCellInTissueProxy;
-    friend class Simulation;
+    friend class TissueSimulation;
 };
 
 /**

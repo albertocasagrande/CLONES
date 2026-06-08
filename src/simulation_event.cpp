@@ -39,14 +39,14 @@ namespace Mutants
 namespace Evolutions
 {
 
-SimulationEvent::~SimulationEvent()
+TissueSimulationEvent::~TissueSimulationEvent()
 {}
 
-const std::map<SimulationEvent::Type, const char*> simulation_event_names
+const std::map<TissueSimulationEvent::Type, const char*> simulation_event_names
 {
-    {SimulationEvent::Type::MUTATION, "mutation"},
-    {SimulationEvent::Type::SAMPLING, "sampling"},
-    {SimulationEvent::Type::LIVENESS_RATE_UPDATE, "liveness rate update"},
+    {TissueSimulationEvent::Type::MUTATION, "mutation"},
+    {TissueSimulationEvent::Type::SAMPLING, "sampling"},
+    {TissueSimulationEvent::Type::LIVENESS_RATE_UPDATE, "liveness rate update"},
 };
 
 }   // Evolutions

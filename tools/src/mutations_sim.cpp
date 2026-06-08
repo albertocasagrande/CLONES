@@ -38,7 +38,7 @@
 
 #include "common.hpp"
 
-#include "simulation.hpp"
+#include "tissue_simulation.hpp"
 #include "descendant_forest.hpp"
 #include "context_index.hpp"
 #include "mutation_engine.hpp"
@@ -55,9 +55,9 @@
 
 template<>
 std::string
-boost::lexical_cast<std::string, CLONES::Mutations::SequencingSimulations::ReadSimulator<>::Mode>(const CLONES::Mutations::SequencingSimulations::ReadSimulator<>::Mode& mode)
+boost::lexical_cast<std::string, CLONES::Mutations::SequencingTissueSimulations::ReadSimulator<>::Mode>(const CLONES::Mutations::SequencingTissueSimulations::ReadSimulator<>::Mode& mode)
 {
-    using namespace CLONES::Mutations::SequencingSimulations;
+    using namespace CLONES::Mutations::SequencingTissueSimulations;
     switch (mode) {
         case ReadSimulator<>::Mode::CREATE:
             return "create";
@@ -71,15 +71,15 @@ boost::lexical_cast<std::string, CLONES::Mutations::SequencingSimulations::ReadS
 }
 
 template<>
-CLONES::Mutations::SequencingSimulations::ReadSimulator<>::Mode
-boost::lexical_cast<CLONES::Mutations::SequencingSimulations::ReadSimulator<>::Mode, std::string>(const std::string& mode)
+CLONES::Mutations::SequencingTissueSimulations::ReadSimulator<>::Mode
+boost::lexical_cast<CLONES::Mutations::SequencingTissueSimulations::ReadSimulator<>::Mode, std::string>(const std::string& mode)
 {
     std::string upper_token = mode;
     for (auto& t_char: upper_token) {
         t_char = toupper(t_char);
     }
 
-    using namespace CLONES::Mutations::SequencingSimulations;
+    using namespace CLONES::Mutations::SequencingTissueSimulations;
 
     if (upper_token == "CREATE") {
         return ReadSimulator<>::Mode::CREATE;
@@ -119,7 +119,7 @@ class MutationsSimulator : public BasicExecutable
     double coverage;
     double purity;
     std::string seq_output_directory;
-    CLONES::Mutations::SequencingSimulations::ReadSimulator<>::Mode read_simulator_output_mode;
+    CLONES::Mutations::SequencingTissueSimulations::ReadSimulator<>::Mode read_simulator_output_mode;
     bool paired_read;
     size_t read_size;
     double insert_size_mean;
@@ -139,7 +139,7 @@ class MutationsSimulator : public BasicExecutable
     bool quiet;
 
     std::list<CLONES::Mutants::Evolutions::TissueSample>
-    get_samples(CLONES::Mutants::Evolutions::Simulation& simulation, const nlohmann::json& simulation_cfg) const
+    get_samples(CLONES::Mutants::Evolutions::TissueSimulation& simulation, const nlohmann::json& simulation_cfg) const
     {
         using namespace CLONES::Mutants;
         using namespace CLONES::Mutants::Evolutions;
@@ -337,7 +337,7 @@ class MutationsSimulator : public BasicExecutable
         return {pos, end_pos+1-begin_pos};
     }
 
-    void saving_statistics_data_and_images(const CLONES::Mutations::SequencingSimulations::SampleSetStatistics& statistics,
+    void saving_statistics_data_and_images(const CLONES::Mutations::SequencingTissueSimulations::SampleSetStatistics& statistics,
                                            const std::string& base_name="chr_") const
     {
         statistics.save_VAF_CSVs(base_name, std::cout, quiet);
@@ -392,7 +392,7 @@ class MutationsSimulator : public BasicExecutable
         using namespace CLONES;
         using namespace CLONES::Mutants;
         using namespace CLONES::Mutations;
-        using namespace CLONES::Mutations::SequencingSimulations;
+        using namespace CLONES::Mutations::SequencingTissueSimulations;
 
         nlohmann::json simulation_cfg = get_simulation_json();
 
@@ -667,7 +667,7 @@ public:
     {
         namespace po = boost::program_options;
 
-        using namespace CLONES::Mutations::SequencingSimulations;
+        using namespace CLONES::Mutations::SequencingTissueSimulations;
 
         visible_options.at("mutations").add_options()
             ("germline-file,G", po::value<std::string>(&germline_csv_filename),
@@ -776,7 +776,7 @@ public:
         }
 
         {
-            using namespace CLONES::Mutations::SequencingSimulations;
+            using namespace CLONES::Mutations::SequencingTissueSimulations;
 
             read_simulator_output_mode = ((vm.count("overwrite")>0)?
                                           ReadSimulator<>::Mode::OVERWRITE:

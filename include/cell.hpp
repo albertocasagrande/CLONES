@@ -47,7 +47,7 @@ namespace Mutants
 namespace Evolutions
 {
 
-class Simulation;
+class TissueSimulation;
 
 }
 
@@ -219,7 +219,7 @@ public:
 
     friend class Tissue;
     friend class SpeciesProperties;
-    friend class Evolutions::Simulation;
+    friend class Evolutions::TissueSimulation;
 
     friend void swap(Cell& a, Cell &b);
 };

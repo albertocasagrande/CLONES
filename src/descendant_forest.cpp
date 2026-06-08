@@ -33,7 +33,7 @@
 
 #include "descendant_forest.hpp"
 
-#include "simulation.hpp"
+#include "tissue_simulation.hpp"
 
 namespace CLONES
 {
@@ -71,11 +71,11 @@ DescendantForest::node DescendantForest::get_node(const CellId& cell_id)
 DescendantForest::DescendantForest()
 {}
 
-DescendantForest::DescendantForest(const Evolutions::Simulation& simulation):
+DescendantForest::DescendantForest(const Evolutions::TissueSimulation& simulation):
     DescendantForest(simulation, simulation.get_tissue_samples())
 {}
 
-DescendantForest::DescendantForest(const Evolutions::Simulation& simulation,
+DescendantForest::DescendantForest(const Evolutions::TissueSimulation& simulation,
                                      const std::list<Evolutions::TissueSample>& tissue_samples)
 {
     std::set<MutantId> mutant_ids;

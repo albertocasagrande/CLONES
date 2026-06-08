@@ -28,7 +28,7 @@
  * SOFTWARE.
  */
 
-#include "simulation.hpp"
+#include "tissue_simulation.hpp"
 
 #include <set>
 #include <list>
@@ -43,16 +43,16 @@ namespace Mutants
 namespace Evolutions
 {
 
-Simulation::AddedCell::AddedCell():
+TissueSimulation::AddedCell::AddedCell():
     species_id(WILD_TYPE_SPECIES)
 {}
 
-Simulation::AddedCell::AddedCell(const SpeciesId& species, const PositionInTissue& position,
+TissueSimulation::AddedCell::AddedCell(const SpeciesId& species, const PositionInTissue& position,
                                  const Time& time):
     PositionInTissue(position), species_id{species}, time{time}
 {}
 
-Simulation::Simulation(int random_seed):
+TissueSimulation::TissueSimulation(int random_seed):
     logger(), last_snapshot_time(system_clock::now()), secs_between_snapshots(0),
     time(0), next_cell_id(Cell::first_tumour_cell_id()), death_activation_level(1),
     duplicate_internal_cells(false), storage_enabled(true)
@@ -63,7 +63,7 @@ Simulation::Simulation(int random_seed):
     set_tissue("A tissue", {1000, 1000});
 }
 
-Simulation::Simulation(const std::filesystem::path& log_directory, int random_seed):
+TissueSimulation::TissueSimulation(const std::filesystem::path& log_directory, int random_seed):
     logger(log_directory), last_snapshot_time(system_clock::now()), secs_between_snapshots(0),
     time(0), next_cell_id(Cell::first_tumour_cell_id()), death_activation_level(1),
     duplicate_internal_cells(false), storage_enabled(true)
@@ -74,13 +74,13 @@ Simulation::Simulation(const std::filesystem::path& log_directory, int random_se
     set_tissue("A tissue", {1000, 1000});
 }
 
-Simulation::Simulation(Simulation&& orig):
-    Simulation()
+TissueSimulation::TissueSimulation(TissueSimulation&& orig):
+    TissueSimulation()
 {
     *this = std::move(orig);
 }
 
-Simulation& Simulation::operator=(Simulation&& orig)
+TissueSimulation& TissueSimulation::operator=(TissueSimulation&& orig)
 {
     std::swap(tissues, orig.tissues);
     std::swap(lineage_graph, orig.lineage_graph);
@@ -103,7 +103,7 @@ Simulation& Simulation::operator=(Simulation&& orig)
     return *this;
 }
 
-const Tissue& Simulation::tissue() const
+const Tissue& TissueSimulation::tissue() const
 {
     if (tissues.size()==0) {
         throw std::runtime_error("No tissue has been associated to the simulation yet.");
@@ -111,7 +111,7 @@ const Tissue& Simulation::tissue() const
     return tissues[0];
 }
 
-Tissue& Simulation::tissue()
+Tissue& TissueSimulation::tissue()
 {
     if (tissues.size()==0) {
         throw std::runtime_error("No tissue has been associated to the simulation yet.");
@@ -201,7 +201,7 @@ void select_next_event_in_species(CellEvent& event, Tissue& tissue,
 }
 
 const CellInTissue&
-Simulation::choose_cell_in(const MutantId& mutant_id, const CellEventType& event_type)
+TissueSimulation::choose_cell_in(const MutantId& mutant_id, const CellEventType& event_type)
 {
     std::vector<size_t> num_of_cells;
 
@@ -228,14 +228,14 @@ Simulation::choose_cell_in(const MutantId& mutant_id, const CellEventType& event
     return species[i].choose_a_cell(random_gen, event_type);
 }
 
-const CellInTissue& Simulation::choose_cell_in(const std::string& mutant_name, const CellEventType& event_type)
+const CellInTissue& TissueSimulation::choose_cell_in(const std::string& mutant_name, const CellEventType& event_type)
 {
     auto mutant_id = find_mutant_id(mutant_name);
 
     return choose_cell_in(mutant_id, event_type);
 }
 
-const CellInTissue& Simulation::choose_cell_in(const MutantId& mutant_id,
+const CellInTissue& TissueSimulation::choose_cell_in(const MutantId& mutant_id,
                                                const RectangleSet& rectangle, const CellEventType& event_type)
 {
     std::set<SpeciesId> species_ids;
@@ -274,7 +274,7 @@ const CellInTissue& Simulation::choose_cell_in(const MutantId& mutant_id,
     throw std::domain_error(oss.str());
 }
 
-const CellInTissue& Simulation::choose_cell_in(const std::string& mutant_name,
+const CellInTissue& TissueSimulation::choose_cell_in(const std::string& mutant_name,
                                                const RectangleSet& rectangle, const CellEventType& event_type)
 {
     auto mutant_id = find_mutant_id(mutant_name);
@@ -360,7 +360,7 @@ bool choose_border_cell_in(PositionInTissue& pos, const Tissue& tissue, const Di
     return false;
 }
 
-const CellInTissue& Simulation::choose_border_cell_in(const MutantId& mutant_id,
+const CellInTissue& TissueSimulation::choose_border_cell_in(const MutantId& mutant_id,
                                                       const RectangleSet& rectangle)
 {
     std::set<SpeciesId> species_ids;
@@ -394,7 +394,7 @@ const CellInTissue& Simulation::choose_border_cell_in(const MutantId& mutant_id,
                              + std::to_string(mutant_id) + ").");
 }
 
-const CellInTissue& Simulation::choose_border_cell_in(const MutantId& mutant_id)
+const CellInTissue& TissueSimulation::choose_border_cell_in(const MutantId& mutant_id)
 {
     RectangleSet rectangle;
 
@@ -413,7 +413,7 @@ const CellInTissue& Simulation::choose_border_cell_in(const MutantId& mutant_id)
     return choose_border_cell_in(mutant_id, rectangle);
 }
 
-const CellInTissue& Simulation::choose_border_cell_in(const std::string& mutant_name,
+const CellInTissue& TissueSimulation::choose_border_cell_in(const std::string& mutant_name,
                                                       const RectangleSet& rectangle)
 {
     const auto mutant_id = find_mutant_id(mutant_name);
@@ -421,7 +421,7 @@ const CellInTissue& Simulation::choose_border_cell_in(const std::string& mutant_
     return choose_border_cell_in(mutant_id, rectangle);
 }
 
-const CellInTissue& Simulation::choose_border_cell_in(const std::string& mutant_name)
+const CellInTissue& TissueSimulation::choose_border_cell_in(const std::string& mutant_name)
 {
     const auto mutant_id = find_mutant_id(mutant_name);
 
@@ -457,7 +457,7 @@ CellEvent create_mutation_event(Tissue& tissue, const PositionInTissue& position
     return event;
 }
 
-bool Simulation::handle_timed_mutation(const TimedEvent& timed_mutation, CellEvent& candidate_event)
+bool TissueSimulation::handle_timed_mutation(const TimedEvent& timed_mutation, CellEvent& candidate_event)
 {
     const auto& mutation = timed_mutation.get_event<Mutation>();
 
@@ -474,7 +474,7 @@ bool Simulation::handle_timed_mutation(const TimedEvent& timed_mutation, CellEve
     }
 }
 
-Simulation& Simulation::simulate_mutation(const PositionInTissue& position,
+TissueSimulation& TissueSimulation::simulate_mutation(const PositionInTissue& position,
                                                    const std::string& dst_mutant_name)
 {
     auto dst_mutant_id = find_mutant_id(dst_mutant_name);
@@ -482,7 +482,7 @@ Simulation& Simulation::simulate_mutation(const PositionInTissue& position,
     return simulate_mutation(position, dst_mutant_id);
 }
 
-Simulation& Simulation::simulate_mutation(const PositionInTissue& position,
+TissueSimulation& TissueSimulation::simulate_mutation(const PositionInTissue& position,
                                                    const MutantId& dst_mutant_id)
 {
     auto mutation_event = create_mutation_event(tissue(), position,
@@ -498,7 +498,7 @@ Simulation& Simulation::simulate_mutation(const PositionInTissue& position,
     return *this;
 }
 
-void Simulation::handle_timed_rate_update(const TimedEvent& timed_rate_update)
+void TissueSimulation::handle_timed_rate_update(const TimedEvent& timed_rate_update)
 {
     const auto& rate_update = timed_rate_update.get_event<RateUpdate>();
     Species& species = tissue().get_species(rate_update.species_id);
@@ -506,7 +506,7 @@ void Simulation::handle_timed_rate_update(const TimedEvent& timed_rate_update)
     species.set_rate(rate_update.event_type, rate_update.new_rate);
 }
 
-void Simulation::handle_timed_sampling(const TimedEvent& timed_sampling, CellEvent& candidate_event)
+void TissueSimulation::handle_timed_sampling(const TimedEvent& timed_sampling, CellEvent& candidate_event)
 {
     const auto& sampling = timed_sampling.get_event<Sampling>();
 
@@ -527,7 +527,7 @@ void Simulation::handle_timed_sampling(const TimedEvent& timed_sampling, CellEve
     }
 }
 
-void Simulation::handle_timed_event_queue(CellEvent& candidate_event)
+void TissueSimulation::handle_timed_event_queue(CellEvent& candidate_event)
 {
     // if the timed event queue is not empty and the next time event occurs before the candidate cell event
     while (!timed_event_queue.empty() && (timed_event_queue.top().time <= candidate_event.delay + time)) {
@@ -568,7 +568,7 @@ void Simulation::handle_timed_event_queue(CellEvent& candidate_event)
     }
 }
 
-CellEvent Simulation::select_next_cell_event()
+CellEvent TissueSimulation::select_next_cell_event()
 {
     std::uniform_real_distribution<double> uni_dist(0.0, 1.0);
 
@@ -586,7 +586,7 @@ CellEvent Simulation::select_next_cell_event()
     return event;
 }
 
-CellEvent Simulation::select_next_event()
+CellEvent TissueSimulation::select_next_event()
 {
     // the tissue() call checks whether a tissue has been
     // associated to the simulation and, if this is not the
@@ -629,8 +629,8 @@ void enable_duplication_on_neighborhood_externals(Tissue& tissue, const Position
     }
 }
 
-typename Simulation::EventAffectedCells
-Simulation::simulate_death(const Position& position)
+typename TissueSimulation::EventAffectedCells
+TissueSimulation::simulate_death(const Position& position)
 {
     auto cell = (*(position.tissue))(position);
 
@@ -638,7 +638,7 @@ Simulation::simulate_death(const Position& position)
         return {{},{}};
     }
 
-    Simulation::EventAffectedCells affected = {{cell.copy_and_erase()},{}};
+    TissueSimulation::EventAffectedCells affected = {{cell.copy_and_erase()},{}};
 
     enable_duplication_on_neighborhood_externals(*(position.tissue), position);
 
@@ -767,8 +767,8 @@ inline const T& select_random_value(GENERATOR& random_gen, const std::vector<T>&
     return values[distribution(random_gen)];
 }
 
-typename Simulation::EventAffectedCells
-Simulation::simulate_mutation(const Position& position, const SpeciesId& final_id)
+typename TissueSimulation::EventAffectedCells
+TissueSimulation::simulate_mutation(const Position& position, const SpeciesId& final_id)
 {
     Tissue& tissue = *(position.tissue);
 
@@ -793,8 +793,8 @@ void switch_duplication_on_neighborhood_internals(Tissue& tissue, const Position
      }
 }
 
-typename Simulation::EventAffectedCells
-Simulation::simulate_duplication(const Position& position)
+typename TissueSimulation::EventAffectedCells
+TissueSimulation::simulate_duplication(const Position& position)
 {
     Tissue& tissue = *(position.tissue);
     EventAffectedCells affected;
@@ -839,8 +839,8 @@ Simulation::simulate_duplication(const Position& position)
     return affected;
 }
 
-typename Simulation::EventAffectedCells
-Simulation::simulate_duplication_and_mutation_event(const Position& position, const SpeciesId& final_id)
+typename TissueSimulation::EventAffectedCells
+TissueSimulation::simulate_duplication_and_mutation_event(const Position& position, const SpeciesId& final_id)
 {
     Tissue& tissue = *(position.tissue);
 
@@ -867,8 +867,8 @@ Simulation::simulate_duplication_and_mutation_event(const Position& position, co
     return affected;
 }
 
-Simulation&
-Simulation::schedule_mutation(const MutantProperties& src, const MutantProperties& dst, const Time time)
+TissueSimulation&
+TissueSimulation::schedule_mutation(const MutantProperties& src, const MutantProperties& dst, const Time time)
 {
     // the tissue() call checks whether a tissue has been
     // associated to the simulation and, if this is not the
@@ -891,7 +891,7 @@ Simulation::schedule_mutation(const MutantProperties& src, const MutantPropertie
     return *this;
 }
 
-const MutantId& Simulation::find_mutant_id(const std::string& mutant_name) const
+const MutantId& TissueSimulation::find_mutant_id(const std::string& mutant_name) const
 {
     auto found_mutant = mutant_name2id.find(mutant_name);
     if (found_mutant == mutant_name2id.end()) {
@@ -901,7 +901,7 @@ const MutantId& Simulation::find_mutant_id(const std::string& mutant_name) const
     return found_mutant->second;
 }
 
-const std::string& Simulation::find_mutant_name(const MutantId& mutant_id) const
+const std::string& TissueSimulation::find_mutant_name(const MutantId& mutant_id) const
 {
     for (const auto& [name, id] : mutant_name2id) {
         if (id == mutant_id) {
@@ -912,8 +912,8 @@ const std::string& Simulation::find_mutant_name(const MutantId& mutant_id) const
     throw std::out_of_range("Unknown mutant id "+std::to_string(mutant_id));
 }
 
-Simulation&
-Simulation::schedule_mutation(const std::string& src, const std::string& dst, const Time time)
+TissueSimulation&
+TissueSimulation::schedule_mutation(const std::string& src, const std::string& dst, const Time time)
 {
     // the tissue() call checks whether a tissue has been
     // associated to the simulation and, if this is not the
@@ -930,8 +930,8 @@ Simulation::schedule_mutation(const std::string& src, const std::string& dst, co
     return *this;
 }
 
-Simulation&
-Simulation::schedule_timed_event(const TimedEvent& timed_event)
+TissueSimulation&
+TissueSimulation::schedule_timed_event(const TimedEvent& timed_event)
 {
     // the tissue() call checks whether a tissue has been
     // associated to the simulation and, if this is not the
@@ -943,7 +943,7 @@ Simulation::schedule_timed_event(const TimedEvent& timed_event)
     return *this;
 }
 
-void Simulation::init_valid_directions()
+void TissueSimulation::init_valid_directions()
 {
     if (tissues.size()==0) {
         return;
@@ -956,7 +956,7 @@ void Simulation::init_valid_directions()
     }
 }
 
-void Simulation::reset()
+void TissueSimulation::reset()
 {
     tissues.clear();
     added_cells.clear();
@@ -971,7 +971,7 @@ void Simulation::reset()
     //death_activation_level = 1;
 }
 
-Simulation& Simulation::add_mutant(const MutantProperties& mutant)
+TissueSimulation& TissueSimulation::add_mutant(const MutantProperties& mutant)
 {
     if (mutant_name2id.count(mutant.get_name())>0) {
         throw std::out_of_range("Clone \""+mutant.get_name()+"\" already in the simulation");
@@ -984,7 +984,7 @@ Simulation& Simulation::add_mutant(const MutantProperties& mutant)
     return *this;
 }
 
-Simulation& Simulation::place_cell(const SpeciesId& species_id, const PositionInTissue& position)
+TissueSimulation& TissueSimulation::place_cell(const SpeciesId& species_id, const PositionInTissue& position)
 {
     const auto& cell = tissue().place_cell(next_cell_id, species_id, position);
 
@@ -1006,7 +1006,7 @@ Simulation& Simulation::place_cell(const SpeciesId& species_id, const PositionIn
     return *this;
 }
 
-Simulation& Simulation::set_tissue(const std::string& name, const std::vector<AxisSize>& sizes)
+TissueSimulation& TissueSimulation::set_tissue(const std::string& name, const std::vector<AxisSize>& sizes)
 {
     if (time>0) {
         std::runtime_error("The tissue properties can be exclusively changed before"
@@ -1024,7 +1024,7 @@ Simulation& Simulation::set_tissue(const std::string& name, const std::vector<Ax
     return *this;
 }
 
-void Simulation::log_initial_cells()
+void TissueSimulation::log_initial_cells()
 {
     if (storage_enabled) {
         for (const auto& species: tissue()) {
@@ -1036,7 +1036,7 @@ void Simulation::log_initial_cells()
 }
 
 std::vector<Tissue::CellInTissueConstantProxy>
-Simulation::collect_cell_proxies_in(const CLONES::Mutants::RectangleSet& rectangle) const
+TissueSimulation::collect_cell_proxies_in(const CLONES::Mutants::RectangleSet& rectangle) const
 {
     std::vector<Tissue::CellInTissueConstantProxy> proxies;
 
@@ -1053,7 +1053,7 @@ Simulation::collect_cell_proxies_in(const CLONES::Mutants::RectangleSet& rectang
 }
 
 std::vector<Tissue::CellInTissueProxy>
-Simulation::collect_cell_proxies_in(const CLONES::Mutants::RectangleSet& rectangle)
+TissueSimulation::collect_cell_proxies_in(const CLONES::Mutants::RectangleSet& rectangle)
 {
     std::vector<Tissue::CellInTissueProxy> proxies;
 
@@ -1070,9 +1070,9 @@ Simulation::collect_cell_proxies_in(const CLONES::Mutants::RectangleSet& rectang
 }
 
 TissueSample
-Simulation::simulate_sampling(const SampleSpecification& specification)
+TissueSimulation::simulate_sampling(const SampleSpecification& specification)
 {
-    auto proxies = static_cast<const Simulation*>(this)->collect_cell_proxies_in(specification.get_bounding_box());
+    auto proxies = static_cast<const TissueSimulation*>(this)->collect_cell_proxies_in(specification.get_bounding_box());
 
     size_t num_of_proxies = proxies.size();
 
@@ -1096,7 +1096,7 @@ Simulation::simulate_sampling(const SampleSpecification& specification)
 }
 
 TissueSample
-Simulation::sample_tissue(const SampleSpecification& specification)
+TissueSimulation::sample_tissue(const SampleSpecification& specification)
 {
     if (name2sample.count(specification.get_name())>0) {
         throw std::domain_error("Sample name \"" + specification.get_name()
@@ -1132,7 +1132,7 @@ Simulation::sample_tissue(const SampleSpecification& specification)
     return sample;
 }
 
-double Simulation::evaluate(const Logics::Variable& variable) const
+double TissueSimulation::evaluate(const Logics::Variable& variable) const
 {
     const auto& species_id = variable.get_species_id();
     switch(variable.get_type()) {
@@ -1153,7 +1153,7 @@ double Simulation::evaluate(const Logics::Variable& variable) const
     }
 }
 
-Simulation::~Simulation()
+TissueSimulation::~TissueSimulation()
 {
 }
 

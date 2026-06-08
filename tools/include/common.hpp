@@ -34,7 +34,7 @@
 
 #include <boost/program_options.hpp>
 
-#include "simulation.hpp"
+#include "tissue_simulation.hpp"
 #include "json_config.hpp"
 
 /**
@@ -90,6 +90,6 @@ public:
      * @param quiet is a Boolean flag to switch on/off (false/true) descriptive messages
      * @return the loaded simulation snapshot
      */
-    static CLONES::Mutants::Evolutions::Simulation
+    static CLONES::Mutants::Evolutions::TissueSimulation
     load_species_simulation(const std::filesystem::path snapshot_path, const bool quiet=false);
 };
