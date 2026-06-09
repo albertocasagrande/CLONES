@@ -233,9 +233,8 @@ if((NOT ${BUILD_SHARED_LIBS}) AND (NOT ${BUILD_STATIC_LIBS}))
 endif()
 
 if(NOT ${BUILD_ONLY_LIBRARIES})
-    message("Building executable, Python wrapper, and tests")
+    message("Building executable and tests")
 
-    add_subdirectory(python)
     add_subdirectory(tools)
 
     enable_testing()
