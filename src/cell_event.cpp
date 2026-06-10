@@ -2,8 +2,8 @@
  * @file cell_event.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements cell events
- * @version 1.1
- * @date 2026-02-06
+ * @version 1.2
+ * @date 2026-06-10
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -42,15 +42,16 @@ namespace Mutants
 std::map<CellEventType, std::string> cell_event_names = {
     {CellEventType::DEATH, "deaths"},
     {CellEventType::DUPLICATION, "duplications"},
-    {CellEventType::EPIGENETIC_SWITCH, "switches"},
-    {CellEventType::MUTATION, "mutations"}
+    {CellEventType::MUTATION, "mutations"},
+    {CellEventType::EPIGENETIC_SWITCH, "epi-switches"},
+    {CellEventType::DUP_AND_EPI_SWITCH, "duplication and epi-switches"}
 };
 
 namespace Evolutions
 {
 
 CellEvent::CellEvent():
-    type(), position(), initial_species(), final_species(), delay()
+    type(), position(), src_species(), dst_species(), delay()
 {}
 
 CellEventType CellEvent::get_event_id(const std::string& event_name)

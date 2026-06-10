@@ -2,8 +2,8 @@
  * @file simulation.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Define a tumour evolution simulation
- * @version 1.6
- * @date 2026-03-04
+ * @version 1.7
+ * @date 2026-06-10
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -119,72 +119,6 @@ Tissue& TissueSimulation::tissue()
     return tissues[0];
 }
 
-template<typename GENERATOR_TYPE>
-void select_liveness_event_in_species(CellEvent& event, Tissue& tissue,
-                                      const Species& species,
-                                      std::uniform_real_distribution<double>& uni_dist,
-                                      GENERATOR_TYPE& random_gen)
-{
-    const std::list<CellEventType> event_types{CellEventType::DUPLICATION,
-                                               CellEventType::DEATH};
-
-    bool selected_new_event = false;
-    // deal with exclusively genomic events
-    for (const auto& event_type: event_types) {
-        const auto event_rate = species.get_rate(event_type);
-        const size_t num_of_cells = species.num_of_cells_available_for(event_type);
-
-        if (num_of_cells>0 && event_rate>0) {
-            const auto r_value = uni_dist(random_gen);
-            const auto candidate_delay =  -log(r_value) / (num_of_cells * event_rate);
-
-            if (event.delay>candidate_delay) {
-                event.type = event_type;
-                event.delay = candidate_delay;
-                selected_new_event = true;
-            }
-        }
-    }
-
-    if (selected_new_event) {
-        event.position = Position(tissue, species.choose_a_cell(random_gen, event.type));
-        event.initial_species = species.get_id();
-    }
-}
-
-template<typename GENERATOR_TYPE>
-void select_epigenetic_event_in_species(CellEvent& event, Tissue& tissue, const Species& species,
-                                        std::uniform_real_distribution<double>& uni_dist,
-                                        GENERATOR_TYPE& random_gen)
-{
-    const auto num_of_cells = species.num_of_cells_available_for(CellEventType::EPIGENETIC_SWITCH);
-
-    if (num_of_cells == 0) {
-        return;
-    }
-
-    bool selected_new_event = false;
-    // Deal with possible epigenetic events whenever admitted
-    for (const auto& [dst_id, event_rate]: species.get_epigenetic_switch_rates()) {
-        if (event_rate>0) {
-            const auto r_value = uni_dist(random_gen);
-
-            const auto candidate_delay = -log(r_value) / (num_of_cells * event_rate);
-
-            if (event.delay>candidate_delay) {
-                event.delay = candidate_delay;
-                event.final_species = dst_id;
-                selected_new_event = true;
-            }
-        }
-    }
-
-    if (selected_new_event) {
-        event.type = CellEventType::EPIGENETIC_SWITCH;
-        event.position = Position(tissue, species.choose_a_cell(random_gen, event.type));
-        event.initial_species = species.get_id();
-    }
-}
 
 template<typename GENERATOR_TYPE>
 void select_next_event_in_species(CellEvent& event, Tissue& tissue,
@@ -196,36 +130,62 @@ void select_next_event_in_species(CellEvent& event, Tissue& tissue,
         return;
     }
 
-    select_liveness_event_in_species(event, tissue, species, uni_dist, random_gen);
-    select_epigenetic_event_in_species(event, tissue, species, uni_dist, random_gen);
+    bool selected_new_event = false;
+    for (const auto& [event_type, event_type_rates]: species.get_rates()) {
+        for (const auto& [dst_event, rate]: event_type_rates) {
+            if (rate > 0) {
+                const auto available_cells = species.num_of_cells_available_for(event_type);
+
+                if (available_cells > 0) {
+                    const auto r_value = uni_dist(random_gen);
+
+                    // sample an exponential distribution with lambda=available_cells*rate
+                    const auto candidate_delay = -log(r_value) / (available_cells * rate);
+
+                    if (event.delay > candidate_delay) {
+                        event.delay = candidate_delay;
+                        event.dst_species = dst_event;
+                        event.type = event_type;
+
+                        // delaying cell selection because is expensive
+
+                        selected_new_event = true;
+                    }
+                }
+            }
+        }
+    }
+        
+    if (selected_new_event) {
+        // at the end select cell selection
+
+        event.position = Position(tissue, species.choose_a_cell(random_gen, event.type));
+        event.src_species = species.get_id();
+    }
 }
 
 const CellInTissue&
 TissueSimulation::choose_cell_in(const MutantId& mutant_id, const CellEventType& event_type)
 {
-    std::vector<size_t> num_of_cells;
-
     size_t total = 0;
 
+    std::vector<size_t> num_of_cells;
     const auto& species = tissue().get_mutant_species(mutant_id);
     for (const auto& S : species) {
-        total += S.num_of_cells_available_for(event_type);
-        num_of_cells.push_back(total);
+        num_of_cells.push_back(S.num_of_cells_available_for(event_type));
+        total += num_of_cells.back();
     }
 
     if (total == 0) {
-        throw std::runtime_error("No cell available for the mutant "+std::to_string(mutant_id));
+        throw std::runtime_error("No cell available for the mutant " + 
+                                 std::to_string(mutant_id));
     }
 
-    std::uniform_int_distribution<size_t> distribution(1,total);
-    const size_t value = distribution(random_gen);
-
-    size_t i=0;
-    while (value > num_of_cells[i]) {
-        ++i;
-    }
-
-    return species[i].choose_a_cell(random_gen, event_type);
+    std::discrete_distribution<size_t> distribution(num_of_cells.begin(),
+                                                    num_of_cells.end());
+    const size_t species_idx = distribution(random_gen);
+    
+    return species[species_idx].choose_a_cell(random_gen, event_type);
 }
 
 const CellInTissue& TissueSimulation::choose_cell_in(const std::string& mutant_name, const CellEventType& event_type)
@@ -236,7 +196,8 @@ const CellInTissue& TissueSimulation::choose_cell_in(const std::string& mutant_n
 }
 
 const CellInTissue& TissueSimulation::choose_cell_in(const MutantId& mutant_id,
-                                               const RectangleSet& rectangle, const CellEventType& event_type)
+                                                     const RectangleSet& rectangle,
+                                                     const CellEventType& event_type)
 {
     std::set<SpeciesId> species_ids;
     auto mutant_species = tissue().get_mutant_species(mutant_id);
@@ -445,14 +406,14 @@ CellEvent create_mutation_event(Tissue& tissue, const PositionInTissue& position
     event.delay = delay;
     event.type = CellEventType::MUTATION;
     event.position = Position(tissue, position);
-    event.initial_species = static_cast<const CellInTissue&>(tissue(position)).get_species_id();
+    event.src_species = static_cast<const CellInTissue&>(tissue(position)).get_species_id();
 
-    const Species& initial_species = tissue.get_species(event.initial_species);
+    const Species& src_species = tissue.get_species(event.src_species);
+    const auto src_epistate = src_species.get_epistate_name();
 
     const auto& mutant_species = tissue.get_mutant_species(final_id);
-    const size_t index = MutantProperties::signature_to_index(initial_species.get_methylation_signature());
 
-    event.final_species = mutant_species[index].get_id();
+    event.dst_species = mutant_species.get_species_by_epistate(src_epistate).get_id();
 
     return event;
 }
@@ -483,10 +444,9 @@ TissueSimulation& TissueSimulation::simulate_mutation(const PositionInTissue& po
 }
 
 TissueSimulation& TissueSimulation::simulate_mutation(const PositionInTissue& position,
-                                                   const MutantId& dst_mutant_id)
+                                                      const MutantId& dst_mutant_id)
 {
-    auto mutation_event = create_mutation_event(tissue(), position,
-                                                         dst_mutant_id, 0);
+    auto mutation_event = create_mutation_event(tissue(), position, dst_mutant_id, 0);
 
     simulate(mutation_event);
 
@@ -501,9 +461,11 @@ TissueSimulation& TissueSimulation::simulate_mutation(const PositionInTissue& po
 void TissueSimulation::handle_timed_rate_update(const TimedEvent& timed_rate_update)
 {
     const auto& rate_update = timed_rate_update.get_event<RateUpdate>();
-    Species& species = tissue().get_species(rate_update.species_id);
+    Species& species = tissue().get_species(rate_update.src_id);
+    const Species& dst_species = tissue().get_species(rate_update.dst_id);
 
-    species.set_rate(rate_update.event_type, rate_update.new_rate);
+    species.set_rate(rate_update.event_type, dst_species,
+                     rate_update.new_rate);
 }
 
 void TissueSimulation::handle_timed_sampling(const TimedEvent& timed_sampling, CellEvent& candidate_event)
@@ -875,12 +837,11 @@ TissueSimulation::schedule_mutation(const MutantProperties& src, const MutantPro
     // case, it throws an std::runtime_error
     (void)tissue();
 
-    if (src.num_of_promoters()>dst.num_of_promoters()) {
+    if (src.has_the_same_epistates(dst)) {
         std::ostringstream oss;
 
-        oss << "Incompatible number of methylable promoters: \"" << src.get_name()
-            << "\" must have at least as many methylable promoters as \"" << dst.get_name()
-            << "\".";
+        oss << "\"" << src.get_name() << "\" and \"" << dst.get_name()
+            << "\" differ in epistates.";
         throw std::domain_error(oss.str());
     }
 

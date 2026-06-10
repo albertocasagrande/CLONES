@@ -2,8 +2,8 @@
  * @file logics.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implement a logic about the simulation
- * @version 1.1
- * @date 2026-02-06
+ * @version 1.2
+ * @date 2026-06-10
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -59,9 +59,15 @@ Variable::Variable(const CellEventType& event_type, const SpeciesId& species_id,
         case CellEventType::DEATH:
         case CellEventType::DUPLICATION:
         case CellEventType::EPIGENETIC_SWITCH:
+        case CellEventType::DUP_AND_EPI_SWITCH:
             break;
         default:
-            throw std::domain_error("Unsupported event type");
+            {
+                std::ostringstream oss;
+
+                oss << __PRETTY_FUNCTION__ << ": Unsupported event type";
+                throw std::domain_error(oss.str());
+            }
     }
 }
 
@@ -79,7 +85,12 @@ std::ostream& operator<<(std::ostream& os, const Variable& variable)
             os << "Time";
             break;
         default:
-            throw std::domain_error("Unsupported event type");
+            {
+                std::ostringstream oss;
+
+                oss << __PRETTY_FUNCTION__ << ": Unsupported event type";
+                throw std::domain_error(oss.str());
+            }
     }
 
     return os;

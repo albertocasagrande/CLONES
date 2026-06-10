@@ -2,8 +2,8 @@
  * @file descendant_forest.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines classes and function for descendant forests
- * @version 1.8
- * @date 2026-02-17
+ * @version 1.9
+ * @date 2026-06-10
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -65,60 +65,6 @@ class DescendantForest
 {
 public:
     using SamplePosition = Evolutions::TissueSampleId;
-private:
-    /**
-     * @brief Species data
-     *
-     * This structure privately stores species data.
-     */
-    struct SpeciesData
-    {
-        MutantId mutant_id;                //!< The species mutant id
-        MethylationSignature signature;    //!< The species signature
-
-        /**
-         * @brief The constructor
-         */
-        SpeciesData(const MutantId& mutant_id, const MethylationSignature& signature);
-
-        /**
-         * @brief Save species data in an archive
-         *
-         * @tparam ARCHIVE is the output archive type
-         * @param archive is the output archive
-         */
-        template<typename ARCHIVE, std::enable_if_t<std::is_base_of_v<Archive::Basic::Out, ARCHIVE>, bool> = true>
-        inline void save(ARCHIVE& archive) const
-        {
-            archive & mutant_id
-                    & signature;
-        }
-
-        /**
-         * @brief Load species data from an archive
-         *
-         * @tparam ARCHIVE is the input archive type
-         * @param archive is the input archive
-         * @return the load species data
-         */
-        template<typename ARCHIVE, std::enable_if_t<std::is_base_of_v<Archive::Basic::In, ARCHIVE>, bool> = true>
-        inline static SpeciesData load(ARCHIVE& archive)
-        {
-            SpeciesData data;
-
-            archive & data.mutant_id
-                    & data.signature;
-
-            return data;
-        }
-private:
-
-        /**
-         * @brief Construct a new Species Data object
-         *
-         */
-        SpeciesData();
-    };
 
     using EdgeTail = std::set<CellId>;
 
@@ -126,7 +72,7 @@ private:
     std::map<CellId, Cell> cells;           //!< The forest cell id-cell map
     std::map<CellId, EdgeTail> branches;    //!< The descendant branches
 
-    std::map<SpeciesId, SpeciesData> species_data;  //!< The species id to data map
+    std::map<SpeciesId, SpeciesProperties> species_data;  //!< The species id to data map
     std::map<MutantId, std::string> mutant_names;   //!< The mutant id to mutant name map
 
     std::vector<Evolutions::TissueSample> samples;  //!< The vector of the samples that produced the forest
@@ -404,7 +350,7 @@ protected:
          */
         inline const MutantId& get_mutant_id() const
         {
-            return forest->species_data.at(get_species_id()).mutant_id;
+            return get_species_properties().get_mutant_id();
         }
 
         /**
@@ -414,7 +360,7 @@ protected:
          */
         inline std::string get_species_name() const
         {
-            return forest->get_species_name(get_species_id());
+            return get_species_properties().get_name();
         }
 
         /**
@@ -424,9 +370,29 @@ protected:
          */
         inline const std::string& get_mutant_name() const
         {
-            return forest->mutant_names.at(get_mutant_id());
+            return  get_species_properties().get_name();
         }
 
+        /**
+         * @brief Get the node epigenetic state name
+         *
+         * @return the node epigenetic state name
+         */
+        inline std::string get_epistate_name() const
+        {
+            return get_species_properties().get_epistate_name();
+        }
+
+        /**
+         * @brief Get the properties of the cell species
+         * 
+         * @return The properties of the cell species
+         */
+        inline const SpeciesProperties& get_species_properties() const
+        {
+            return forest->species_data.at(get_species_id());
+        }
+    
         /**
          * @brief Get the cell's birth time
          *
@@ -452,16 +418,6 @@ protected:
             const auto& a_child = *(siblings.begin());
 
             return forest->cells.at(a_child).get_birth_time();
-        }
-
-        /**
-         * @brief Get the node methylation signature
-         *
-         * @return a constant reference to the node methylation signature
-         */
-        inline const MethylationSignature& get_methylation_signature() const
-        {
-            return forest->species_data.at(get_species_id()).signature;
         }
 
         /**
@@ -767,7 +723,7 @@ public:
      *
      * @return a constant reference to the species data.
      */
-    inline const std::map<SpeciesId, SpeciesData>& get_species_data() const
+    inline const std::map<SpeciesId, SpeciesProperties>& get_species_data() const
     {
         return species_data;
     }
@@ -779,10 +735,11 @@ public:
      * @return a constant reference to the name of the mutant having
      *          `mutant_id` as identifier
      */
-    inline const std::string& get_mutant_name(const MutantId& mutant_id) const
+    /*inline const std::string& get_mutant_name(const MutantId& mutant_id) const
     {
         return mutant_names.at(mutant_id);
     }
+        */
 
     /**
      * @brief Get the name of a species
@@ -790,7 +747,21 @@ public:
      * @param species_id is the identifier of the species whose name is aimed
      * @return the name of the species having `species_id` as identifier
      */
-    std::string get_species_name(const SpeciesId& species_id) const;
+    std::string get_species_name(const SpeciesId& species_id) const
+    {
+        return species_data.at(species_id).get_name();
+    }
+
+    /**
+     * @brief Get the epigenetic state name of a species
+     *
+     * @param species_id is the identifier of the species whose name is aimed
+     * @return the epigenetic state name of the species having `species_id` as identifier
+     */
+    inline const std::string& get_epigenetic_state_name(const SpeciesId& species_id) const
+    {
+        return species_data.at(species_id).get_epistate_name();
+    }
 
     /**
      * @brief Get the forest root cell identifiers

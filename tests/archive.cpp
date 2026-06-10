@@ -2,8 +2,8 @@
  * @file archive.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Some archive tests
- * @version 1.3
- * @date 2026-02-06
+ * @version 1.4
+ * @date 2026-06-10
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -53,23 +53,42 @@ struct ArchiveFixture {
     {
         using namespace CLONES::Mutants;
 
-        MutantProperties A("A",{{0.01,0.01}});
-        A["-"].set_rates({{CellEventType::DEATH, 0.1},
-                          {CellEventType::DUPLICATION, 0.3}});
-        A["+"].set_rates({{CellEventType::DEATH, 0.1},
-                          {CellEventType::DUPLICATION, 0.45}});
+        MutantProperties A("A", {"E1", "E2", "E3"});
 
-        MutantProperties B("B",{{0.01,0.01}});
-        B["-"].set_rates({{CellEventType::DEATH, 0.1},
-                          {CellEventType::DUPLICATION, 0.2}});
-        B["+"].set_rates({{CellEventType::DEATH, 0.01},
-                          {CellEventType::DUPLICATION, 0.02}});
+        A["E1"].set_rate(CellEventType::DEATH, 0.1)
+               .set_rate(CellEventType::DUPLICATION, 0.3)
+               .set_rate(CellEventType::DUP_AND_EPI_SWITCH, A["E2"], 0.01)
+               .set_rate(CellEventType::DUP_AND_EPI_SWITCH, A["E3"], 0.01);
+        A["E2"].set_rate(CellEventType::DEATH, 0.1)
+               .set_rate(CellEventType::DUPLICATION, 0.45)
+               .set_rate(CellEventType::DUP_AND_EPI_SWITCH, A["E1"], 0.01)
+               .set_rate(CellEventType::DUP_AND_EPI_SWITCH, A["E3"], 0.02);
+        A["E3"].set_rate(CellEventType::DEATH, 0.08)
+               .set_rate(CellEventType::DUPLICATION, 0.3)
+               .set_rate(CellEventType::DUP_AND_EPI_SWITCH, A["E2"], 0.02)
+               .set_rate(CellEventType::DUP_AND_EPI_SWITCH, A["E3"], 0.01);
+
+
+        MutantProperties B("B", {"E1", "E2", "E3"});
+
+        B["E1"].set_rate(CellEventType::DEATH, 0.1)
+               .set_rate(CellEventType::DUPLICATION, 0.2)
+               .set_rate(CellEventType::DUP_AND_EPI_SWITCH, B["E2"], 0.01)
+               .set_rate(CellEventType::DUP_AND_EPI_SWITCH, B["E3"], 0.01);
+        B["E2"].set_rate(CellEventType::DEATH, 0.1)
+               .set_rate(CellEventType::DUPLICATION, 0.2)
+               .set_rate(CellEventType::DUP_AND_EPI_SWITCH, B["E1"], 0.01)
+               .set_rate(CellEventType::DUP_AND_EPI_SWITCH, B["E3"], 0.02);
+        B["E3"].set_rate(CellEventType::DEATH, 0.09)
+               .set_rate(CellEventType::DUPLICATION, 0.18)
+               .set_rate(CellEventType::DUP_AND_EPI_SWITCH, B["E2"], 0.02)
+               .set_rate(CellEventType::DUP_AND_EPI_SWITCH, B["E3"], 0.01);
 
         tissue_simulation.set_tissue("Liver", {1000,1000})
-                  .add_mutant(A)
-                  .add_mutant(B)
-                  .place_cell(B["-"], {250, 500})
-                  .schedule_mutation(B,A,50);
+                         .add_mutant(A)
+                         .add_mutant(B)
+                         .place_cell(B["-"], {250, 500})
+                         .schedule_mutation(B,A,50);
 
         tissue_simulation.death_activation_level = 100;
         tissue_simulation.storage_enabled = false;
@@ -161,22 +180,9 @@ bool operator==(const CLONES::Mutants::Evolutions::CellInTissue& a, const CLONES
             static_cast<const Evolutions::PositionInTissue&>(a)==static_cast<const Evolutions::PositionInTissue&>(b));
 }
 
-bool operator==(const CLONES::Mutants::SpeciesProperties& a, const CLONES::Mutants::SpeciesProperties& b)
-{
-    return (a.get_name()==b.get_name() &&
-            a.get_id()==b.get_id() &&
-            a.get_mutant_id()==b.get_mutant_id() &&
-            a.get_rates()==b.get_rates() &&
-            a.get_epigenetic_switch_rates()==b.get_epigenetic_switch_rates());
-}
-
-inline bool operator!=(const CLONES::Mutants::SpeciesProperties& a, const CLONES::Mutants::SpeciesProperties& b)
-{
-    return !(a==b);
-}
-
 bool operator==(const CLONES::Mutants::Evolutions::Species& a, const CLONES::Mutants::Evolutions::Species& b)
 {
+    using namespace std;
     using namespace CLONES::Mutants;
 
     if (static_cast<const SpeciesProperties&>(a)!=static_cast<const SpeciesProperties&>(b)) {
@@ -489,21 +495,26 @@ BOOST_AUTO_TEST_CASE(binary_epigenetic_mutant)
 {
     using namespace CLONES::Mutants;
 
-    MutantProperties to_save("A",{{0.01,0.01},{0.01,0.01}});
-    to_save["--"].set_rates({{CellEventType::DEATH, 0.1},
-                             {CellEventType::DUPLICATION, 0.3}});
-    to_save["+-"].set_rates({{CellEventType::DEATH, 0.1},
-                             {CellEventType::DUPLICATION, 0.45}});
-    to_save["-+"].set_rates({{CellEventType::DEATH, 0.1},
-                             {CellEventType::DUPLICATION, 0.2}});
-    to_save["+-"].set_rates({{CellEventType::DEATH, 0.01},
-                             {CellEventType::DUPLICATION, 0.02}});
+    MutantProperties to_save("A", {"E1", "E2", "E3"});
+
+    to_save["E1"].set_rate(CellEventType::DEATH, 0.1)
+                 .set_rate(CellEventType::DUPLICATION, 0.3)
+                 .set_rate(CellEventType::DUP_AND_EPI_SWITCH, to_save["E2"], 0.01)
+                 .set_rate(CellEventType::DUP_AND_EPI_SWITCH, to_save["E3"], 0.01);
+    to_save["E2"].set_rate(CellEventType::DEATH, 0.1)
+                 .set_rate(CellEventType::DUPLICATION, 0.45)
+                 .set_rate(CellEventType::DUP_AND_EPI_SWITCH, to_save["E1"], 0.01)
+                 .set_rate(CellEventType::DUP_AND_EPI_SWITCH, to_save["E3"], 0.02);
+    to_save["E3"].set_rate(CellEventType::DEATH, 0.08)
+                 .set_rate(CellEventType::DUPLICATION, 0.3)
+                 .set_rate(CellEventType::DUP_AND_EPI_SWITCH, to_save["E2"], 0.02)
+                 .set_rate(CellEventType::DUP_AND_EPI_SWITCH, to_save["E3"], 0.01);   
 
     auto filename = get_a_temporary_path();
     {
         CLONES::Archive::Binary::Out o_archive(filename);
 
-        for (const auto& species : to_save.get_species()) {
+        for (const auto& [epistate_name, species] : to_save.get_species()) {
             o_archive & species;
         }
     }
@@ -511,7 +522,7 @@ BOOST_AUTO_TEST_CASE(binary_epigenetic_mutant)
     {
         CLONES::Archive::Binary::In i_archive(filename);
 
-        for (const auto& species : to_save.get_species()) {
+        for (const auto& [epistate_name, species] : to_save.get_species()) {
             SpeciesProperties in_species =  SpeciesProperties::load(i_archive);
 
             BOOST_CHECK(species==in_species);

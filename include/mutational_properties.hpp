@@ -2,8 +2,8 @@
  * @file mutational_properties.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a class to represent the mutational properties
- * @version 1.7
- * @date 2026-02-06
+ * @version 1.8
+ * @date 2026-06-10
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -390,30 +390,9 @@ class MutationalProperties
     inline static auto& get_passenger_rates(T& passenger_rates, const std::string& mutant_name,
                                             const std::string& epistate)
     {
-        const auto species_name = mutant_name + epistate;
+        const auto species_name = Mutants::SpeciesProperties::get_name(mutant_name, epistate);
 
         return get_passenger_rates(passenger_rates, species_name);
-    }
-
-    /**
-     * @brief Get the passenger rates for a species
-     *
-     * @tparam MAP is the type of `passenger_rates`. It can be constant or non-constant
-     * @param passenger_rates is a map associating species names to their rates
-     * @param mutant_name is the mutant of the species whose rates are aimed
-     * @param signature is the epigenetic signature of the species whose rates are
-     *      aimed
-     * @return a (constant) reference to the rates associated by `passenger_rates` to
-     *      species whose mutant and epigenetic signature are `mutant_name` and
-     *      `signature`, respectively
-     */
-    template<typename T>
-    static auto& get_passenger_rates(T& passenger_rates, const std::string& mutant_name,
-                                     const Mutants::MethylationSignature& signature)
-    {
-        const auto epistate = Mutants::MutantProperties::signature_to_string(signature);
-
-        return get_passenger_rates(passenger_rates, mutant_name, epistate);
     }
 public:
 
@@ -512,40 +491,6 @@ public:
     get_passenger_rates(const std::string& mutant_name, const std::string& epistate)
     {
         return get_passenger_rates(passenger_rates, mutant_name, epistate);
-    }
-
-    /**
-     * @brief Get the timed passenger rates of a species
-     *
-     * @param mutant_name is the mutant of the species whose rates are aimed
-     * @param signature is the epigenetic signature of the species whose rates are
-     *      aimed
-     * @return a constant reference to the timed rates associated by
-     *      `passenger_rates` to the species whose mutant and epigenetic signature
-     *      are `mutant_name` and `signature`, respectively
-     */
-    inline const Timed<PassengerRates>&
-    get_passenger_rates(const std::string& mutant_name,
-                        const Mutants::MethylationSignature& signature) const
-    {
-        return get_passenger_rates(passenger_rates, mutant_name, signature);
-    }
-
-    /**
-     * @brief Get the timed passenger rates of a species
-     *
-     * @param mutant_name is the mutant of the species whose rates are aimed
-     * @param signature is the epigenetic signature of the species whose rates are
-     *      aimed
-     * @return a reference to the timed rates associated by `passenger_rates` to
-     *      the species whose mutant and epigenetic signature are `mutant_name`
-     *      and `signature`, respectively
-     */
-    inline Timed<PassengerRates>&
-    get_passenger_rates(const std::string& mutant_name,
-                        const Mutants::MethylationSignature& signature)
-    {
-        return get_passenger_rates(passenger_rates, mutant_name, signature);
     }
 
     /**

@@ -2,8 +2,8 @@
  * @file tissue.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Define tissue class
- * @version 1.3
- * @date 2026-03-04
+ * @version 1.4
+ * @date 2026-06-10
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -66,6 +66,27 @@ Tissue::SpeciesView::const_iterator Tissue::SpeciesView::const_iterator::operato
     this->operator--();
 
     return copy;
+}
+
+const Species& Tissue::SpeciesView::get_species_by_epistate(const std::string& epistate_name) const
+{
+    for (const Species& species: *this) {
+        if (species.get_epistate_name()==epistate_name) {
+            return species;
+        }
+    }
+
+    std::ostringstream oss;
+
+    if (size()==0) {
+        oss << "The mutant has no epigenetic states";
+    }
+
+    oss << "\"" << (*this)[0].get_mutant_name()
+        << "\" does not have the epigenetic state \""
+        << epistate_name << "\"";
+
+    throw std::out_of_range(oss.str());
 }
 
 size_t Tissue::SpeciesView::num_of_cells() const
@@ -340,11 +361,12 @@ Tissue& Tissue::add_mutant_species(const MutantProperties& mutant)
     }
 
     // check whether any of the species is already in the tissue
-    for (const auto& species: mutant.get_species()) {
+    for (const auto& [epistate_name, species]: mutant.get_species()) {
         if (id_pos.count(species.get_id())>0) {
             throw std::runtime_error("Species id "
                                      + std::to_string(static_cast<int>(species.get_id()))
-                                     + " already in the tissue");
+                                     + "(i.e., " + species.get_name()
+                                     + ") already in the tissue");
         }
         if (name_pos.count(species.get_name())>0) {
             throw std::runtime_error("Species \""
@@ -355,7 +377,7 @@ Tissue& Tissue::add_mutant_species(const MutantProperties& mutant)
 
     // insert the mutants in the tissue
     auto& pos = mutant_pos[mutant.get_id()];
-    for (const auto& in_species: mutant.get_species()) {
+    for (const auto& [epistate_name, in_species]: mutant.get_species()) {
         // place the new species at the end of the species vector
         pos.push_back(species.size());
 

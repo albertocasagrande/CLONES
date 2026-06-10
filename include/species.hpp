@@ -2,8 +2,8 @@
  * @file species.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines species representation
- * @version 1.4
- * @date 2026-05-25
+ * @version 1.5
+ * @date 2026-06-10
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -309,12 +309,17 @@ public:
                 return true;
             case CellEventType::DUPLICATION:
             case CellEventType::MUTATION:
-            case CellEventType::EPIGENETIC_SWITCH:
+            case CellEventType::DUP_AND_EPI_SWITCH:
                 return (duplication_enabled.count(cell_id)>0);
             case CellEventType::ANY:
                 return true;
             default:
-                throw std::domain_error("Unsupported event type");
+                {
+                    std::ostringstream oss;
+
+                    oss << __PRETTY_FUNCTION__ << ": Unsupported event type ";
+                    throw std::domain_error(oss.str());
+                }
         }
     }
 
@@ -346,15 +351,21 @@ public:
     {
         switch (event_type) {
             case CellEventType::DEATH:
+            case CellEventType::EPIGENETIC_SWITCH:
                 return choose_a_cell(generator, cells);
             case CellEventType::DUPLICATION:
             case CellEventType::MUTATION:
-            case CellEventType::EPIGENETIC_SWITCH:
+            case CellEventType::DUP_AND_EPI_SWITCH:
                 return choose_a_cell(generator, duplication_enabled);
             case CellEventType::ANY:
                 return choose_a_cell(generator, cells);
             default:
-                throw std::domain_error("Unsupported event type");
+                {
+                    std::ostringstream oss;
+
+                    oss << __PRETTY_FUNCTION__ << ": Unsupported event type";
+                    throw std::domain_error(oss.str());
+                }
         }
     }
 

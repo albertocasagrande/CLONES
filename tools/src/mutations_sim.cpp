@@ -369,20 +369,19 @@ class MutationsSimulator : public BasicExecutable
         }
     }
 
-    class MethylationLabelling
+    class EpigeneticLabelling
     {
         CLONES::Mutants::DescendantForest const* forest;
     public:
-        MethylationLabelling(const CLONES::Mutants::DescendantForest& forest):
+        EpigeneticLabelling(const CLONES::Mutants::DescendantForest& forest):
             forest{&forest}
         {}
 
         std::string operator()(const CLONES::Mutants::CellId& cell_id) const
         {
-            auto node = forest->get_node(cell_id);
+            const auto node = forest->get_node(cell_id);
 
-            const auto& signature = node.get_methylation_signature();
-            return CLONES::Mutants::MutantProperties::signature_to_string(signature);
+            return node.get_epistate_name();
         }
     };
 
@@ -484,7 +483,7 @@ class MutationsSimulator : public BasicExecutable
                                       pre_neoplastic_ID_signature_name);
 
         if (epigenetic_FACS) {
-            MethylationLabelling labelling{forest};
+            EpigeneticLabelling labelling{forest};
 
             forest.partition_samples(labelling);
         }

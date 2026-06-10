@@ -3,43 +3,80 @@
     "mutants": [
         {
             "name": "A",
-            "epigenetic rates": [
+            "epigenetic states": [
                 {
-                    "methylation": 0.01,
-                    "demethylation": 0.01
-                }
-            ],
-            "epigenetic types": [
-                {
-                    "status": "-",
+                    "name": "E1",
                     "death rate": 0.1,
                     "duplication rate": 0.2
                 },
                 {
-                    "status": "+",
+                    "name": "E2",
                     "death rate": 0.01,
                     "duplication rate": 0.02 
+                },
+                {
+                    "name": "E3",
+                    "death rate": 0.01,
+                    "duplication rate": 0.02 
+                }
+            ],
+            "epigenetic switches": [
+                {
+                    "source": "E1",
+                    "destination": "E2",
+                    "rate": 0.01
+                },
+                {
+                    "source": "E1",
+                    "destination": "E3",
+                    "rate": 0.01
+                },
+                {
+                    "source": "E2",
+                    "destination": "E1",
+                    "rate": 0.01
+                },
+                {
+                    "source": "E2",
+                    "destination": "E3",
+                    "rate": 0.01
+                },
+                {
+                    "source": "E3",
+                    "destination": "E1",
+                    "rate": 0.01
+                },
+                {
+                    "source": "E3",
+                    "destination": "E2",
+                    "rate": 0.01
                 }
             ]
         },
         {
             "name": "B",
-            "epigenetic rates": [
+            "epigenetic states": [
                 {
-                    "methylation": 0.01,
-                    "demethylation": 0.01
-                }
-            ],
-            "epigenetic types": [
-                {
-                    "status": "-",
+                    "name": "E1",
                     "death rate": 0.1,
                     "duplication rate": 0.3 
                 },
                 {
-                    "status": "+",
+                    "name": "E2",
                     "death rate": 0.1,
                     "duplication rate": 0.45 
+                }
+            ],
+            "epigenetic switches": [
+                {
+                    "source": "E1",
+                    "destination": "E2",
+                    "rate": 0.01
+                },
+                {
+                    "source": "E2",
+                    "destination": "E1",
+                    "rate": 0.01
                 }
             ]
         }
@@ -52,7 +89,7 @@
         {
             "mutant": {
                 "name": "A",
-                "epistate": "-"
+                "epistate": "E1"
             },
             "position": [500, 500]
         }
@@ -105,16 +142,14 @@
         {
             "time": 90,
             "type": "liveness rate update",
-            "mutant": "A", 
-            "status": "-", 
+            "species": "A[E1]",
             "rate name": "deaths", 
             "rate": 0.3
         },
         {
             "time": 90,
             "type": "liveness rate update",
-            "mutant": "A", 
-            "status": "+", 
+            "species": "A[E2]",
             "rate name": "deaths", 
             "rate": 0.3
         }

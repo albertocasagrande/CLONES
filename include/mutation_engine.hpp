@@ -2,8 +2,8 @@
  * @file mutation_engine.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a class to place mutations on a descendant forest
- * @version 1.35
- * @date 2026-05-22
+ * @version 1.36
+ * @date 2026-06-10
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -1136,10 +1136,9 @@ class MutationEngine
         std::map<SpeciesId, Timed<PassengerRates>> species_rates;
 
         for (const auto& [species_id, species_data] : descendant_forest.get_species_data()) {
-            const auto mutant_name = descendant_forest.get_mutant_name(species_data.mutant_id);
+            const auto& species_name = species_data.get_name();
 
-            species_rates[species_id] = mutational_properties.get_passenger_rates(mutant_name,
-                                                                                  species_data.signature);
+            species_rates[species_id] = mutational_properties.get_passenger_rates(species_name);
         }
 
         return species_rates;
@@ -1163,14 +1162,14 @@ class MutationEngine
         std::map<MutantId, DriverMutations> driver_mutations;
 
         for (const auto& [species_id, species_data] : descendant_forest.get_species_data()) {
-            const auto mutant_name = descendant_forest.get_mutant_name(species_data.mutant_id);
+            const auto& mutant_name = species_data.get_mutant_name();
 
             auto driver_it = mutational_properties.get_driver_mutations().find(mutant_name);
 
             if (driver_it == mutational_properties.get_driver_mutations().end()) {
                 throw std::runtime_error("\"" + mutant_name + "\" is unknown");
             }
-            driver_mutations[species_data.mutant_id] = driver_it->second;
+            driver_mutations[species_data.get_mutant_id()] = driver_it->second;
         }
 
         return driver_mutations;

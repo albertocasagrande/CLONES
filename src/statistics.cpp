@@ -2,8 +2,8 @@
  * @file statistics.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Define simulation statistics
- * @version 1.1
- * @date 2026-02-06
+ * @version 1.2
+ * @date 2026-06-10
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -203,21 +203,27 @@ void TissueStatistics::record_event(const CellEvent& event, const Time &time)
 
     switch(event.type) {
         case CellEventType::DEATH:
-            record_death(event.initial_species, time);
+            record_death(event.src_species, time);
             break;
         case CellEventType::DUPLICATION:
-            record_duplication(event.initial_species, time);
+            record_duplication(event.src_species, time);
             break;
-        case CellEventType::EPIGENETIC_SWITCH:
-            record_epigenetic_switch(event.initial_species,
-                                     event.final_species, time);
+        case CellEventType::DUP_AND_EPI_SWITCH:
+            record_epigenetic_switch(event.src_species,
+                                     event.dst_species, time);
             break;
         case CellEventType::MUTATION:
-            record_mutation(event.initial_species,
-                            event.final_species, time);
+            record_mutation(event.src_species,
+                            event.dst_species, time);
             break;
         default:
-            throw std::runtime_error("Unsupported event type");
+            {
+                std::ostringstream oss;
+
+                oss << __PRETTY_FUNCTION__ << ": Unsupported event type "
+                    << cell_event_names[event.type];
+                throw std::domain_error(oss.str());
+            }
     }
 }
 
@@ -235,7 +241,7 @@ size_t TissueStatistics::count_fired_events(const SpeciesId& species_id,
             return s_stats.killed_cells;
         case CellEventType::DUPLICATION:
             return s_stats.num_duplications;
-        case CellEventType::EPIGENETIC_SWITCH:
+        case CellEventType::DUP_AND_EPI_SWITCH:
             return s_stats.num_of_epigenetic_events();
         default:
             throw std::domain_error("EventCountTest does not support event "+

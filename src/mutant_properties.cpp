@@ -2,8 +2,8 @@
  * @file mutant_properties.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements the mutant properties
- * @version 1.2
- * @date 2026-05-25
+ * @version 1.3
+ * @date 2026-06-10
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -43,246 +43,145 @@ namespace Mutants
 unsigned int SpeciesProperties::counter = 0;
 unsigned int MutantProperties::counter = 0;
 
-EpigeneticRates::EpigeneticRates(const double methylation_rate, const double demethylation_rate):
-        methylation(methylation_rate), demethylation(demethylation_rate)
-{
-    if (methylation_rate<0 || methylation_rate>1) {
-        throw std::domain_error("the methylation rate does not belong to the interval [0,1]");
-    }
-
-    if (demethylation_rate<0 || demethylation_rate>1) {
-        throw std::domain_error("the demethylation rate does not belong to the interval [0,1]");
-    }
-}
-
-EpigeneticRates::EpigeneticRates(const double rate):
-        EpigeneticRates(rate, rate)
-{}
-
-EpigeneticRates& EpigeneticRates::set_methylation_rate(const double& rate)
-{
-    if (rate<0 || rate>1) {
-        throw std::domain_error("the rate does not belong to the interval [0,1]");
-    }
-
-    methylation = rate;
-
-    return *this;
-}
-
-EpigeneticRates& EpigeneticRates::set_demethylation_rate(const double& rate)
-{
-    if (rate<0 || rate>1) {
-        throw std::domain_error("the rate does not belong to the interval [0,1]");
-    }
-
-    demethylation = rate;
-
-    return *this;
-}
-
 SpeciesProperties::SpeciesProperties():
     id(0), mutant_id(0)
 {}
 
 SpeciesProperties::SpeciesProperties(const MutantProperties& mutant,
-                                     const size_t num_of_promoters):
-    id(counter++), mutant_id(mutant.get_id())
+                                     const std::string& epistate_name):
+    id(counter++), epistate_name{epistate_name}, mutant_id(mutant.get_id()), 
+    mutant_name{mutant.get_name()}
+{}
+
+std::string SpeciesProperties::get_name(const std::string& mutant_name,
+                                        const std::string& epistate_name)
 {
-    const size_t epigenetic_index = mutant.get_species().size();
-
-    name = mutant.get_name();
-
-    methylation_signature = MutantProperties::index_to_signature(epigenetic_index, num_of_promoters);
-}
-
-double SpeciesProperties::get_rate(const CellEventType& event) const
-{
-    if (event == CellEventType::EPIGENETIC_SWITCH) {
-        throw std::domain_error("Use get_epigenetic_rate_to to get epigenetic rate.");
+    if (epistate_name.size()==0) {
+        return mutant_name;
     }
 
-    if (event_rates.count(event)==0) {
-        return 0;
-    }
-    return event_rates.at(event);
+    return mutant_name + "[" + epistate_name + "]";
 }
 
-const double& SpeciesProperties::set_rate(const CellEventType& event, const double rate)
+double SpeciesProperties::get_rate(const CellEventType& event,
+                                   const SpeciesId& dst_species) const
 {
-    if (event == CellEventType::EPIGENETIC_SWITCH) {
-        throw std::domain_error("Use set_epigenetic_rate_to to set epigenetic rate.");
-    }
+    EventRate::const_iterator event_rates_it = event_rates.find(event);
 
-    return (event_rates[event] = rate);
-}
+    if (event_rates_it != event_rates.end()) {
+        auto rate_it = event_rates_it->second.find(dst_species);
 
-double SpeciesProperties::get_epigenetic_rate_to(const SpeciesId& species_id) const
-{
-    const auto found = epigenetic_rates.find(species_id);
-
-    if (found == epigenetic_rates.end()) {
-        throw std::out_of_range("The species " + std::to_string(id) + " and "
-                                + std::to_string(species_id) + "do not belong to the "
-                                + "same mutant.");
+        if (rate_it != event_rates_it->second.end()) {
+            return rate_it->second;
+        }
     }
 
-    return found->second;
+    return 0;
 }
 
-const double& SpeciesProperties::set_epigenetic_rate_to(const SpeciesId& species_id, const double rate)
+SpeciesProperties& SpeciesProperties::set_rate(const CellEventType& event,
+                                               const double rate)
 {
-    auto found = epigenetic_rates.find(species_id);
-
-    if (found == epigenetic_rates.end()) {
-        throw std::out_of_range("The species " + std::to_string(id) + " and "
-                                + std::to_string(species_id) + "do not belong to the "
-                                + "same mutant.");
+    if (event != CellEventType::DEATH
+            && event != CellEventType::DUPLICATION) {
+        throw std::domain_error("`SpeciesProperties::set_rate(const CellEventType&"
+                                ", const double&)` can be used exclusively for deaths" 
+                                " or duplications");
     }
 
-    return (found->second = rate);
+    return set_rate(event, *this, rate);
 }
 
-std::string SpeciesProperties::get_name() const
+SpeciesProperties& SpeciesProperties::set_rate(const CellEventType& event,
+                                               const SpeciesProperties& dst_species,
+                                               const double rate)
 {
-    return name + MutantProperties::signature_to_string(methylation_signature);
+    if (dst_species.get_mutant_id() != get_mutant_id()) {
+        throw std::domain_error("`SpeciesProperties::set_rate()`: `dst_species` "
+                                "and the calling object must belong to the same "
+                                "mutant");
+    }
+
+    switch(event) {
+        case CellEventType::DEATH:
+        case CellEventType::DUPLICATION:
+        case CellEventType::EPIGENETIC_SWITCH:
+        case CellEventType::DUP_AND_EPI_SWITCH:
+            event_rates[event][dst_species.get_id()] = rate;
+            
+            return *this;
+        default:
+            throw std::domain_error("`SpeciesProperties::set_rate()`: unsupported "
+                                    "event \"");
+    }
 }
 
-MutantProperties::MutantProperties(const std::string& name,
-                                   const std::vector<EpigeneticRates>& epigenetic_event_rates):
+MutantProperties::MutantProperties(const std::string& name, std::list<std::string>&& epi_states):
+    MutantProperties(name, epi_states)
+{}
+
+
+MutantProperties::MutantProperties(const std::string& name, const std::list<std::string>& epi_states):
     id(counter++), name(name)
 {
-    size_t epigenetic_switches = 1<<epigenetic_event_rates.size();
-
-    for (size_t i=0; i<epigenetic_switches; ++i) {
-        species.push_back(SpeciesProperties(*this, epigenetic_event_rates.size()));
-    }
-
-    for (auto& l_species: species) {
-        auto e_signature = l_species.get_methylation_signature();
-        auto& e_rates = l_species.epigenetic_rates;
-
-        for (size_t i=0; i<epigenetic_event_rates.size(); ++i) {
-            // get the signature of the mutant reachable by
-            // methylating/demethylating the i-th promoter
-            e_signature[i] = !e_signature[i];
-
-            // get the index of the mutant reachable by
-            // methylating/demethylating the i-th promoter
-            size_t index = signature_to_index(e_signature);
-
-            // get the identifier of the mutant reachable by
-            // methylating/demethylating the i-th promoter
-            SpeciesId dst_id = species[index].get_id();
-
-            if (e_signature[i]) {  // if the promoter is methylated
-                // a methylation event must occur
-                e_rates[dst_id] = epigenetic_event_rates[i].get_methylation_rate();
-            } else {
-                // a demethylation event must occur
-                e_rates[dst_id] = epigenetic_event_rates[i].get_demethylation_rate();
-            }
-
-            // revert to the original signature
-            e_signature[i] = !e_signature[i];
-        }
+    for (const auto& epi_state : epi_states) {
+        species.emplace(epi_state, SpeciesProperties{*this, epi_state});
     }
 }
 
 MutantProperties::MutantProperties(const std::string& name):
-    MutantProperties(name, std::vector<EpigeneticRates>())
+    MutantProperties(name, {""})
 {}
 
-size_t MutantProperties::num_of_promoters() const
+const SpeciesProperties& MutantProperties::operator[](const std::string& epistate_name) const
 {
-    if (species.size()==0) {
-        return 0;
+    auto src_species_it = species.find(epistate_name);
+    if (src_species_it == species.end()) {
+        throw std::out_of_range("Unknown epistate \"" + epistate_name + "\"");
     }
 
-    return species[0].get_methylation_signature().size();
+    return src_species_it->second;
 }
 
-SpeciesProperties& MutantProperties::operator[](const MethylationSignature& methylation_signature)
+SpeciesProperties& MutantProperties::operator[](const std::string& epistate_name)
 {
-    validate_signature(methylation_signature);
+    auto src_species_it = species.find(epistate_name);
+    if (src_species_it == species.end()) {
+        throw std::out_of_range("Unknown epistate \"" + epistate_name + "\"");
+    }
 
-    return species[MutantProperties::signature_to_index(methylation_signature)];
+    return src_species_it->second;
 }
 
-const SpeciesProperties& MutantProperties::operator[](const MethylationSignature& methylation_signature) const
+bool MutantProperties::have_the_same_epistates(const MutantProperties& mutant_a,
+                                               const MutantProperties& mutant_b)
 {
-    validate_signature(methylation_signature);
+    if (mutant_a.species.size() != mutant_b.species.size()) {
+        return false;
+    }
 
-    return species[MutantProperties::signature_to_index(methylation_signature)];
-}
-
-SpeciesProperties& MutantProperties::operator[](const std::string& methylation_signature)
-{
-    validate_signature(methylation_signature);
-
-    return species[MutantProperties::string_to_index(methylation_signature)];
-}
-
-const SpeciesProperties& MutantProperties::operator[](const std::string& methylation_signature) const
-{
-    validate_signature(methylation_signature);
-
-    return species[MutantProperties::string_to_index(methylation_signature)];
-}
-
-size_t MutantProperties::string_to_index(const std::string& methylation_signature)
-{
-    size_t index=0, digit_value=(1 << methylation_signature.size());
-
-    for (const char& c: methylation_signature) {
-        digit_value >>= 1;
-        if (c=='+') {
-            index |= digit_value;
+    auto species_a_it = mutant_a.species.begin();
+    for (const auto& [epistate_b, species_b]: mutant_b.species) {
+        if (species_a_it->first != epistate_b) {
+            return false;
         }
+
+        ++species_a_it;
     }
 
-    return index;
+    return true;
 }
 
-std::string MutantProperties::index_to_string(const size_t& index, const size_t num_of_promoters)
+
+bool operator==(const SpeciesProperties& a, const SpeciesProperties& b)
 {
-    size_t digit_value=(1 << num_of_promoters);
-    std::ostringstream oss;
-
-    while (digit_value>1) {
-        digit_value >>= 1;
-        oss << (((digit_value&index) != 0) ? "+" : "-");
-    }
-
-    return oss.str();
+    return (a.get_id()==b.get_id()
+            && a.get_mutant_id()==b.get_mutant_id()
+            && a.get_mutant_name()==b.get_mutant_name()
+            && a.get_epistate_name()==b.get_epistate_name()
+            && a.get_rates()==b.get_rates());
 }
 
-size_t MutantProperties::signature_to_index(const MethylationSignature& methylation_signature)
-{
-    size_t index=0, digit_value=(1 << methylation_signature.size());
-
-    for (const bool& b_value: methylation_signature) {
-        digit_value >>= 1;
-        if (b_value) {
-            index |= digit_value;
-        }
-    }
-
-    return index;
-}
-
-MethylationSignature MutantProperties::index_to_signature(const size_t& index, const size_t num_of_promoters)
-{
-    MethylationSignature signature;
-    size_t digit_value=(1 << num_of_promoters);
-
-    while (digit_value>1) {
-        digit_value >>= 1;
-        signature.push_back((digit_value&index) != 0);
-    }
-
-    return signature;
-}
 
 }   // Mutants
 
@@ -291,36 +190,22 @@ MethylationSignature MutantProperties::index_to_signature(const size_t& index, c
 namespace std
 {
 
-std::ostream& operator<<(std::ostream& out, const CLONES::Mutants::EpigeneticRates& epigenetic_rates)
-{
-    out << "{\"on\": " << epigenetic_rates.get_methylation_rate()
-            << ",\"off\": " << epigenetic_rates.get_demethylation_rate() << "}";
-    return out;
-}
-
 std::ostream& operator<<(std::ostream& out, const CLONES::Mutants::SpeciesProperties& species)
 {
-    out << "{name: \""<< species.get_name() << "\", id: " << species.get_id()
+    out << "{name: \""<< species.get_name() << "\", id: " << species.get_id() 
         << ", event_rates: {";
 
     std::string sep="";
-    for (const auto& [event, rate]: species.get_rates()) {
-        out << sep << CLONES::Mutants::cell_event_names[event] << ": " << rate;
-        sep = ", ";
-    }
-
-    const auto& e_rates = species.get_epigenetic_switch_rates();
-    if (e_rates.size()>0) {
-        out << "}, epigenetic rates: {";
-        sep="";
-        for (const auto& [dst_id, rate]: e_rates) {
-            out << sep << dst_id << ": " << rate;
+    for (const auto& [event, event_type_rates]: species.get_rates()) {
+        for (const auto& [dst_event, rate]: event_type_rates) {
+            out << sep
+                << "(event: "<< CLONES::Mutants::cell_event_names[event] 
+                << ", dst: "<< dst_event << ", rate: " << rate << ")";
             sep = ", ";
         }
-        out << "}";
     }
 
-    out << "}";
+    out << "}}";
 
     return out;
 }
@@ -335,7 +220,7 @@ std::ostream& operator<<(std::ostream& out, const CLONES::Mutants::MutantPropert
         sep = "\n";
     }
 
-    for (const auto& species: mutant.get_species()) {
+    for (const auto& [epistate_name, species]: mutant.get_species()) {
         out << sep << species;
         sep = ",\n";
     }

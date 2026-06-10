@@ -2,8 +2,8 @@
  * @file tissue.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines tissue class
- * @version 1.3
- * @date 2026-05-25
+ * @version 1.4
+ * @date 2026-06-10
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -334,6 +334,16 @@ public:
         };
 
         /**
+         * @brief Get the species by epigenetic state name
+         * 
+         * @param epistate_name is the epigenetic state name of the aimed species
+         * @return a constant reference to the species having `epistate_name` as
+         *      epigenetic state name. If none of the species in the view have this
+         *      epigenetic state name, an `std::out_of_range` is thrown. 
+         */
+        const Species& get_species_by_epistate(const std::string& epistate_name) const;
+
+        /**
          * @brief Index operator
          *
          * @param index is the index to access
@@ -591,7 +601,8 @@ public:
      * @param y_size is the size of the tissue on the y axis
      * @param z_size is the size of the tissue on the z axis
      */
-    Tissue(const std::vector<MutantProperties>& mutants, const AxisSize x_size, const AxisSize y_size, const AxisSize z_size);
+    Tissue(const std::vector<MutantProperties>& mutants, const AxisSize x_size,
+           const AxisSize y_size, const AxisSize z_size);
 
     /**
      * @brief A constructor for a 2D tissue
@@ -600,7 +611,8 @@ public:
      * @param x_size is the size of the tissue on the x axis
      * @param y_size is the size of the tissue on the y axis
      */
-    Tissue(const std::vector<MutantProperties>& mutants, const AxisSize x_size, const AxisSize y_size);
+    Tissue(const std::vector<MutantProperties>& mutants, const AxisSize x_size,
+           const AxisSize y_size);
 
     /**
      * @brief A constructor
@@ -618,7 +630,8 @@ public:
      * @param y_size is the size of the tissue on the y axis
      * @param z_size is the size of the tissue on the z axis
      */
-    Tissue(const std::string& name, const AxisSize x_size, const AxisSize y_size, const AxisSize z_size);
+    Tissue(const std::string& name, const AxisSize x_size, const AxisSize y_size,
+           const AxisSize z_size);
 
     /**
      * @brief A constructor for a 2D tissue
@@ -638,7 +651,8 @@ public:
      * @param y_size is the size of the tissue on the y axis
      * @param z_size is the size of the tissue on the z axis
      */
-    Tissue(const std::string& name, const std::vector<MutantProperties>& mutants, const AxisSize x_size, const AxisSize y_size, const AxisSize z_size);
+    Tissue(const std::string& name, const std::vector<MutantProperties>& mutants,
+           const AxisSize x_size, const AxisSize y_size, const AxisSize z_size);
 
     /**
      * @brief A constructor for a 2D tissue
@@ -648,7 +662,8 @@ public:
      * @param x_size is the size of the tissue on the x axis
      * @param y_size is the size of the tissue on the y axis
      */
-    Tissue(const std::string& name, const std::vector<MutantProperties>& mutants, const AxisSize x_size, const AxisSize y_size);
+    Tissue(const std::string& name, const std::vector<MutantProperties>& mutants,
+           const AxisSize x_size, const AxisSize y_size);
 
     /**
      * @brief Get the initial iterator for the tissue species

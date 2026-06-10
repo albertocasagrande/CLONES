@@ -79,6 +79,39 @@ class DriverSimulator : public BasicExecutable
     bool disable_storage;
     bool duplicate_internal_cells;
 
+    struct Epistate
+    {
+        std::string name;
+        double death_rate;
+        double duplication_rate;
+
+        Epistate():
+            name{""}, death_rate{0.0}, duplication_rate{0.0}
+        {}
+
+        explicit Epistate(const nlohmann::json& epistate_json):
+            death_rate{0.0}, duplication_rate{0.0}
+        {
+            if (!epistate_json.is_object()) {
+                throw std::domain_error("Every epigenetic state must be an object");
+            }
+
+            if (!epistate_json.contains("name")) {
+                throw std::domain_error("Every epigenetic state must contain a \"name\" field");
+            }
+
+            name = epistate_json["name"].template get<std::string>();
+
+            if (epistate_json.contains("death rate")) {
+                death_rate = epistate_json["death rate"].template get<double>();
+            }
+
+            if (epistate_json.contains("duplication rate")) {
+                duplication_rate = epistate_json["duplication rate"].template get<double>();
+            }
+        }
+    };
+
     static double get_rate(const nlohmann::json& rate_json)
     {
         double rate = rate_json.template get<double>();
@@ -112,59 +145,96 @@ class DriverSimulator : public BasicExecutable
         throw std::domain_error(oss.str());
     }
 
+    static std::list<Epistate> get_epistate_names(const nlohmann::json& epistates_json)
+    {
+        if (!epistates_json.is_array()) {
+            throw std::domain_error("The \"epigenetic states\" field must be an array of epigenetic states");
+        }
+
+        std::list<Epistate> epistates;
+        for (const auto& state_json : epistates_json) {
+            epistates.push_back(Epistate(state_json));
+        }
+
+        return epistates;
+    }
+
+    static void set_switch_rate(CLONES::Mutants::MutantProperties& mutant, const nlohmann::json& switch_json)
+    {
+        using namespace CLONES::Mutants;
+
+        if (!switch_json.is_object()) {
+            throw std::domain_error("Any epigenetic switch specification must be an object");
+        }
+
+        if (!switch_json.contains("source")) {
+            throw std::domain_error("Any epigenetic switch specification must contain a \"source\" field");
+        }
+
+        const std::string src_epistate_name = switch_json["source"].template get<std::string>();
+
+        if (!switch_json.contains("destination")) {
+            throw std::domain_error("Any epigenetic switch specification must contain a \"destination\" field");
+        }
+
+        const std::string dst_epistate_name = switch_json["destination"].template get<std::string>();
+
+        if (!switch_json.contains("rate")) {
+            throw std::domain_error("Any epigenetic switch specification must contain a \"rate\" field");
+        }
+
+        const double rate = switch_json["rate"].template get<double>();
+
+        mutant[src_epistate_name].set_rate(CellEventType::DUP_AND_EPI_SWITCH,
+                                           mutant[dst_epistate_name], rate);
+    }
+
     static CLONES::Mutants::MutantProperties create_mutant(const nlohmann::json& mutant_json)
     {
         using namespace CLONES::Mutants;
-        std::vector<EpigeneticRates> epigenetic_rates;
 
         if (!mutant_json.is_object()) {
             throw std::domain_error("The mutant specification must be an object");
         }
 
-        if (!mutant_json.contains("epigenetic rates")) {
-            throw std::domain_error("The mutant specification must contain a \"epigenetic rates\" field");
+        if (!mutant_json.contains("epigenetic states")) {
+            throw std::domain_error("The mutant specification must contain a \"epigenetic states\" field");
         }
 
-        if (!mutant_json["epigenetic rates"].is_array()) {
-            throw std::domain_error("The \"epigenetic rates\" field must be an array of epigenetic rates");
-        }
-
-        if (!mutant_json.contains("epigenetic types")) {
-            throw std::domain_error("The mutant specification must contain a \"epigenetic types\" field");
-        }
-
-        if (!mutant_json["epigenetic types"].is_array()) {
-            throw std::domain_error("The \"epigenetic types\" field must be an array of epigenetic types");
-        }
-
-        if (static_cast<size_t>(1<<mutant_json["epigenetic rates"].size())!=mutant_json["epigenetic types"].size()) {
-            throw std::domain_error("The epigenetic types must be exponential in number with respect "
-                                    "to the number of promotor epigenetic rates");
-        }
-
-        for (const auto& rate_json : mutant_json["epigenetic rates"]) {
-
-            if (!rate_json.is_object()) {
-                throw std::domain_error("Every \"epigenetic rates\" must be an object");
+        std::list<Epistate> epistates = get_epistate_names(mutant_json["epigenetic states"]);
+        std::set<std::string> epistate_names;
+    
+        for (const Epistate& epistate : epistates) {
+            if (epistate_names.count(epistate.name)>0) {
+                throw std::domain_error("The epistate \"" + epistate.name + "\" has multiple definitions.");
             }
-
-            const auto methylation_rate = get_epigenetic_rate(rate_json,
-                                                              {"methylation", "on"});
-            const auto demethylation_rate = get_epigenetic_rate(rate_json,
-                                                                {"demethylation", "off"});
-            epigenetic_rates.push_back({methylation_rate, demethylation_rate});
+            epistate_names.insert(epistate.name);
         }
 
         if (!mutant_json.contains("name")) {
             throw std::domain_error("The mutant specification must contain a \"name\" field");
         }
 
-        MutantProperties mutant(mutant_json["name"].template get<std::string>(), epigenetic_rates);
+        MutantProperties mutant(mutant_json["name"].template get<std::string>(),
+                                std::list<std::string>(epistate_names.begin(), epistate_names.end()));
 
-        for (const auto& type_json : mutant_json["epigenetic types"]) {
-            auto& type = mutant[type_json["status"].template get<std::string>()];
-            type.set_rate(CellEventType::DEATH, get_rate(type_json["death rate"]));
-            type.set_rate(CellEventType::DUPLICATION, get_rate(type_json["duplication rate"]));
+        for (const Epistate& epistate : epistates) {
+            SpeciesProperties& species = mutant.get_species().at(epistate.name);
+
+            species.set_rate(CellEventType::DEATH, epistate.death_rate)
+                   .set_rate(CellEventType::DUPLICATION, epistate.duplication_rate);
+        }
+
+        if (!mutant_json.contains("epigenetic switches")) {
+            throw std::domain_error("The mutant specification must contain a \"epigenetic switches\" field");
+        }
+
+        if (!mutant_json["epigenetic switches"].is_array()) {
+            throw std::domain_error("The \"epigenetic switches\" field must be an array of epigenetic switches");
+        }
+
+        for (const auto& switch_json : mutant_json["epigenetic switches"]) {
+            set_switch_rate(mutant, switch_json);
         }
 
         return mutant;

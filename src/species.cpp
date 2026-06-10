@@ -2,8 +2,8 @@
  * @file species.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements species representation methods
- * @version 1.3
- * @date 2026-03-04
+ * @version 1.4
+ * @date 2026-06-10
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -115,14 +115,21 @@ size_t Species::num_of_cells_available_for(const CellEventType& event_type) cons
                 return 0;
             }
         }
-        case CellEventType::DUPLICATION:
         case CellEventType::EPIGENETIC_SWITCH:
+            return cells.size();
+        case CellEventType::DUPLICATION:
+        case CellEventType::DUP_AND_EPI_SWITCH:
         case CellEventType::MUTATION:
             return duplication_enabled.size();
         case CellEventType::ANY:
             return cells.size();
         default:
-            throw std::domain_error("Unsupported event type");
+            {
+                std::ostringstream oss;
+
+                oss << __PRETTY_FUNCTION__ << ": Unsupported event type";
+                throw std::domain_error(oss.str());
+            }
     }
 }
 

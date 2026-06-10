@@ -2,8 +2,8 @@
  * @file read_simulator.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements classes to simulate sequencing
- * @version 1.7
- * @date 2026-05-25
+ * @version 1.8
+ * @date 2026-06-10
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -946,7 +946,7 @@ void SampleSetStatistics::save_coverage_image(const std::filesystem::path& filen
         tiledlayout(++num_of_plots, 1);
 
         long chr_size;
-        for (const auto& [sample_name, sample_stats]: stats_map) {
+        for (const auto& [sample_name, sample_stats]: *stats_map) {
             nexttile();
 
             const auto coverage = sample_stats.get_chr_coverage(chromosome_id).get_coverage_vector();
@@ -1069,13 +1069,13 @@ void SampleSetStatistics::save_SID_histogram(const std::filesystem::path& filena
         xlabel("VAF");
         ylabel("Num. of SIDs");
     } else {
-        auto total_SID_data = get_total_SID_data(stats_map);
+        auto total_SID_data = get_total_SID_data(*stats_map);
 
-        auto total_locus_coverage = get_total_SID_coverage(stats_map,
+        auto total_locus_coverage = get_total_SID_coverage(*stats_map,
                                                            total_SID_data);
 
         tiledlayout(++num_of_plots, 1);
-        for (const auto& [sample_name, sample_stats]: stats_map) {
+        for (const auto& [sample_name, sample_stats]: *stats_map) {
             nexttile();
 
             std::vector<double> VAF = get_VAF_data(sample_stats, chromosome_id, 0.15);

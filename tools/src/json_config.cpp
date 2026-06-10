@@ -453,23 +453,33 @@ get_timed_rate_update(const CLONES::Mutants::Evolutions::TissueSimulation& simul
 
     const std::string descr("Every timed rate update description");
 
-    std::vector<std::string> fields{"time", "mutant", "status", "rate name", "rate"};
+    std::vector<std::string> fields{"time", "species", "rate name", "rate"};
 
     for (const auto& field: fields) {
         ConfigReader::expecting(field, timed_rate_update_json, descr);
     }
     const auto time = timed_rate_update_json["time"].template get<Time>();
 
-    const auto name = (timed_rate_update_json["mutant"].template get<std::string>()
-                        + timed_rate_update_json["status"].template get<std::string>());
+    const auto species_name = (timed_rate_update_json["species"].template get<std::string>());
 
-    const Species& species = find_species_by_name(simulation, name);
+    const Species& species = find_species_by_name(simulation, species_name);
 
     const auto rate_name = timed_rate_update_json["rate name"].template get<std::string>();
     CLONES::Mutants::CellEventType cell_event_type = get_cell_event_type_by_name(rate_name);
 
-    TissueSimulationEventWrapper rate_update({species.get_id(), cell_event_type,
-                                        get_rate(timed_rate_update_json["rate"])});
+    CLONES::Mutants::SpeciesId dst_id;
+    if (cell_event_type == CLONES::Mutants::CellEventType::DEATH
+            || cell_event_type == CLONES::Mutants::CellEventType::DUPLICATION) {
+
+        dst_id = species.get_id();
+    } else {
+        ConfigReader::expecting("dst_species", timed_rate_update_json, descr);
+        const auto dst_species_name = (timed_rate_update_json["dst_species"].template get<std::string>());
+
+        dst_id = find_species_by_name(simulation, dst_species_name).get_id();
+    }
+    TissueSimulationEventWrapper rate_update({species.get_id(), dst_id, cell_event_type,
+                                              get_rate(timed_rate_update_json["rate"])});
 
     return {time, rate_update};
 }

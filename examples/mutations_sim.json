@@ -14,8 +14,9 @@
         {
             "name": "A",
             "passenger rates": [
-                { "epistate": "-", "indel": 1e-9, "SNV": 3e-9, "CNA": 4e-11},
-                { "epistate": "+", "indel": 1e-9, "SNV": 6e-9}
+                { "epistate": "E1", "indel": 1e-9, "SNV": 3e-9, "CNA": 4e-11},
+                { "epistate": "E2", "indel": 1e-9, "SNV": 6e-9},
+                { "epistate": "E3", "indel": 1e-9, "SNV": 6e-9}
             ],
             "driver mutations": [
                 {
@@ -52,8 +53,9 @@
         {
             "name": "B",
             "passenger rates": [
-                { "epistate": "-", "SNV": 3e-8},
-                { "epistate": "+", "SNV": 6e-8}
+                { "epistate": "E1", "SNV": 3e-8},
+                { "epistate": "E2", "SNV": 6e-8},
+                { "epistate": "E3", "SNV": 6e-8},
             ]
         }
     ],

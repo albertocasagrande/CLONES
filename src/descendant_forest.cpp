@@ -2,8 +2,8 @@
  * @file descendant_forest.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements classes and function for descendant forests
- * @version 1.5
- * @date 2026-02-17
+ * @version 1.6
+ * @date 2026-06-10
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -41,13 +41,6 @@ namespace CLONES
 namespace Mutants
 {
 
-DescendantForest::SpeciesData::SpeciesData()
-{}
-
-DescendantForest::SpeciesData::SpeciesData(const MutantId& mutant_id, const MethylationSignature& signature):
-    mutant_id(mutant_id), signature(signature)
-{}
-
 DescendantForest::const_node DescendantForest::get_node(const CellId& cell_id) const
 {
     if (cells.count(cell_id)==0) {
@@ -76,7 +69,7 @@ DescendantForest::DescendantForest(const Evolutions::TissueSimulation& simulatio
 {}
 
 DescendantForest::DescendantForest(const Evolutions::TissueSimulation& simulation,
-                                     const std::list<Evolutions::TissueSample>& tissue_samples)
+                                   const std::list<Evolutions::TissueSample>& tissue_samples)
 {
     std::set<MutantId> mutant_ids;
 
@@ -85,8 +78,7 @@ DescendantForest::DescendantForest(const Evolutions::TissueSimulation& simulatio
         const auto& mutant_id = s_properties.get_mutant_id();
         mutant_ids.insert(mutant_id);
 
-        const auto& signature = s_properties.get_methylation_signature();
-        species_data.insert({s_properties.get_id(), {mutant_id, signature}});
+        species_data.emplace(s_properties.get_id(), s_properties);
     }
 
     for (const auto& mutant_id : mutant_ids) {
@@ -129,19 +121,6 @@ std::vector<DescendantForest::const_node> DescendantForest::get_leaves() const
     }
 
     return leaves;
-}
-
-std::string DescendantForest::get_species_name(const SpeciesId& species_id) const
-{
-    const auto& species_it = species_data.find(species_id);
-    if (species_it == species_data.end()) {
-        throw std::runtime_error("Unknown species id "+std::to_string(species_id));
-    }
-
-    const auto& data = species_it->second;
-
-    return get_mutant_name(data.mutant_id) +
-                MutantProperties::signature_to_string(data.signature);
 }
 
 bool is_crucial(const DescendantForest::const_node& node, const std::list<std::list<CellId>>& sticks_from)

@@ -2,8 +2,8 @@
  * @file ending_conditions.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements simulation ending conditions
- * @version 1.1
- * @date 2026-02-06
+ * @version 1.2
+ * @date 2026-06-10
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -87,7 +87,7 @@ EventCountTest::EventCountTest(const CellEventType& event_type,
     switch(event_type) {
         case CellEventType::DEATH:
         case CellEventType::DUPLICATION:
-        case CellEventType::EPIGENETIC_SWITCH:
+        case CellEventType::DUP_AND_EPI_SWITCH:
             return;
         default:
             throw std::domain_error("EventCountTest does not support event "+
@@ -97,7 +97,7 @@ EventCountTest::EventCountTest(const CellEventType& event_type,
 
 EventCountTest::EventCountTest(const SpeciesId& src_id, const SpeciesId& dst_id,
                                const size_t& threshold):
-    event_type(CellEventType::EPIGENETIC_SWITCH), species_id(src_id), dst_id(dst_id),
+    event_type(CellEventType::DUP_AND_EPI_SWITCH), species_id(src_id), dst_id(dst_id),
     threshold(threshold)
 {}
 
@@ -127,6 +127,7 @@ size_t EventCountTest::get_event_number(const TissueSimulation& simulation) cons
         case CellEventType::DUPLICATION:
             return s_stats.num_duplications;
         case CellEventType::EPIGENETIC_SWITCH:
+        case CellEventType::DUP_AND_EPI_SWITCH:
             return get_epigenetic_events_to(s_stats, dst_id);
         default:
             throw std::domain_error("EventCountTest does not support event "+

@@ -2,8 +2,8 @@
  * @file event_wrapper.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a simulation event wrapper
- * @version 1.1
- * @date 2026-02-06
+ * @version 1.2
+ * @date 2026-06-10
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -124,7 +124,12 @@ struct TissueSimulationEventWrapper
                 archive & get_event<Sampling>();
                 break;
             default:
-                throw std::runtime_error("Unsupported event type");
+                {
+                    std::ostringstream oss;
+
+                    oss << __PRETTY_FUNCTION__ << ": Unsupported event type";
+                    throw std::domain_error(oss.str());
+                }
         }
     }
 
@@ -162,7 +167,12 @@ struct TissueSimulationEventWrapper
                     return TissueSimulationEventWrapper(sampling);
                 }
             default:
-                throw std::runtime_error("Unsupported event type");
+                {
+                    std::ostringstream oss;
+
+                    oss << __PRETTY_FUNCTION__ << ": Unsupported event type";
+                    throw std::domain_error(oss.str());
+                }
         }
     }
 };

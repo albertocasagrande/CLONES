@@ -2,8 +2,8 @@
  * @file rate_update.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines liveness rate updates
- * @version 1.1
- * @date 2026-02-06
+ * @version 1.2
+ * @date 2026-06-10
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -51,29 +51,55 @@ struct RateUpdate : public TissueSimulationEvent
 {
     using Type = TissueSimulationEvent::Type;
 
-    SpeciesId species_id;   //!< The involved species id
-    CellEventType event_type;          //!< The liveness event type
-    double new_rate;                   //!< The new rate
+    SpeciesId src_id;           //!< The event source species id
+    SpeciesId dst_id;           //!< The event destination species id
+    CellEventType event_type;   //!< The event type
+    double new_rate;            //!< The new rate
 
     /**
      * @brief A constructor
      *
-     * @param species_id is the identifier of the species whose rate is changed by the event
-     * @param event_type is the event type whose rate is changed by the event
-     * @param new_rate is the new rate for `event_type` in the species `species_id`
+     * @param species_id is the identifier of the species in which the event occurs
+     * @param event_type is the event type whose rate is changed. The event type
+     *      must be either `CellEventType::DEATH` or `CellEventType::DUPLICATION`
+     * @param new_rate is the new rate for `event_type` in `species_id`
      */
-    RateUpdate(const SpeciesId& species_id,
+    RateUpdate(const SpeciesId& species_id, const CellEventType& event_type,
+               const double& new_rate);
+
+    /**
+     * @brief A constructor
+     *
+     * @param species is the species in which the event occurs
+     * @param event_type is the event type whose rate is changed by the event. The
+     *      event type must be either `CellEventType::DEATH` or
+     *      `CellEventType::DUPLICATION`
+     * @param new_rate is the new rate for `event_type` in `species`
+     */
+    RateUpdate(const SpeciesProperties& species,
                const CellEventType& event_type, const double& new_rate);
 
     /**
      * @brief A constructor
      *
-     * @param species is the species whose rate is changed by the event
-     * @param event_type is the event type whose rate is changed by the event
-     * @param new_rate is the new rate for `event_type` in the species `species_id`
+     * @param src_id is the identifier of the species from which the event occurs
+     * @param dst_id is the identifier of the species to which the event occurs
+     * @param event_type is the event type whose rate is changed
+     * @param new_rate is the new rate for `event_type` from `src_id` to `dst_id`
      */
-    RateUpdate(const SpeciesProperties& species, const CellEventType& event_type,
-               const double& new_rate);
+    RateUpdate(const SpeciesId& src_id, const SpeciesId& dst_id,
+               const CellEventType& event_type, const double& new_rate);
+
+    /**
+     * @brief A constructor
+     *
+     * @param src is the species from which the event occurs.
+     * @param dst is the species to which the event occurs.
+     * @param event_type is the event type whose rate is changed by the event.
+     * @param new_rate is the new rate for `event_type`  from `src` to `dst`.
+     */
+    RateUpdate(const SpeciesProperties& src, const SpeciesProperties& dst,
+               const CellEventType& event_type, const double& new_rate);
 
     /**
      * @brief Save a timed genomic mutation in an archive
@@ -84,7 +110,8 @@ struct RateUpdate : public TissueSimulationEvent
     template<typename ARCHIVE, std::enable_if_t<std::is_base_of_v<Archive::Basic::Out, ARCHIVE>, bool> = true>
     void save(ARCHIVE& archive) const
     {
-        archive & species_id
+        archive & src_id
+                & dst_id
                 & event_type
                 & new_rate;
     }
@@ -99,15 +126,16 @@ struct RateUpdate : public TissueSimulationEvent
     template<typename ARCHIVE, std::enable_if_t<std::is_base_of_v<Archive::Basic::In, ARCHIVE>, bool> = true>
     static RateUpdate load(ARCHIVE& archive)
     {
-        SpeciesId species_id;
+        SpeciesId src_id, dst_id;
         CellEventType event_type;
         double new_rate;
 
-        archive & species_id
+        archive & src_id
+                & dst_id
                 & event_type
                 & new_rate;
 
-        return {species_id, event_type, new_rate};
+        return {src_id, dst_id, event_type, new_rate};
     }
 
     inline Type type() const {
@@ -133,7 +161,8 @@ struct RateUpdate : public TissueSimulationEvent
 inline bool operator==(const CLONES::Mutants::Evolutions::RateUpdate& lhs,
                        const CLONES::Mutants::Evolutions::RateUpdate& rhs)
 {
-    return (lhs.species_id == rhs.species_id)
+    return (lhs.src_id == rhs.src_id)
+            && (lhs.dst_id == rhs.dst_id)
             && (lhs.event_type == rhs.event_type)
             && (lhs.new_rate == rhs.new_rate);
 }
