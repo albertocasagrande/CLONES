@@ -2,8 +2,8 @@
  * @file driver_storage.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements class to load and store driver mutations
- * @version 1.2
- * @date 2026-02-06
+ * @version 1.3
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -31,6 +31,8 @@
 #include "driver_storage.hpp"
 
 #include "csv_reader.hpp"
+
+#include "error.hpp"
 
 namespace CLONES
 {
@@ -100,9 +102,9 @@ DriverStorage DriverStorage::load(const std::filesystem::path& filename)
 
                     oss << "The code \"" << code << "\" is associated to both "
                         << mutation << " and " << found->second.mutation
-                        << std::endl;
+                        << ".";
 
-                    throw std::runtime_error(oss.str());
+                    throw Error<std::runtime_error>(oss.str());
                 }
 
                 found->second.tumour_types.insert(ttype);

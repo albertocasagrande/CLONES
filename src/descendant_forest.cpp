@@ -2,8 +2,8 @@
  * @file descendant_forest.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements classes and function for descendant forests
- * @version 1.6
- * @date 2026-06-10
+ * @version 1.7
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -35,6 +35,8 @@
 
 #include "tissue_simulation.hpp"
 
+#include "error.hpp"
+
 namespace CLONES
 {
 
@@ -44,8 +46,8 @@ namespace Mutants
 DescendantForest::const_node DescendantForest::get_node(const CellId& cell_id) const
 {
     if (cells.count(cell_id)==0) {
-        throw std::runtime_error("The forest does not contain the cell "
-                                 "having the specified identifier");
+        throw Error<std::runtime_error>("The forest does not contain the cell "
+                                        "having the specified identifier");
     }
 
     return DescendantForest::const_node(this, cell_id);
@@ -54,8 +56,8 @@ DescendantForest::const_node DescendantForest::get_node(const CellId& cell_id) c
 DescendantForest::node DescendantForest::get_node(const CellId& cell_id)
 {
     if (cells.count(cell_id)==0) {
-        throw std::runtime_error("The forest does not contain the cell "
-                                 "having the specified identifier");
+        throw Error<std::runtime_error>("The forest does not contain the cell "
+                                        "having the specified identifier");
     }
 
     return DescendantForest::node(this, cell_id);
@@ -190,7 +192,7 @@ std::list<std::list<CellId>> DescendantForest::get_sticks(const double birth_tim
 
     return sticks;
 }
- 
+
 std::map<CellId, size_t> DescendantForest::get_node_depths() const
 {
     std::map<CellId, size_t> depths;
@@ -377,8 +379,9 @@ DescendantForest::get_subforest_for(const std::vector<std::string>& sample_names
             oss << sep << missing_name;
             sep = ", ";
         }
+        oss << ".";
 
-        throw std::domain_error(oss.str());
+        throw Error<std::domain_error>(oss.str());
     }
 
     DescendantForest subforest = *this;
@@ -392,7 +395,8 @@ bool DescendantForest::is_leaf(const CellId& cell_id) const
     auto branches_it = branches.find(cell_id);
 
     if (branches_it == branches.end()) {
-        throw std::domain_error(std::to_string(cell_id)+" is not a forest cell");
+        throw Error<std::domain_error>(std::to_string(cell_id)
+                                       + " is not a forest cell.");
     }
     return branches_it->second.size()==0;
 }

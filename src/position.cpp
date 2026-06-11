@@ -2,8 +2,8 @@
  * @file position.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a position class in a tissue
- * @version 1.1
- * @date 2026-02-06
+ * @version 1.2
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -31,6 +31,8 @@
 #include "position.hpp"
 #include "tissue.hpp"
 
+#include "error.hpp"
+
 namespace CLONES
 {
 
@@ -52,24 +54,29 @@ Direction::Direction(const uint8_t value, const uint8_t& dimension):
     bit_vector(value)
 {
     if (!bit_vector) {
-        throw std::domain_error("Unsupported direction");
+        throw Error<std::domain_error>("Unsupported direction "
+                                       + std::to_string(value)
+                                       + ".");
     }
 
     for (size_t i=0; i<3; ++i) {
         const uint8_t axis = (value >> 2*i)&0x03;
 
         if (axis == 0x03) {
-            throw std::domain_error("Unsupported direction");
+        throw Error<std::domain_error>("Unsupported direction "
+                                       + std::to_string(value)
+                                       + ".");
         }
     }
 
     switch (dimension) {
         case 2:
             if (value>>4) {
-                throw std::domain_error(("Direction specification contains "
-                                         "z-axis component, but the "
-                                         "specified dimension is ")
-                                        + std::to_string(dimension));
+                throw Error<std::domain_error>("Direction specification "
+                                               + std::to_string(value)
+                                               + " contains a z-axis component, "
+                                               + " but the specified dimension is "
+                                               + std::to_string(dimension) + ".");
             }
             break;
         case 0:
@@ -81,9 +88,9 @@ Direction::Direction(const uint8_t value, const uint8_t& dimension):
             bit_vector = bit_vector | (0x01 << 6);
             break;
         default:
-            throw std::domain_error("Supported dimension are 2 and 3. "
-                                    "Specified "
-                                    + std::to_string(dimension) + ".");
+            throw Error<std::domain_error>("Supported dimension are 2 and 3. "
+                                           "Specified "
+                                           + std::to_string(dimension) + ".");
     }
 }
 
@@ -179,7 +186,7 @@ std::list<Direction> Direction::get_near_by_directions() const
                 }
                 break;
             default:
-                throw std::out_of_range("Unsupported direction");
+                throw Error<std::runtime_error>("Unsupported direction.");
         }
     }
 
@@ -339,8 +346,9 @@ DirectionGenerator::const_iterator DirectionGenerator::end() const
         case 3:
             return const_iterator(initial_dir, 26);
         default:
-            throw std::runtime_error("Unsupported dimension "
-                                     + std::to_string(initial_dir.num_of_dimensions()));
+            throw Error<std::runtime_error>("Unsupported dimension "
+                                            + std::to_string(initial_dir.num_of_dimensions())
+                                            + ".");
     }
 }
 
@@ -447,7 +455,11 @@ Position::Position(Tissue& tissue, const AxisPosition& x, const AxisPosition& y,
     PositionInTissue(x, y, z), tissue(&tissue)
 {
     if (!tissue.is_valid(*this)) {
-        throw std::domain_error("Invalid position");
+        std::ostringstream oss;
+
+        oss << *this << " is not a valid position for the tissue.";
+
+        throw Error<std::domain_error>(oss.str());
     }
 }
 
@@ -455,7 +467,11 @@ Position::Position(Tissue& tissue, const PositionInTissue& pos):
     PositionInTissue(pos), tissue(&tissue)
 {
     if (!tissue.is_valid(pos)) {
-        throw std::domain_error("Invalid position");
+        std::ostringstream oss;
+
+        oss << *this << " is not a valid position for the tissue.";
+
+        throw Error<std::domain_error>(oss.str());
     }
 }
 
@@ -482,7 +498,7 @@ std::ostream& operator<<(std::ostream& os, const CLONES::Mutants::Evolutions::Di
                 os << "N";
                 break;
             default:
-                throw std::runtime_error("Unknown direction");
+                throw CLONES::Error<std::runtime_error>("Unknown direction.");
         }
     }
 

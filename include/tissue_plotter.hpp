@@ -2,8 +2,8 @@
  * @file tissue_plotter.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a UI window to plot a tissue
- * @version 1.1
- * @date 2026-02-06
+ * @version 1.2
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -39,6 +39,8 @@
 
 #include "tissue.hpp"
 #include "palette.hpp"
+
+#include "error.hpp"
 
 namespace CLONES
 {
@@ -304,7 +306,7 @@ public:
 		last_redraw_time(std::chrono::system_clock::from_time_t(0))
 	{
 		if (tissue.num_of_species()>palette.size()) {
-			throw std::domain_error("The color palette does not support so many species");
+			throw Error<std::domain_error>("The color palette does not support so many species.");
 		}
 
 		auto sizes(tissue.size());
@@ -314,7 +316,7 @@ public:
 			return;
 		}
 
-		throw std::runtime_error("Unsupported plot window type");
+		throw Error<std::runtime_error>("Unsupported plot window type");
 	}
 
 	/**

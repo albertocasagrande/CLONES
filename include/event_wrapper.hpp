@@ -2,8 +2,8 @@
  * @file event_wrapper.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a simulation event wrapper
- * @version 1.2
- * @date 2026-06-10
+ * @version 1.3
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -37,6 +37,8 @@
 #include "mutant_mutation.hpp"
 #include "rate_update.hpp"
 #include "sampling.hpp"
+
+#include "error.hpp"
 
 namespace CLONES
 {
@@ -124,12 +126,9 @@ struct TissueSimulationEventWrapper
                 archive & get_event<Sampling>();
                 break;
             default:
-                {
-                    std::ostringstream oss;
-
-                    oss << __PRETTY_FUNCTION__ << ": Unsupported event type";
-                    throw std::domain_error(oss.str());
-                }
+                throw Error<std::runtime_error>("Unsupported event type \""
+                                               + std::string(simulation_event_names.at(type))
+                                               + "\".");
         }
     }
 
@@ -167,12 +166,9 @@ struct TissueSimulationEventWrapper
                     return TissueSimulationEventWrapper(sampling);
                 }
             default:
-                {
-                    std::ostringstream oss;
-
-                    oss << __PRETTY_FUNCTION__ << ": Unsupported event type";
-                    throw std::domain_error(oss.str());
-                }
+                throw Error<std::runtime_error>("Unsupported event type \""
+                                               + std::string(simulation_event_names.at(type))
+                                               + "\".");
         }
     }
 };

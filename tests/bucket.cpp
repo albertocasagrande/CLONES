@@ -2,8 +2,8 @@
  * @file bucket.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Bucket tests
- * @version 1.3
- * @date 2026-02-06
+ * @version 1.4
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -44,6 +44,8 @@
 #include "genomic_position.hpp"
 
 #include "bucket.hpp"
+
+#include "error.hpp"
 
 #define DEFAULT_DATASET_SIZE 10000
 #define DEFAULT_WRITE_CACHE_SIZE 700
@@ -163,16 +165,16 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(create_bucket_T, T, test_types)
 
     fs::remove(bucket.path());
 
-    BOOST_CHECK_THROW(Bucket<T>("/"), std::domain_error);
+    BOOST_CHECK_THROW(Bucket<T>("/"), CLONES::Error<std::runtime_error>);
 
     BOOST_CHECK_THROW(Bucket<T>(get_a_temporary_path(), 0),
-                      std::domain_error);
+                      CLONES::Error<std::domain_error>);
 }
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(load_bucket_T, T, test_types, BucketFixture<T>)
 {
     using namespace CLONES::Archive;
-    
+
     Bucket<T> load_bucket(this->bucket.path());
     BOOST_CHECK(load_bucket.size()==DEFAULT_DATASET_SIZE);
 }

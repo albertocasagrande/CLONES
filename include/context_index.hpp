@@ -2,8 +2,8 @@
  * @file context_index.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements a class to build a context index
- * @version 1.2
- * @date 2026-02-06
+ * @version 1.3
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -45,6 +45,8 @@
 #include "genomic_region.hpp"   // Mutations::GenomicRegion
 #include "basic_IO.hpp"         // IO::get_stream_size
 #include "sbs_context.hpp"          // Mutations::ExtendedContextAutomaton
+
+#include "error.hpp"
 
 #include "progress_bar.hpp"
 
@@ -293,11 +295,11 @@ protected:
                     const size_t& sampling_rate, UI::ProgressBar* progress_bar)
     {
         if (!fasta_stream.good()) {
-            throw std::runtime_error("the stream is not readable");
+            throw Error<std::runtime_error>("The stream is not readable.");
         }
 
         if (sampling_rate==0) {
-            throw std::domain_error("The sampling rate must be positive");
+            throw Error<std::domain_error>("The sampling rate must be positive.");
         }
 
         auto streamsize = CLONES::IO::get_stream_size(fasta_stream);
@@ -364,10 +366,8 @@ protected:
         std::ifstream genome_fasta_stream(fasta_filename);
 
         if (!genome_fasta_stream.good()) {
-            std::ostringstream oss;
-
-            oss << "\"" << to_string(fasta_filename) << "\" does not exist";
-            throw std::runtime_error(oss.str());
+            throw Error<std::runtime_error>("\"" + to_string(fasta_filename)
+                                            + "\" does not exist.");
         }
 
         reset_with(genome_fasta_stream, regions_to_avoid, sampling_rate, progress_bar);
@@ -487,7 +487,7 @@ public:
         auto& context_pos = context2pos->at(context);
 
         if (context_pos.size() < index+1) {
-            throw std::out_of_range("The context does not have so many positions");
+            throw Error<std::out_of_range>("The context does not have so many positions.");
         }
 
         if (context_pos.size() > index+1) {
@@ -529,7 +529,7 @@ public:
         auto& context_pos = context2pos->at(context);
 
         if (context_pos.size() < index) {
-            throw std::out_of_range("The context does not have so many positions");
+            throw Error<std::out_of_range>("The context does not have so many positions.");
         }
 
         context_pos.push_back(absolute_position);
@@ -652,13 +652,10 @@ public:
         archive & abs_pos_size;
 
         if (abs_pos_size != sizeof(GENOME_WIDE_POSITION)) {
-            std::ostringstream oss;
-
-            oss << "Absolute position size (" << sizeof(GENOME_WIDE_POSITION)
-                << " bytes) does not match file object one (" << static_cast<size_t>(abs_pos_size)
-                << " bytes)." ;
-
-            throw std::runtime_error(oss.str());
+            throw Error<std::runtime_error>("Absolute position size ("
+                                            + std::to_string(sizeof(GENOME_WIDE_POSITION))
+                                            + " bytes) does not match file object one ("
+                                            + std::to_string(abs_pos_size) + " bytes).");
         }
 
         context_index.context2pos = std::make_shared<ContextPositionMap>();

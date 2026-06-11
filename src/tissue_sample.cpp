@@ -2,8 +2,8 @@
  * @file tissue_sample.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements tissue samples
- * @version 1.2
- * @date 2026-02-06
+ * @version 1.3
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -29,6 +29,8 @@
  */
 
 #include "tissue_sample.hpp"
+
+#include "error.hpp"
 
 namespace CLONES
 {
@@ -98,7 +100,10 @@ TissueSample::TissueSample(const std::string& name, const Time& time,
 void TissueSample::add_cell_id(const CLONES::Mutants::CellId& cell_id)
 {
     if (bounding_box.size() == cell_ids->size()) {
-        throw std::domain_error("The sample already contains all the cell ids");
+        std::ostringstream oss;
+
+        oss << *this << "already contains all the cell ids.";
+        throw Error<std::runtime_error>(oss.str());
     }
 
     cell_ids->push_back(cell_id);

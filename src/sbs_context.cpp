@@ -2,8 +2,8 @@
  * @file sbs_context.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements SBS contexts and extended context automata
- * @version 1.2
- * @date 2026-02-06
+ * @version 1.3
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -35,6 +35,8 @@
 
 #include "archive.hpp"
 
+#include "error.hpp"
+
 namespace CLONES
 {
 
@@ -54,7 +56,9 @@ char decode_base(const uint8_t& code)
         case 3:
             return 'A';
         default:
-            throw std::domain_error("Unknown code");
+            throw Error<std::runtime_error>("Unknown code \""
+                                            + std::to_string(static_cast<uint>(code))
+                                            + "\".");
     }
 }
 
@@ -74,7 +78,8 @@ uint8_t encode_base(const char& base)
         case 'a':
             return 3;
         default:
-            throw std::domain_error("Unknown base");
+            throw Error<std::runtime_error>(std::string("Unknown base \"")
+                                            + base + "\".");
     }
 }
 
@@ -88,7 +93,7 @@ SBSContext::SBSContext(const char* nucleic_triplet):
     if (nucleic_triplet[0]=='\0' || nucleic_triplet[1]=='\0'
             || nucleic_triplet[2]=='\0' || nucleic_triplet[3]!='\0') {
 
-        throw std::domain_error("Expected a nucleic triplet");
+        throw Error<std::domain_error>("Expected a nucleic triplet.");
     }
 
     // this is to have the central nucleotide associated
@@ -103,8 +108,8 @@ SBSContext::SBSContext(const std::string& nucleic_triplet):
     code(0)
 {
     if (nucleic_triplet.size()!=3) {
-        throw std::domain_error("Expected a nucleic triplet. Got \""
-                                + nucleic_triplet +"\"");
+        throw Error<std::domain_error>("Expected a nucleic triplet. Got \""
+                                       + nucleic_triplet +"\"");
     }
 
     // this is to have the central nucleotide associated

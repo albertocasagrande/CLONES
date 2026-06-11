@@ -2,8 +2,8 @@
  * @file mutation_list.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements a class to represent mutation lists
- * @version 1.2
- * @date 2026-02-06
+ * @version 1.3
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -31,6 +31,8 @@
 #include <sstream>
 
 #include "mutation_list.hpp"
+
+#include "error.hpp"
 
 namespace CLONES
 {
@@ -120,7 +122,7 @@ std::set<MUTATION> build_mutation_set(const std::string& mutant_name,
             oss << mutation << " added twice among "
                 << mutant_name << "'s driver mutations.";
 
-            throw std::domain_error(oss.str());
+            throw Error<std::domain_error>(oss.str());
         }
 
         mutation_set.insert(mutation);
@@ -178,20 +180,26 @@ MutationList::MutationList(const std::list<MutationSpec<SID>>& SIDs,
             case WGD_TURN:
                 break;
             default:
-                throw std::domain_error("Unsupported driver mutation type.");
+                {
+                    std::ostringstream oss;
+
+                    oss << "Unsupported driver mutation type "
+                        << static_cast<uint>(*order_it) << ".";
+                    throw Error<std::domain_error>(oss.str());
+                }
         }
     }
 
     if (SID_count != SIDs.size()) {
-        throw std::domain_error("The number of SNVs/indels differs from "
-                                "that of the same kind of mutations "
-                                "in the application order list.");
+        throw Error<std::runtime_error>("The number of SNVs/indels differs from "
+                                       "that of the same kind of mutations "
+                                       "in the application order list.");
     }
 
     if (CNA_count != CNAs.size()) {
-        throw std::domain_error("The number of CNAs differs from "
-                                "that of the same kind of mutations "
-                                "in the application order list.");
+        throw Error<std::runtime_error>("The number of CNAs differs from "
+                                        "that of the same kind of mutations "
+                                        "in the application order list.");
     }
 }
 

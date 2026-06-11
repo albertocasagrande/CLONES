@@ -2,8 +2,8 @@
  * @file read.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements sequencing reads
- * @version 1.6
- * @date 2026-02-06
+ * @version 1.7
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -31,6 +31,8 @@
 #include <map>
 
 #include "read.hpp"
+
+#include "error.hpp"
 
 namespace CLONES
 {
@@ -351,7 +353,7 @@ void validate_mutation(const std::string& reference, const SID& mutation)
 
         oss << "Wrong mutation ref sequence: expecting \""
             << mutation.ref << "\" got \"" << ref_substr << "\".";
-        throw std::runtime_error(oss.str());
+        throw Error<std::runtime_error>(oss.str());
     }
 }
 

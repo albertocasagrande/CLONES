@@ -2,8 +2,8 @@
  * @file rate_update.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements liveness rate updates
- * @version 1.2
- * @date 2026-06-10
+ * @version 1.3
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -31,6 +31,8 @@
 #include "rate_update.hpp"
 #include "cell_event.hpp"
 
+#include "error.hpp"
+
 namespace CLONES
 {
 
@@ -47,13 +49,13 @@ RateUpdate::RateUpdate(const SpeciesId& species_id,
 {
     if (event_type != CellEventType::DEATH
             && event_type != CellEventType::DUPLICATION) {
-        throw std::domain_error("`RateUpdate(const SpeciesId&, const CellEventType&"
-                                ", const double&)` can be used exclusively for deaths" 
-                                " or duplications");
+        throw Error<std::domain_error>(("Expected either a death or duplication "
+                                        "event. Got ")
+                                       + cell_event_names[event_type] + ".");
     }
 }
 
-RateUpdate::RateUpdate(const SpeciesProperties& species_id, 
+RateUpdate::RateUpdate(const SpeciesProperties& species_id,
                        const CellEventType& event_type, const double& new_rate):
     RateUpdate(species_id.get_id(), event_type, new_rate)
 {}
@@ -64,7 +66,7 @@ RateUpdate::RateUpdate(const SpeciesId& src_id, const SpeciesId& dst_id,
     src_id(src_id), dst_id(dst_id), event_type(event_type), new_rate(new_rate)
 {}
 
-RateUpdate::RateUpdate(const SpeciesProperties& src, const SpeciesProperties& dst, 
+RateUpdate::RateUpdate(const SpeciesProperties& src, const SpeciesProperties& dst,
                        const CellEventType& event_type, const double& new_rate):
     RateUpdate(src.get_id(), dst.get_id(), event_type, new_rate)
 {}

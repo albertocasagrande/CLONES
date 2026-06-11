@@ -2,8 +2,8 @@
  * @file mutation_engine.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a class to place mutations on a descendant forest
- * @version 1.36
- * @date 2026-06-10
+ * @version 1.37
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -51,7 +51,7 @@
 #include "filter.hpp"
 #include "utils.hpp"
 #include "warning.hpp"
-
+#include "error.hpp"
 
 namespace CLONES
 {
@@ -415,9 +415,9 @@ class MutationEngine
                     to_be_placed = false;
                 } else {
                     if (--available == 0) {
-                        throw std::runtime_error("None of the "
-                                                + std::to_string(passenger_CNAs.size())
-                                                + " admitted CNAs can be applied.");
+                        throw Error<std::runtime_error>("None of the "
+                                                        + std::to_string(passenger_CNAs.size())
+                                                        + " admitted CNAs can be applied.");
                     }
 
                     if (index<available) {
@@ -574,7 +574,7 @@ class MutationEngine
             return ID_signatures;
         }
 
-        throw std::runtime_error("Unsupported mutation type.");
+        throw Error<std::runtime_error>("Unsupported mutation type.");
     }
 
     /**
@@ -595,7 +595,7 @@ class MutationEngine
             return ID_signatures;
         }
 
-        throw std::runtime_error("Unsupported mutation type.");
+        throw Error<std::runtime_error>("Unsupported mutation type.");
     }
 
     /**
@@ -676,7 +676,7 @@ class MutationEngine
             return rates.indel;
         }
 
-        throw std::runtime_error("Unsupported mutation type.");
+        throw Error<std::runtime_error>("Unsupported mutation type.");
     }
 
     /**
@@ -840,7 +840,9 @@ class MutationEngine
                 }
                 return true;
             default:
-                throw std::runtime_error("Unsupported CNA type");
+                throw Error<std::runtime_error>("Unsupported CNA type "
+                                                + std::to_string(static_cast<unsigned int>(cna.type))
+                                                + ".");
         }
     }
 
@@ -890,7 +892,7 @@ class MutationEngine
             return place_SID(mutation, cell_mutations);
         }
 
-        throw std::runtime_error("Unsupported mutation type.");
+        throw Error<std::runtime_error>("Unsupported mutation type.");
     }
 
     /**
@@ -919,7 +921,7 @@ class MutationEngine
             oss << mutant_name << "'s driver mutation "
                 << mutation << " cannot be placed.";
 
-            throw std::runtime_error(oss.str());
+            throw Error<std::domain_error>(oss.str());
         }
     }
 
@@ -962,7 +964,9 @@ class MutationEngine
                         node.add_whole_genome_doubling();
                         break;
                     default:
-                        throw std::runtime_error("Unsupported driver mutation type.");
+                        throw Error<std::runtime_error>("Unsupported driver mutation type "
+                                                + std::to_string(static_cast<unsigned int>(*order_it))
+                                                + ".");
                 }
             }
         }
@@ -1023,7 +1027,7 @@ class MutationEngine
         if (rates_it == passenger_rates.end()) {
             const auto& species_name = node.get_forest().get_species_name(node.get_species_id());
 
-            throw std::runtime_error("Unknown species \""+ species_name +"\"");
+            throw Error<std::runtime_error>("Unknown species \"" + species_name + "\".");
         }
 
         const auto& node_rates = rates_it->second.at(node.get_birth_time());
@@ -1087,7 +1091,7 @@ class MutationEngine
             return rs_stack.size();
         }
 
-        throw std::runtime_error("Unsupported mutation type.");
+        throw Error<std::runtime_error>("Unsupported mutation type.");
     }
 
     /**
@@ -1115,7 +1119,7 @@ class MutationEngine
             return;
         }
 
-        throw std::runtime_error("Unsupported mutation type.");
+        throw Error<std::runtime_error>("Unsupported mutation type.");
     }
 
     /**
@@ -1167,7 +1171,7 @@ class MutationEngine
             auto driver_it = mutational_properties.get_driver_mutations().find(mutant_name);
 
             if (driver_it == mutational_properties.get_driver_mutations().end()) {
-                throw std::runtime_error("\"" + mutant_name + "\" is unknown");
+                throw Error<std::runtime_error>("\"" + mutant_name + "\" is unknown.");
             }
             driver_mutations[species_data.get_mutant_id()] = driver_it->second;
         }
@@ -1219,9 +1223,9 @@ class MutationEngine
 
         for (const auto chr_id : context_chr_ids) {
             if (germline_chromosomes.find(chr_id) == germline_chromosomes.end()) {
-                throw std::out_of_range("The germline does not contain Chr. "
-                                        + GenomicPosition::chrtos(chr_id)
-                                        + " which is present in the reference.");
+                throw Error<std::out_of_range>("The germline does not contain Chr. "
+                                               + GenomicPosition::chrtos(chr_id)
+                                               + " which is present in the reference.");
             }
         }
     }
@@ -1254,7 +1258,7 @@ class MutationEngine
             } else if (ID_signatures.count(name)>0) {
                 exposures[MutationType::Type::INDEL][name]=coeff;
             } else {
-                throw std::runtime_error("Unknown signature " + name + ".");
+                throw Error<std::runtime_error>("Unknown signature \"" + name + "\".");
             }
         }
 
@@ -1294,7 +1298,7 @@ class MutationEngine
             oss << "The " << prob_name << " must sum up to 1: " << prob_map
                 << " sums up to " << sum << ".";
 
-            throw std::domain_error(oss.str());
+            throw Error<std::domain_error>(oss.str());
         }
     }
 
@@ -1323,8 +1327,15 @@ class MutationEngine
                         }
                         break;
                     default:
-                        throw std::domain_error("Unsupported mutation type "
-                                                + std::to_string(static_cast<size_t>(mutation_type)));
+                        {
+                            std::ostringstream oss;
+
+                            oss << "Unsupported mutation type "
+                                << static_cast<size_t>(mutation_type)
+                                << ".";
+
+                            throw Error<std::domain_error>(oss.str());
+                        }
                 }
             }
         }
@@ -1596,7 +1607,7 @@ public:
     {
         for (const auto& [name, coeff]: exposure) {
             if (signature_map.count(name)==0) {
-                throw std::runtime_error("Unknown signature " + name + ".");
+                throw Error<std::runtime_error>("Unknown signature " + name + ".");
             }
         }
     }
@@ -1614,14 +1625,15 @@ public:
     MutationEngine& add(const Time& time, const MutationalExposure& exposure)
     {
         if (time<0) {
-            throw std::domain_error("TissueSimulation time is a non-negative value");
+            throw Error<std::domain_error>("TissueSimulation time is a "
+                                           "non-negative value");
         }
 
         for (const auto& [m_type, mt_exposure] : split_exposures(exposure)) {
             auto& ttimed_exposures = get_timed_exposures(m_type);
             if (ttimed_exposures.count(time)>0) {
-                throw std::runtime_error("Another exposure has been set for time "
-                                         + std::to_string(time) + ".");
+                throw Error<std::runtime_error>("Another exposure has been set for time "
+                                                + std::to_string(time) + ".");
             }
             ttimed_exposures.emplace(Time(time), mt_exposure);
         }
@@ -1711,8 +1723,8 @@ public:
                 std::map<std::string, MutationType::Type>({{"SBS", MutationType::Type::SBS},
                                                            {"indel", MutationType::Type::INDEL}})) {
             if (may_place_passengers(type) && !has_default_exposure(type)) {
-                throw std::runtime_error("The default exposure for " + name
-                                         + "s has not been set yet.");
+                throw Error<std::runtime_error>("The default exposure for " + name
+                                                + "s has not been set yet.");
             }
         }
 

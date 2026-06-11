@@ -2,8 +2,8 @@
  * @file species.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements species representation methods
- * @version 1.4
- * @date 2026-06-10
+ * @version 1.5
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -31,6 +31,8 @@
 #include <random>
 
 #include "species.hpp"
+
+#include "error.hpp"
 
 namespace CLONES
 {
@@ -124,12 +126,9 @@ size_t Species::num_of_cells_available_for(const CellEventType& event_type) cons
         case CellEventType::ANY:
             return cells.size();
         default:
-            {
-                std::ostringstream oss;
-
-                oss << __PRETTY_FUNCTION__ << ": Unsupported event type";
-                throw std::domain_error(oss.str());
-            }
+            throw Error<std::runtime_error>("Unsupported event type "
+                                            + std::to_string(static_cast<uint>(event_type))
+                                            + ".");
     }
 }
 
@@ -139,7 +138,8 @@ void Species::erase(const CellId& cell_id)
     auto cell_it = cells.find(cell_id);
 
     if (cell_it == cells.end()) {
-        throw std::domain_error("Unknown cell "+std::to_string(cell_id));
+        throw Error<std::domain_error>("Unknown cell " + std::to_string(cell_id)
+                                        + ".");
     }
 
     // delete it from the duplication enabled map
@@ -191,7 +191,8 @@ void Species::enable_duplication_for(const CellId& cell_id)
 {
     auto cell_it = cells.find(cell_id);
     if (cell_it == cells.end()) {
-        throw std::domain_error("Unknown cell "+std::to_string(cell_id));
+        throw Error<std::domain_error>("Unknown cell " + std::to_string(cell_id)
+                                       + ".");
     }
 
     duplication_enabled.insert({cell_id, cell_it->second});
@@ -201,7 +202,8 @@ void Species::disable_duplication_for(const CellId& cell_id)
 {
     auto cell_it = cells.find(cell_id);
     if (cell_it == cells.end()) {
-        throw std::domain_error("Unknown cell "+std::to_string(cell_id));
+        throw Error<std::domain_error>("Unknown cell " + std::to_string(cell_id)
+                                       + ".");
     }
 
     duplication_enabled.erase(cell_id);
@@ -212,7 +214,8 @@ CellInTissue& Species::operator()(const CellId& cell_id)
     auto cell_it = cells.find(cell_id);
 
     if (cell_it == cells.end()) {
-        throw std::domain_error("Unknown cell "+std::to_string(cell_id));
+        throw Error<std::domain_error>("Unknown cell " + std::to_string(cell_id)
+                                       + ".");
     }
 
     return *(cell_it->second);
@@ -223,7 +226,8 @@ const CellInTissue& Species::operator()(const CellId& cell_id) const
     auto cell_it = cells.find(cell_id);
 
     if (cell_it == cells.end()) {
-        throw std::domain_error("Unknown cell "+std::to_string(cell_id));
+        throw Error<std::domain_error>("Unknown cell " + std::to_string(cell_id)
+                                       + ".");
     }
 
     return *(cell_it->second);

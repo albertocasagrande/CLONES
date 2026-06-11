@@ -2,8 +2,8 @@
  * @file csv_reader.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a class to read CSV
- * @version 1.3
- * @date 2026-02-06
+ * @version 1.4
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -35,6 +35,8 @@
 #include <vector>
 #include <fstream>
 #include <filesystem>
+
+#include "error.hpp"
 
 namespace CLONES
 {
@@ -146,7 +148,7 @@ public:
         inline const CSVRow& operator*() const
         {
             if (eof) {
-                throw std::runtime_error("No rows available: EOF have been reached.");
+                throw Error<std::runtime_error>("No rows available: EOF have been reached.");
             }
             return curr_row;
         }
@@ -159,7 +161,7 @@ public:
         inline const CSVRow* operator->() const
         {
             if (eof) {
-                throw std::runtime_error("No rows available: EOF have been reached.");
+                throw Error<std::runtime_error>("No rows available: EOF have been reached.");
             }
             return &curr_row;
         }
@@ -267,8 +269,8 @@ public:
         auto found = columns.find(column_name);
 
         if (found == columns.end()) {
-            throw std::domain_error("Unknown column name \""
-                                    + column_name + "\".");
+            throw Error<std::domain_error>("Unknown column name \""
+                                           + column_name + "\".");
         }
 
         return found->second;

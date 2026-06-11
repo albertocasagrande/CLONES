@@ -2,8 +2,8 @@
  * @file rs_index.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a class to compute the repeated substring index
- * @version 1.5
- * @date 2026-05-25
+ * @version 1.6
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -45,6 +45,8 @@
 #include "archive.hpp"
 
 #include "id_signature.hpp"
+
+#include "error.hpp"
 
 namespace CLONES
 {
@@ -95,7 +97,7 @@ struct Repetition
         unit(unit, unit+unit_size), prev_base(previous_base)
     {
         if (unit_size==0) {
-            throw std::domain_error("Unit size must be greater than 0.");
+            throw Error<std::domain_error>("Unit size must be greater than 0.");
         }
     }
 
@@ -709,7 +711,7 @@ struct RSIndex
                 pos -= r_pointer->size();
             }
         }
-        throw std::runtime_error("No such a " + polymer_type + " available.");
+        throw Error<std::runtime_error>("No such a " + polymer_type + " available.");
     }
 
     /**
@@ -960,7 +962,7 @@ public:
             oss << "Unsupported archive type: the archive contains a RSIndex whose repetition type size is "
                 << size_of_repetition_type << " whereas the repetition type size of this RSIndex is "
                 << sizeof(RepetitionType) << ".";
-            throw std::runtime_error(oss.str());
+            throw Error<std::runtime_error>(oss.str());
         }
 
         archive & *(rs_index.hetero_map)

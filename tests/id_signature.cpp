@@ -2,8 +2,8 @@
  * @file id_signature.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Some ID example
- * @version 1.0
- * @date 2026-02-06
+ * @version 1.1
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -42,6 +42,7 @@
 
 #include "id_signature.hpp"
 
+#include "error.hpp"
 
 BOOST_AUTO_TEST_CASE(ID_type_create)
 {
@@ -113,7 +114,7 @@ BOOST_AUTO_TEST_CASE(ID_type_read_error)
         std::istringstream is(error);
         IDType type;
 
-        BOOST_CHECK_THROW(is >> type, std::domain_error);
+        BOOST_CHECK_THROW(is >> type, CLONES::Error<std::domain_error>);
     }
 }
 

@@ -2,8 +2,8 @@
  * @file genomic_sequence.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements a structure to handle genomic sequence
- * @version 1.3
- * @date 2026-02-06
+ * @version 1.4
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -31,6 +31,8 @@
 #include <sstream>
 
 #include "genomic_sequence.hpp"
+
+#include "error.hpp"
 
 namespace CLONES
 {
@@ -70,9 +72,9 @@ size_t GenomicSequence::get_base_index(const char& orig)
         case 't':
             return 3;
         default:
-            throw std::domain_error("Unknown base \""
-                                    + std::string(orig,1)
-                                    + "\".");
+            throw Error<std::domain_error>("Unknown base \""
+                                           + std::string(orig,1)
+                                           + "\".");
     }
 }
 
@@ -98,8 +100,8 @@ char GenomicSequence::get_complement(const char& base)
         {
             std::ostringstream oss;
 
-            oss << "Unsupported base '" << base << "'";
-            throw std::domain_error(oss.str());
+            oss << "Unsupported base '" << base << "'.";
+            throw Error<std::domain_error>(oss.str());
         }
     }
 }

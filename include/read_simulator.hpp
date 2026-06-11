@@ -2,8 +2,8 @@
  * @file read_simulator.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines classes to simulate sequencing
- * @version 1.30
- * @date 2026-02-06
+ * @version 1.31
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -56,6 +56,7 @@
 #include "variables.hpp"
 
 #include "utils.hpp"
+#include "error.hpp"
 
 #include "sequencer.hpp"
 
@@ -1852,8 +1853,8 @@ private:
         size_t i{0};
         while (std::filesystem::exists(SAM_file_path)) {
             if (!std::filesystem::is_regular_file(SAM_file_path)) {
-                throw std::runtime_error("\"" + to_string(SAM_file_path)
-                                         + "\" is not a regular file");
+                throw Error<std::runtime_error>("\"" + to_string(SAM_file_path)
+                                                 + "\" is not a regular file.");
             }
             SAM_filename = base_name + chr_str + "_"
                             + std::to_string(i++) + ".sam";
@@ -2076,13 +2077,13 @@ private:
 
         if (fs::exists(this->output_directory)) {
             if (mode==Mode::CREATE) {
-                throw std::domain_error("\"" + to_string(output_directory)
-                                        + "\" already exists");
+                throw Error<std::domain_error>("\"" + to_string(output_directory)
+                                                + "\" already exists.");
             }
 
             if (!fs::is_directory(this->output_directory)) {
-                throw std::domain_error("\"" + to_string(output_directory)
-                                        + "\" is not a directory");
+                throw Error<std::domain_error>("\"" + to_string(output_directory)
+                                                + "\" is not a directory.");
             }
 
             if (mode==Mode::OVERWRITE) {
@@ -2093,21 +2094,21 @@ private:
         fs::create_directory(this->output_directory);
 
         if (!fs::exists(this->ref_genome_filename)) {
-            throw std::domain_error("\"" + to_string(ref_genome_filename)
-                                    + "\" does not exist");
+            throw Error<std::domain_error>("\"" + to_string(ref_genome_filename)
+                                            + "\" does not exist.");
         }
 
         if (!fs::is_regular_file(this->ref_genome_filename)) {
-            throw std::domain_error("\"" + to_string(ref_genome_filename)
-                                    + "\" is not a regular file");
+            throw Error<std::domain_error>("\"" + to_string(ref_genome_filename)
+                                            + "\" is not a regular file.");
         }
 
         std::ifstream ref_stream(ref_genome_filename);
         int c = ref_stream.get();
 
         if (c != EOF && c != '>') {
-            throw std::domain_error("\"" + to_string(ref_genome_filename)
-                                    + "\" is not a FASTA file");
+            throw Error<std::domain_error>("\"" + to_string(ref_genome_filename)
+                                            + "\" is not a FASTA file.");
         }
     }
 
@@ -2247,20 +2248,20 @@ public:
         using namespace CLONES;
 
         if (coverage < 0) {
-            throw std::domain_error("The coverage value must be non-negative: got "
-                                    + std::to_string(coverage) + ".");
+            throw Error<std::domain_error>("The coverage value must be non-negative: got "
+                                           + std::to_string(coverage) + ".");
         }
 
         if (purity < 0 || purity > 1) {
-            throw std::domain_error("The purity value must be in [0,1]: got "
-                                    + std::to_string(purity) + ".");
+            throw Error<std::domain_error>("The purity value must be in [0,1]: got "
+                                           + std::to_string(purity) + ".");
 
         }
 
         if (read_type == ReadType::PAIRED_READ
                 && !sequencer.supports_paired_reads()) {
-            throw std::domain_error(sequencer.get_model_name()
-                                    + " does not support paired reads.");
+            throw Error<std::domain_error>(sequencer.get_model_name()
+                                           + " does not support paired reads.");
         }
 
         auto targets = SequencingTargets::get_targets(random_generator, forest,

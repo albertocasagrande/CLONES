@@ -2,8 +2,8 @@
  * @file tissue_simulation.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a tumour evolution simulation
- * @version 1.4
- * @date 2026-06-10
+ * @version 1.5
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -883,7 +883,7 @@ public:
      * @return a reference to the updated object
      */
     inline TissueSimulation& place_cell(const SpeciesProperties& species_properties,
-                                  const PositionInTissue& position)
+                                        const PositionInTissue& position)
     {
         return place_cell(species_properties.get_id(), position);
     }
@@ -1246,13 +1246,9 @@ TissueSimulation& TissueSimulation::simulate(const CellEvent& event, UI::TissueP
             affected = simulate_duplication_and_mutation_event(event.position, event.dst_species);
             break;
         default:
-            {
-                std::ostringstream oss;
-
-                oss << __PRETTY_FUNCTION__ << ": Unhandled event type \""
-                    << cell_event_names[event.type] << "\"";
-                throw std::domain_error(oss.str());
-            }
+            throw Error<std::runtime_error>("Unhandled event type \""
+                                            + std::string(cell_event_names[event.type])
+                                            + "\".");
     }
 
     for (const auto& cell : affected.new_cells) {

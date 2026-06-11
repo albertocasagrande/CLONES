@@ -2,8 +2,8 @@
  * @file mutant_properties.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines mutant properties
- * @version 1.2
- * @date 2026-06-10
+ * @version 1.3
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -70,9 +70,9 @@ public:
 
     /**
      * @brief A constructor
-     * 
-     * This is a generic constructor for 
-     * 
+     *
+     * This is a generic constructor for
+     *
      * @param type is the event type
      * @param dst is the destination of the species
      * @param rate is the rate of the event
@@ -84,7 +84,7 @@ public:
 
     /**
      * @brief Get the event type
-     * 
+     *
      * @return The event type
      */
     inline const CellEventType& get_type() const
@@ -94,7 +94,7 @@ public:
 
     /**
      * @brief Get the event destination
-     * 
+     *
      * @return The event destination
      */
     inline const SpeciesId& get_dst() const
@@ -104,8 +104,8 @@ public:
 
     /**
      * @brief Get the event rate
-     * 
-     * @return The event rate 
+     *
+     * @return The event rate
      */
     inline const double& get_rate() const
     {
@@ -197,11 +197,11 @@ public:
 
     /**
      * @brief Get the species name from the mutant and the epistate names
-     * 
+     *
      * @param mutant_name is the mutant name
      * @param epistate_name is the epigenetic state name
      * @return The name of a species whose mutant and epigenetic state names
-     *      are `mutant_name` and `epistate_name`, respectively. 
+     *      are `mutant_name` and `epistate_name`, respectively.
      */
     static std::string get_name(const std::string& mutant_name,
                                 const std::string& epistate_name);
@@ -244,7 +244,7 @@ public:
      * @param event is the event whose rate is set the
      *      event. If the event is neither `CellEventType::DEATH`
      *      nor `CellEventType::DUPLICATION`, a `std::domain_error`
-     *      exception is thrown 
+     *      exception is thrown
      * @param rate is the new rate for the event
      * @return a non-constant reference to species properties
      */
@@ -402,7 +402,7 @@ public:
 
     /**
      * @brief Get the species by epigenetic state name
-     * 
+     *
      * @param epistate_name is the epigenetic state name of the aimed species
      * @return A constant reference to the species having `epistate_name` as the
      *      epigenetic state name
@@ -411,7 +411,7 @@ public:
 
     /**
      * @brief Get the species by epigenetic state name
-     * 
+     *
      * @param epistate_name is the epigenetic state name of the aimed species
      * @return A non-constant reference to the species having `epistate_name` as
      *      the epigenetic state name
@@ -420,7 +420,7 @@ public:
 
     /**
      * @brief Test whether two mutants have the same set of epigenetic states
-     * 
+     *
      * @param mutant is a `MutantProperties` object
      * @return `true` iff this object and `mutant` have the same set of
      *      epigenetic states
@@ -432,7 +432,7 @@ public:
 
     /**
      * @brief Test whether two mutants have the same set of epigenetic states
-     * 
+     *
      * @param mutant_a is a `MutantProperties` object
      * @param mutant_b is a `MutantProperties` object
      * @return `true` iff `mutant_a` and `mutant_b` have the same set of
@@ -444,7 +444,7 @@ public:
 
 /**
  * @brief Test whether two species properties are the same
- * 
+ *
  * @param a is a `SpeciesProperties` object
  * @param b is a `SpeciesProperties` object
  * @return `true` iff the two species properties are the same
@@ -453,7 +453,7 @@ bool operator==(const SpeciesProperties& a, const SpeciesProperties& b);
 
 /**
  * @brief Test whether two species properties differ
- * 
+ *
  * @param a is a `SpeciesProperties` object
  * @param b is a `SpeciesProperties` object
  * @return `true` iff the two species properties differ

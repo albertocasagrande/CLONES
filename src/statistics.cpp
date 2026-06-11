@@ -2,8 +2,8 @@
  * @file statistics.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Define simulation statistics
- * @version 1.2
- * @date 2026-06-10
+ * @version 1.3
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -32,6 +32,8 @@
 
 #include "statistics.hpp"
 #include "tissue.hpp"
+
+#include "error.hpp"
 
 namespace CLONES
 {
@@ -217,13 +219,9 @@ void TissueStatistics::record_event(const CellEvent& event, const Time &time)
                             event.dst_species, time);
             break;
         default:
-            {
-                std::ostringstream oss;
-
-                oss << __PRETTY_FUNCTION__ << ": Unsupported event type "
-                    << cell_event_names[event.type];
-                throw std::domain_error(oss.str());
-            }
+            Error<std::runtime_error>("Unsupported event type "
+                                      + std::to_string(static_cast<uint>(event.type))
+                                      + ".");
     }
 }
 
@@ -244,8 +242,9 @@ size_t TissueStatistics::count_fired_events(const SpeciesId& species_id,
         case CellEventType::DUP_AND_EPI_SWITCH:
             return s_stats.num_of_epigenetic_events();
         default:
-            throw std::domain_error("EventCountTest does not support event "+
-                                    cell_event_names[event_type]);
+            throw Error<std::runtime_error>("Unknown event \""+
+                                            cell_event_names[event_type]
+                                            + "\".");
     }
 }
 

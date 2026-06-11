@@ -2,8 +2,8 @@
  * @file id_signature.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements SBS signature
- * @version 1.2
- * @date 2026-02-06
+ * @version 1.3
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -32,6 +32,7 @@
 
 #include "id_signature.hpp"
 
+#include "error.hpp"
 
 namespace CLONES
 {
@@ -58,8 +59,8 @@ IDType::IDType(const std::string& type):
     std::string field;
 
     if (type.back()==':') {
-        throw std::domain_error("\"" + type + "\" does not represent an ID type: "
-                                + "it should contain 4 field separated by ':'.");
+        throw Error<std::domain_error>("\"" + type + "\" does not represent an ID type: "
+                                       + "it should contain 4 field separated by ':'.");
     }
 
     while (std::getline(istype, field, ':'))
@@ -67,20 +68,20 @@ IDType::IDType(const std::string& type):
         fields.push_back(field);
 
         if (fields.size()>4) {
-            throw std::domain_error("\"" + type + "\" does not represent an ID type: "
-                                    + "it should contain 4 field separated by ':'.");
+            throw Error<std::domain_error>("\"" + type + "\" does not represent an ID type: "
+                                           + "it should contain 4 field separated by ':'.");
         }
     }
 
     if (fields.size()<4) {
-        throw std::domain_error("\"" + type + "\" does not represent an ID type: "
-                                + "it should contain 4 field separated by ':'.");
+        throw Error<std::domain_error>("\"" + type + "\" does not represent an ID type: "
+                                       + "it should contain 4 field separated by ':'.");
     }
 
     if (fields[2].size() != 1) {
-        throw std::domain_error("\"" + type + "\" does not represent an ID type: "
-                                + "\"" +fields[2] + "\" should be a character among "
-                                + "'C', 'T', 'R', or 'M'.");
+        throw Error<std::domain_error>("\"" + type + "\" does not represent an ID type: "
+                                       + "\"" +fields[2] + "\" should be a character among "
+                                       + "'C', 'T', 'R', or 'M'.");
     }
 
     switch (fields[2][0]) {
@@ -101,7 +102,8 @@ IDType::IDType(const std::string& type):
             ftype = FragmentType::MICROHOMOLOGY;
             break;
         default:
-            throw std::domain_error("\""+type+"\" does not represent an ID type.");
+            throw Error<std::domain_error>("\"" + type
+                                           + "\" does not represent an ID type.");
     }
 
     if (ftype == FragmentType::MICROHOMOLOGY) {
@@ -116,9 +118,9 @@ IDType::IDType(const std::string& type):
             ++sl_index;
         }
     } else if (fields[1] != "Ins") {
-        throw std::domain_error("\"" + type + "\" does not represent an ID type: "
-                                + "\"" + fields[1] + "\" should be either \"Ins\""
-                                + "\"Del\".");
+        throw Error<std::domain_error>("\"" + type + "\" does not represent an ID type: "
+                                       + "\"" + fields[1] + "\" should be either \"Ins\""
+                                       + "\"Del\".");
     }
 
 }

@@ -2,8 +2,8 @@
  * @file mutational_properties.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a class to represent the mutational properties
- * @version 1.8
- * @date 2026-06-10
+ * @version 1.9
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -40,6 +40,9 @@
 #include "mutation_spec.hpp"
 
 #include "mutation_list.hpp"
+
+#include "error.hpp"
+
 namespace CLONES
 {
 
@@ -137,7 +140,7 @@ class Timed
     static auto find_iterator_at(MAP& time_map, const Time& time)
     {
         if (time<0) {
-            throw std::domain_error("The time must be non-negative.");
+            throw Error<std::domain_error>("The time must be non-negative.");
         }
 
         auto found = time_map.upper_bound(time);
@@ -259,15 +262,15 @@ public:
     void delete_change_at(const Time& time)
     {
         if (time == 0) {
-            throw std::domain_error("The time interval beginning at time 0 "
-                                    "cannot be removed");
+            throw Error<std::domain_error>("The time interval beginning at time 0 "
+                                           "cannot be removed.");
         }
 
         auto found = time_map.find(time);
 
         if (found == time_map.end()) {
-            throw std::runtime_error("No is time interval beginning at time "
-                                     + std::to_string(time));
+            throw Error<std::runtime_error>("No is time interval beginning at time "
+                                            + std::to_string(time) + ".");
         }
 
         time_map.remove(found);
@@ -368,7 +371,8 @@ class MutationalProperties
     {
         auto found = passenger_rates.find(species_name);
         if (found == passenger_rates.end()) {
-            throw std::domain_error("\"" + species_name + "\" has no mutational rate");
+            throw Error<std::runtime_error>("\"" + species_name
+                                            + "\" has no mutational rate.");
         }
 
         return found->second;

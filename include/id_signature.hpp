@@ -2,8 +2,8 @@
  * @file id_signature.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines indel signature
- * @version 1.1
- * @date 2026-02-06
+ * @version 1.2
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -38,6 +38,8 @@
 
 #include "mutation.hpp"
 #include "signature.hpp"
+
+#include "error.hpp"
 
 namespace CLONES
 {
@@ -188,7 +190,8 @@ private:
         }
         oss << "\"" << num_str << "\" should be a number in the interval [0,"
             << std::numeric_limits<TYPE>::max() << "].";
-        throw std::domain_error(oss.str());
+
+        throw Error<std::domain_error>(oss.str());
     }
 };
 

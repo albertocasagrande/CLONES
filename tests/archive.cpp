@@ -2,8 +2,8 @@
  * @file archive.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Some archive tests
- * @version 1.4
- * @date 2026-06-10
+ * @version 1.5
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -42,6 +42,7 @@
 #include "ending_conditions.hpp"
 #include "logger.hpp"
 #include "utils.hpp"
+#include "error.hpp"
 
 struct ArchiveFixture {
     long double time_horizon;
@@ -87,8 +88,8 @@ struct ArchiveFixture {
         tissue_simulation.set_tissue("Liver", {1000,1000})
                          .add_mutant(A)
                          .add_mutant(B)
-                         .place_cell(B["-"], {250, 500})
-                         .schedule_mutation(B,A,50);
+                         .place_cell(B["E1"], {250, 500})
+                         .schedule_mutation(B, A, 50);
 
         tissue_simulation.death_activation_level = 100;
         tissue_simulation.storage_enabled = false;
@@ -491,7 +492,7 @@ BOOST_AUTO_TEST_CASE(binary_timed_mutation_queue)
     std::filesystem::remove(filename);
 }
 
-BOOST_AUTO_TEST_CASE(binary_epigenetic_mutant)
+BOOST_AUTO_TEST_CASE(build_binary_epigenetic_mutant_specification)
 {
     using namespace CLONES::Mutants;
 
@@ -508,7 +509,27 @@ BOOST_AUTO_TEST_CASE(binary_epigenetic_mutant)
     to_save["E3"].set_rate(CellEventType::DEATH, 0.08)
                  .set_rate(CellEventType::DUPLICATION, 0.3)
                  .set_rate(CellEventType::DUP_AND_EPI_SWITCH, to_save["E2"], 0.02)
-                 .set_rate(CellEventType::DUP_AND_EPI_SWITCH, to_save["E3"], 0.01);   
+                 .set_rate(CellEventType::DUP_AND_EPI_SWITCH, to_save["E3"], 0.01);
+}
+
+
+BOOST_AUTO_TEST_CASE(binary_epigenetic_mutant)
+{
+    using namespace CLONES::Mutants;
+    MutantProperties to_save("A", {"E1", "E2", "E3"});
+
+    to_save["E1"].set_rate(CellEventType::DEATH, 0.1)
+                 .set_rate(CellEventType::DUPLICATION, 0.3)
+                 .set_rate(CellEventType::DUP_AND_EPI_SWITCH, to_save["E2"], 0.01)
+                 .set_rate(CellEventType::DUP_AND_EPI_SWITCH, to_save["E3"], 0.01);
+    to_save["E2"].set_rate(CellEventType::DEATH, 0.1)
+                 .set_rate(CellEventType::DUPLICATION, 0.45)
+                 .set_rate(CellEventType::DUP_AND_EPI_SWITCH, to_save["E1"], 0.01)
+                 .set_rate(CellEventType::DUP_AND_EPI_SWITCH, to_save["E3"], 0.02);
+    to_save["E3"].set_rate(CellEventType::DEATH, 0.08)
+                 .set_rate(CellEventType::DUPLICATION, 0.3)
+                 .set_rate(CellEventType::DUP_AND_EPI_SWITCH, to_save["E2"], 0.02)
+                 .set_rate(CellEventType::DUP_AND_EPI_SWITCH, to_save["E3"], 0.01);
 
     auto filename = get_a_temporary_path();
     {

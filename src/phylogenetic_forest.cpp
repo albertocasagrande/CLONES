@@ -2,8 +2,8 @@
  * @file phylogenetic_forest.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements classes and function for phylogenetic forests
- * @version 1.18
- * @date 2026-05-22
+ * @version 1.19
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -35,6 +35,8 @@
 #include "phylogenetic_forest.hpp"
 
 #include "tissue_simulation.hpp"
+
+#include "error.hpp"
 
 namespace CLONES
 {
@@ -76,15 +78,14 @@ const MutationList& PhylogeneticForest::const_node::pre_neoplastic_mutations() c
         return found->second;
     }
 
-    throw std::runtime_error("const_node::pre_neoplastic_mutations(): The "
-                             "node is not a forest root.");
+    throw Error<std::runtime_error>("The node is not a forest root.");
 }
 
 PhylogeneticForest::const_node PhylogeneticForest::get_node(const Mutants::CellId& cell_id) const
 {
     if (get_cells().count(cell_id)==0) {
-        throw std::domain_error("The cell " + std::to_string(cell_id)
-                                + " is not in the forest.");
+        throw Error<std::domain_error>("The cell " + std::to_string(cell_id)
+                                       + " is not in the forest.");
     }
 
     return PhylogeneticForest::const_node(this, cell_id);
@@ -93,8 +94,8 @@ PhylogeneticForest::const_node PhylogeneticForest::get_node(const Mutants::CellI
 PhylogeneticForest::node PhylogeneticForest::get_node(const Mutants::CellId& cell_id)
 {
     if (get_cells().count(cell_id)==0) {
-        throw std::domain_error("The cell " + std::to_string(cell_id)
-                                + " is not in the forest.");
+        throw Error<std::domain_error>("The cell " + std::to_string(cell_id)
+                                       + " is not in the forest.");
     }
 
     return PhylogeneticForest::node(this, cell_id);
@@ -189,8 +190,8 @@ CellGenomeMutations PhylogeneticForest::get_cell_mutations(const Mutants::CellId
                                                            const bool& with_germinal) const
 {
     if (arising_mutations.count(cell_id) == 0) {
-        throw std::domain_error("The cell " + std::to_string(cell_id)
-                                + " is not in the forest.");
+        throw Error<std::domain_error>("The cell " + std::to_string(cell_id)
+                                       + " is not in the forest.");
     }
 
     auto node = get_node(cell_id);
@@ -338,8 +339,8 @@ PhylogeneticForest::get_allelic_count(const std::string& sample_name,
         }
     }
 
-    throw std::domain_error("\"" + sample_name +"\" is not a sample of the "
-                            + "phylogenetic forest");
+    throw Error<std::domain_error>("\"" + sample_name +"\" is not a sample of the "
+                                   + "phylogenetic forest.");
 }
 
 void PhylogeneticForest::clear()

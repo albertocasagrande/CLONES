@@ -2,8 +2,8 @@
  * @file species.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines species representation
- * @version 1.5
- * @date 2026-06-10
+ * @version 1.6
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -43,6 +43,7 @@
 #include "cell.hpp"
 #include "mutant_properties.hpp"
 
+#include "error.hpp"
 
 namespace CLONES
 {
@@ -177,7 +178,7 @@ class Species: public SpeciesProperties
                                       const CellIdToCell& id2cell_ptrs) const
     {
         if (id2cell_ptrs.size()==0) {
-            throw std::domain_error("No cells can be selected");
+            throw Error<std::domain_error>("No cells can be selected.");
         }
 
         std::uniform_int_distribution<size_t> dist(0, id2cell_ptrs.size()-1);
@@ -301,7 +302,7 @@ public:
                                       const CellEventType event_type) const
     {
         if (cells.count(cell_id)==0) {
-            throw std::domain_error("The cell does not belong to the species");
+            throw Error<std::domain_error>("The cell does not belong to the species.");
         }
 
         switch (event_type) {
@@ -314,12 +315,9 @@ public:
             case CellEventType::ANY:
                 return true;
             default:
-                {
-                    std::ostringstream oss;
-
-                    oss << __PRETTY_FUNCTION__ << ": Unsupported event type ";
-                    throw std::domain_error(oss.str());
-                }
+                throw Error<std::runtime_error>("Unsupported event type "
+                                               + std::to_string(static_cast<uint>(event_type))
+                                               + ".");
         }
     }
 
@@ -360,12 +358,9 @@ public:
             case CellEventType::ANY:
                 return choose_a_cell(generator, cells);
             default:
-                {
-                    std::ostringstream oss;
-
-                    oss << __PRETTY_FUNCTION__ << ": Unsupported event type";
-                    throw std::domain_error(oss.str());
-                }
+                throw Error<std::runtime_error>("Unsupported event type "
+                                               + std::to_string(static_cast<uint>(event_type))
+                                               + ".");
         }
     }
 

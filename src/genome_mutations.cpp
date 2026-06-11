@@ -2,8 +2,8 @@
  * @file genome_mutations.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements genome and chromosome data structures
- * @version 1.23
- * @date 2026-05-25
+ * @version 1.24
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -33,6 +33,8 @@
 #include <exception>
 
 #include "genome_mutations.hpp"
+
+#include "error.hpp"
 
 namespace CLONES
 {
@@ -136,11 +138,10 @@ ChromosomeMutations::get_modifiable_allele(const AlleleId& allele_id)
     auto it = _data->alleles.find(allele_id);
 
     if (it == _data->alleles.end()) {
-        std::ostringstream oss;
-
-        oss << "Chromosome " << GenomicPosition::chrtos(_data->identifier)
-            <<  " has not allele " << Allele::format_id(allele_id) << ".";
-        throw std::out_of_range(oss.str());
+        throw Error<std::out_of_range>("Chromosome "
+                                       + GenomicPosition::chrtos(_data->identifier)
+                                       + " has not allele "
+                                       + Allele::format_id(allele_id) + ".");
     }
 
     return {&(it->second), data_backup};
@@ -149,7 +150,13 @@ ChromosomeMutations::get_modifiable_allele(const AlleleId& allele_id)
 bool ChromosomeMutations::allele_contains(const AlleleId& allele_id, const GenomicRegion& genomic_region) const
 {
     if (!contains(genomic_region)) {
-        throw std::domain_error("The genomic region is not in the chromosome");
+        std::ostringstream oss;
+
+        oss << "The genomic region " << genomic_region
+            << " is not in the chromosome "
+            << GenomicPosition::chrtos(id()) << ".";
+
+        throw Error<std::runtime_error>(oss.str());
     }
 
     return get_allele(allele_id).contains(genomic_region);
@@ -166,16 +173,22 @@ bool ChromosomeMutations::amplify_region(const GenomicRegion& genomic_region, co
                                          AlleleId& new_allele_id, const Mutation::Nature& nature)
 {
     if (!contains(genomic_region)) {
-        throw std::domain_error("The genomic region is not in the chromosome");
+        std::ostringstream oss;
+
+        oss << "The genomic region " << genomic_region
+            << " is not in the chromosome "
+            << GenomicPosition::chrtos(id()) << ".";
+
+        throw Error<std::domain_error>(oss.str());
     }
 
     std::shared_ptr<ChromosomeMutations::Data> data_backup;
 
     if (new_allele_id != RANDOM_ALLELE) {
         if (get_alleles().find(new_allele_id) != get_alleles().end()) {
-            throw std::domain_error("Chromosome " + std::to_string(id())
-                                    + " already contains the allele "
-                                    + std::to_string(new_allele_id) + ".");
+            throw Error<std::runtime_error>("Chromosome " + GenomicPosition::chrtos(id())
+                                            + " already contains the allele "
+                                            + std::to_string(new_allele_id) + ".");
         }
 
         data_backup = make_data_exclusive();
@@ -230,7 +243,13 @@ bool ChromosomeMutations::remove_region(const GenomicRegion& genomic_region, con
                                         const Mutation::Nature& nature)
 {
     if (!contains(genomic_region)) {
-        throw std::domain_error("The genomic region is not in the chromosome");
+        std::ostringstream oss;
+
+        oss << "The genomic region " << genomic_region
+            << " is not in the chromosome "
+            << GenomicPosition::chrtos(id()) << ".";
+
+        throw Error<std::domain_error>(oss.str());
     }
 
     auto [allele, data_backup] = get_modifiable_allele(allele_id);
@@ -260,9 +279,10 @@ bool ChromosomeMutations::has_context_free(const SID& mutation) const
     if (!contains(mutation)) {
         std::ostringstream oss;
 
-        oss << mutation << " is does not lie in the chromosome "
-            << id() << ".";
-        throw std::domain_error(oss.str());
+        oss << mutation << " is does not lay in the chromosome "
+            << GenomicPosition::chrtos(id()) << ".";
+
+        throw Error<std::runtime_error>(oss.str());
     }
 
     bool some_allele_contains_pos{false};
@@ -305,8 +325,9 @@ bool ChromosomeMutations::apply_contained(const MutationList& mutation_list)
                 duplicate_alleles();
                 break;
             default:
-                throw std::runtime_error("ChromosomeMutations::apply_contained(const MutationList&):"
-                                         " Unsupported mutation type");
+                throw Error<std::runtime_error>("Unsupported mutation type "
+                                                + std::to_string(static_cast<uint>(list_it.get_type()))
+                                                + ".");
         }
     }
 
@@ -324,14 +345,21 @@ bool ChromosomeMutations::apply_CNA(CNA& cna)
             return remove_region(cna_region, cna.dest,
                                  cna.nature);
         default:
-            throw std::runtime_error("Unsupported CNA type");
+            throw Error<std::runtime_error>("Unsupported CNA type "
+                                            + std::to_string(static_cast<uint>(cna.type))
+                                            + ".");
     }
 }
 
 bool ChromosomeMutations::insert_in_object(const SID& mutation, const AlleleId& allele_id)
 {
     if (!contains(mutation)) {
-        throw std::domain_error("The genomic position of the SID is not in the chromosome");
+        std::ostringstream oss;
+
+        oss << "The genomic position of " << mutation << " is not in the chromosome "
+            << GenomicPosition::chrtos(id()) << ".";
+
+        throw Error<std::domain_error>(oss.str());
     }
 
     auto [allele, data_backup] = get_modifiable_allele(allele_id);
@@ -348,7 +376,12 @@ bool ChromosomeMutations::insert_in_object(const SID& mutation, const AlleleId& 
 bool ChromosomeMutations::insert_in_reference(const SID& mutation, const AlleleId& allele_id)
 {
     if (!contains(mutation)) {
-        throw std::domain_error("The genomic position of the SID is not in the chromosome");
+        std::ostringstream oss;
+
+        oss << "The genomic position of " << mutation << " is not in the chromosome "
+            << GenomicPosition::chrtos(id()) << ".";
+
+        throw Error<std::out_of_range>(oss.str());
     }
 
     auto& allele = get_allele(allele_id);
@@ -359,7 +392,12 @@ bool ChromosomeMutations::insert_in_reference(const SID& mutation, const AlleleI
 bool ChromosomeMutations::remove_from_object_at(const GenomicPosition& genomic_position)
 {
     if (!contains(genomic_position)) {
-        throw std::domain_error("The genomic position of the SID is not in the chromosome");
+        std::ostringstream oss;
+
+        oss << "The genomic position " << genomic_position << " is not in the chromosome "
+            << GenomicPosition::chrtos(id()) << ".";
+
+        throw Error<std::domain_error>(oss.str());
     }
 
     // save original data pointer for possible backup
@@ -380,7 +418,12 @@ bool ChromosomeMutations::remove_from_object_at(const GenomicPosition& genomic_p
 bool ChromosomeMutations::remove_from_object(const MutationSpec<SID>& mutation_spec)
 {
     if (!contains(mutation_spec)) {
-        throw std::domain_error("The genomic position of the SID is not in the chromosome");
+        std::ostringstream oss;
+
+        oss << "The genomic position of " << mutation_spec << " is not in the chromosome "
+            << GenomicPosition::chrtos(id()) << ".";
+
+        throw Error<std::out_of_range>(oss.str());
     }
 
     // save original data pointer for possible backup
@@ -517,7 +560,7 @@ ChromosomeMutations::get_allelic_map(const std::set<ChrPosition>& break_points,
 
                 oss << "The breakpoint " << pos << " is not in "
                     << "the provided breakpoint set.";
-                throw std::domain_error(oss.str());
+                throw Error<std::domain_error>(oss.str());
             }
 
             const auto fragment_end = fragment.end();
@@ -549,12 +592,9 @@ GenomeMutations::GenomeMutations(const std::vector<ChromosomeMutations>& chromos
 {
     for (const auto& chromosome: chromosomes) {
         if (this->chromosomes.count(chromosome.id())>0) {
-            std::ostringstream oss;
-
-            oss << "Chromosome " << GenomicPosition::chrtos(chromosome.id())
-                << " has been specified twice";
-
-            throw std::domain_error(oss.str());
+            throw Error<std::domain_error>("Chromosome "
+                                           + GenomicPosition::chrtos(chromosome.id())
+                                           + " has been specified twice.");
         }
         this->chromosomes[chromosome.id()] = chromosome;
     }
@@ -605,10 +645,8 @@ auto find_chromosome(std::map<ChromosomeId, ChromosomeMutations>& chromosomes, c
     auto chr_it = chromosomes.find(chr_id);
 
     if (chr_it == chromosomes.end()) {
-        std::ostringstream oss;
-
-        oss << "Unknown chromosome " << GenomicPosition::chrtos(chr_id);
-        throw std::domain_error(oss.str());
+        throw Error<std::out_of_range>("Unknown chromosome "
+                                       + GenomicPosition::chrtos(chr_id) + ".");
     }
 
     return chr_it;
@@ -619,10 +657,8 @@ auto find_chromosome(const std::map<ChromosomeId, ChromosomeMutations>& chromoso
     auto chr_it = chromosomes.find(chr_id);
 
     if (chr_it == chromosomes.end()) {
-        std::ostringstream oss;
-
-        oss << "Unknown chromosome " << GenomicPosition::chrtos(chr_id);
-        throw std::domain_error(oss.str());
+        throw Error<std::out_of_range>("Unknown chromosome "
+                                       + GenomicPosition::chrtos(chr_id) + ".");
     }
 
     return chr_it;
@@ -646,8 +682,8 @@ const ChromosomeMutations& GenomeMutations::get_chromosome(const ChromosomeId& c
     auto found = chromosomes.find(chromosome_id);
 
     if (found == chromosomes.end()) {
-        throw std::out_of_range("Unknown chromosome "
-                                + GenomicPosition::chrtos(chromosome_id) + ".");
+        throw Error<std::out_of_range>("Unknown chromosome "
+                                       + GenomicPosition::chrtos(chromosome_id) + ".");
     }
     return found->second;
 }
@@ -657,8 +693,8 @@ ChromosomeMutations& GenomeMutations::get_chromosome(const ChromosomeId& chromos
     auto found = chromosomes.find(chromosome_id);
 
     if (found == chromosomes.end()) {
-        throw std::out_of_range("Unknown chromosome "
-                                + GenomicPosition::chrtos(chromosome_id) + ".");
+        throw Error<std::out_of_range>("Unknown chromosome "
+                                       + GenomicPosition::chrtos(chromosome_id) + ".");
     }
     return found->second;
 }
@@ -729,9 +765,9 @@ bool GenomeMutations::apply_to_reference(const MutationList& mutation_list)
                 duplicate_alleles();
                 break;
             default:
-                throw std::runtime_error("GenomeMutations::apply_to_"
-                                         "reference(const MutationList&):"
-                                         " Unsupported mutation type");
+                throw Error<std::runtime_error>("Unsupported mutation type "
+                                                + std::to_string(static_cast<uint>(list_it.get_type()))
+                                                + ".");
         }
     }
 
@@ -759,8 +795,9 @@ bool GenomeMutations::apply(const MutationList& mutation_list)
                 duplicate_alleles();
                 break;
             default:
-                throw std::runtime_error("GenomeMutations::apply(const MutationList&):"
-                                         " Unsupported mutation type");
+                throw Error<std::runtime_error>("Unsupported mutation type "
+                                                + std::to_string(static_cast<uint>(list_it.get_type()))
+                                                + ".");
         }
     }
 
@@ -778,7 +815,9 @@ bool GenomeMutations::apply_CNA(CNA& cna)
             return remove_region(cna_region, cna.dest,
                                  cna.nature);
         default:
-            throw std::runtime_error("Unsupported CNA type");
+            throw Error<std::runtime_error>("Unsupported CNA type "
+                                            + std::to_string(static_cast<uint>(cna.type))
+                                            + ".");
     }
 }
 

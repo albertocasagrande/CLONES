@@ -2,8 +2,8 @@
  * @file mutant_properties.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements the mutant properties
- * @version 1.3
- * @date 2026-06-10
+ * @version 1.4
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -34,6 +34,8 @@
 #include "mutant_properties.hpp"
 #include "cell_event.hpp"
 
+#include "error.hpp"
+
 namespace CLONES
 {
 
@@ -49,7 +51,7 @@ SpeciesProperties::SpeciesProperties():
 
 SpeciesProperties::SpeciesProperties(const MutantProperties& mutant,
                                      const std::string& epistate_name):
-    id(counter++), epistate_name{epistate_name}, mutant_id(mutant.get_id()), 
+    id(counter++), epistate_name{epistate_name}, mutant_id(mutant.get_id()),
     mutant_name{mutant.get_name()}
 {}
 
@@ -84,9 +86,8 @@ SpeciesProperties& SpeciesProperties::set_rate(const CellEventType& event,
 {
     if (event != CellEventType::DEATH
             && event != CellEventType::DUPLICATION) {
-        throw std::domain_error("`SpeciesProperties::set_rate(const CellEventType&"
-                                ", const double&)` can be used exclusively for deaths" 
-                                " or duplications");
+        throw Error<std::domain_error>("Death or duplication event expected; got "
+                                      + cell_event_names[event] + ".");
     }
 
     return set_rate(event, *this, rate);
@@ -97,9 +98,13 @@ SpeciesProperties& SpeciesProperties::set_rate(const CellEventType& event,
                                                const double rate)
 {
     if (dst_species.get_mutant_id() != get_mutant_id()) {
-        throw std::domain_error("`SpeciesProperties::set_rate()`: `dst_species` "
-                                "and the calling object must belong to the same "
-                                "mutant");
+        std::ostringstream oss;
+
+        oss << "Exclusively admitted epigenetic switches between species "
+            << "belonging to the same mutant. Got " << get_name() << " and "
+            << dst_species.get_name() << ".";
+
+        throw Error<std::runtime_error>(oss.str());
     }
 
     switch(event) {
@@ -108,11 +113,11 @@ SpeciesProperties& SpeciesProperties::set_rate(const CellEventType& event,
         case CellEventType::EPIGENETIC_SWITCH:
         case CellEventType::DUP_AND_EPI_SWITCH:
             event_rates[event][dst_species.get_id()] = rate;
-            
+
             return *this;
         default:
-            throw std::domain_error("`SpeciesProperties::set_rate()`: unsupported "
-                                    "event \"");
+            throw Error<std::runtime_error>("Unsupported event \""
+                                            + cell_event_names[event] + "\".");
     }
 }
 
@@ -137,7 +142,7 @@ const SpeciesProperties& MutantProperties::operator[](const std::string& epistat
 {
     auto src_species_it = species.find(epistate_name);
     if (src_species_it == species.end()) {
-        throw std::out_of_range("Unknown epistate \"" + epistate_name + "\"");
+        throw Error<std::out_of_range>("Unknown epistate \"" + epistate_name + "\"");
     }
 
     return src_species_it->second;
@@ -147,7 +152,7 @@ SpeciesProperties& MutantProperties::operator[](const std::string& epistate_name
 {
     auto src_species_it = species.find(epistate_name);
     if (src_species_it == species.end()) {
-        throw std::out_of_range("Unknown epistate \"" + epistate_name + "\"");
+        throw Error<std::out_of_range>("Unknown epistate \"" + epistate_name + "\"");
     }
 
     return src_species_it->second;
@@ -192,14 +197,14 @@ namespace std
 
 std::ostream& operator<<(std::ostream& out, const CLONES::Mutants::SpeciesProperties& species)
 {
-    out << "{name: \""<< species.get_name() << "\", id: " << species.get_id() 
+    out << "{name: \""<< species.get_name() << "\", id: " << species.get_id()
         << ", event_rates: {";
 
     std::string sep="";
     for (const auto& [event, event_type_rates]: species.get_rates()) {
         for (const auto& [dst_event, rate]: event_type_rates) {
             out << sep
-                << "(event: "<< CLONES::Mutants::cell_event_names[event] 
+                << "(event: "<< CLONES::Mutants::cell_event_names[event]
                 << ", dst: "<< dst_event << ", rate: " << rate << ")";
             sep = ", ";
         }

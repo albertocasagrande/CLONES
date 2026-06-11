@@ -2,8 +2,8 @@
  * @file logics.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a logic about the simulation
- * @version 1.2
- * @date 2026-05-25
+ * @version 1.3
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -36,6 +36,7 @@
 #include <ostream>
 
 #include "cell_event.hpp"
+#include "error.hpp"
 
 struct Context;
 
@@ -212,8 +213,9 @@ public:
             case Type::MULT:
                 return (lhs->evaluate(context))*(rhs->evaluate(context));
             default:
-                throw std::domain_error("Unsupported expression type code "
-                                        + std::to_string(static_cast<unsigned int>(type)));
+                throw Error<std::runtime_error>("Unsupported expression type code "
+                                                + std::to_string(static_cast<unsigned int>(type))
+                                                + ".");
         }
     }
 
@@ -384,8 +386,9 @@ public:
             case Type::NE:
                 return l_value != r_value;
             default:
-                throw std::runtime_error("Unknown relation type code "
-                                         + std::to_string(static_cast<unsigned int>(type)));
+                throw Error<std::runtime_error>("Unsupported expression type code "
+                                                + std::to_string(static_cast<unsigned int>(type))
+                                                + ".");
         }
     }
 
@@ -414,8 +417,9 @@ public:
             case Type::NE:
                 return (l_dist != r_dist? 0: 1);
             default:
-                throw std::runtime_error("Unknown relation type code "
-                                         + std::to_string(static_cast<unsigned int>(type)));
+                throw Error<std::domain_error>("Unknown relation type code "
+                                                + std::to_string(static_cast<unsigned int>(type))
+                                                + ".");
         }
     }
 
@@ -682,8 +686,9 @@ struct Formula
             case Type::OR:
                 return (lhs->evaluate(context) || rhs->evaluate(context));
             default:
-                throw std::runtime_error("Unknown formula type code "
-                                         + std::to_string(static_cast<unsigned int>(type)));
+                throw Error<std::domain_error>("Unknown formula type code "
+                                                + std::to_string(static_cast<unsigned int>(type))
+                                                + ".");
         }
     }
 
@@ -709,8 +714,9 @@ struct Formula
             case Type::OR:
                 return std::min(lhs->sat_distance(context), rhs->sat_distance(context));
             default:
-                throw std::runtime_error("Unknown formula type code "
-                                         + std::to_string(static_cast<unsigned int>(type)));
+                throw Error<std::domain_error>("Unknown formula type code "
+                                                + std::to_string(static_cast<unsigned int>(type))
+                                                + ".");
         }
     }
 

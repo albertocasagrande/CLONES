@@ -2,8 +2,8 @@
  * @file sequencer.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements sequencer models
- * @version 1.3
- * @date 2026-02-06
+ * @version 1.4
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -32,6 +32,8 @@
 
 #include "sequencer.hpp"
 
+#include "error.hpp"
+
 namespace CLONES
 {
 
@@ -41,8 +43,9 @@ namespace Sequencers
 char SangerQualityCodec::encode(const double error_prob)
 {
     if ((error_prob > 1) || (error_prob < 0)) {
-        throw std::domain_error("The error probability must be a value in [0, 1]: got "
-                                + std::to_string(error_prob));
+        throw Error<std::domain_error>(("The error probability must be "
+                                        "a value in [0, 1]. Got ")
+                                       + std::to_string(error_prob));
     }
 
     // Simulating quality scores for wrongly sequenced bases
@@ -69,13 +72,13 @@ double SangerQualityCodec::decode(const char quality_code)
     const double quality_value = quality_code-base_quality_code();
 
     if ((quality_code > max_quality_code()) || (quality_code < min_quality_code())) {
-        throw std::domain_error("The quality code must be a character in ['"
-                                + std::string(1, min_quality_code())
-                                + "' (ASCII-"+ std::to_string(min_quality_value())+"), "
-                                + std::string(1, max_quality_code())
-                                + "' (ASCII-"+ std::to_string(max_quality_value())+")]"
-                                + ": got " + std::string(1, quality_code)
-                                + "' (ASCII-"+ std::to_string(quality_value) +")");
+        throw Error<std::domain_error>("The quality code must be a character in ['"
+                                       + std::string(1, min_quality_code())
+                                       + "' (ASCII-" + std::to_string(min_quality_value())
+                                       + "), " + std::string(1, max_quality_code())
+                                       + "' (ASCII-" + std::to_string(max_quality_value())
+                                       + ")]: got " + std::string(1, quality_code)
+                                       + "' (ASCII-" + std::to_string(quality_value) +")");
     }
 
     return std::pow(static_cast<double>(10), -quality_value/10);

@@ -2,8 +2,8 @@
  * @file tissue_sampler.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Main file for the CLONES tool that sample tissues
- * @version 1.1
- * @date 2026-02-06
+ * @version 1.2
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -48,12 +48,13 @@ class TissueSampler : public BasicExecutable
 
     void perform_sampling(const nlohmann::json& sampling_cfg, const bool quiet=false) const
     {
+        using namespace CLONES;
         using namespace CLONES::Mutants;
         using namespace CLONES::Mutants::Evolutions;
-        using ConfigReader = CLONES::ConfigReader;
 
         if (!sampling_cfg.is_array()) {
-            throw std::runtime_error("The sampling configuration does not consist in an array");
+            throw Error<std::runtime_error>("The sampling configuration does not "
+                                            "consist in an array");
         }
 
         BinaryLogger::CellReader reader(species_directory);

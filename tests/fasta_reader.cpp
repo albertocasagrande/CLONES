@@ -2,8 +2,8 @@
  * @file fasta_reader.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Testing CLONES::IO::FASTA::Reader class
- * @version 1.1
- * @date 2026-02-06
+ * @version 1.2
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -37,6 +37,7 @@
 
 #include "fasta_chr_reader.hpp"
 
+#include "error.hpp"
 
 BOOST_AUTO_TEST_CASE(reader_creation)
 {
@@ -220,8 +221,8 @@ BOOST_AUTO_TEST_CASE(build_index_reader_error)
 
     IndexedReader<Sequence> ireader;
 
-    BOOST_CHECK_THROW(IndexedReader<Sequence>(FASTA_INDEX_ERR), std::domain_error);
-    BOOST_CHECK_THROW(ireader.open(FASTA_INDEX_ERR), std::domain_error);
+    BOOST_CHECK_THROW(IndexedReader<Sequence>(FASTA_INDEX_ERR), CLONES::Error<std::domain_error>);
+    BOOST_CHECK_THROW(ireader.open(FASTA_INDEX_ERR), CLONES::Error<std::domain_error>);
 }
 
 BOOST_AUTO_TEST_CASE(chr_nucleotides_reader)

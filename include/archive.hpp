@@ -2,8 +2,8 @@
  * @file archive.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines some archive classes and their methods
- * @version 1.9
- * @date 2026-05-22
+ * @version 1.10
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -44,6 +44,8 @@
 #include "progress_bar.hpp"
 
 #include "utils.hpp"
+
+#include "error.hpp"
 
 /**
  * @brief The CLONES namespace
@@ -119,10 +121,10 @@ public:
 
 /**
  * @brief A template to test whether a type requires a constant amount of space on disk
- * 
+ *
  * A template to test whether a type requires a constant amount of space on disk. By
  * default any type does not use constant space on disk.
- * 
+ *
  * @tparam T is the type to be tested
  * @tparam ENABLE is an optional parameter to enable/disable the template
  */
@@ -132,7 +134,7 @@ struct uses_constant_space_on_disk : std::false_type {};
 // a template specialization for arithmetic and enumerative types.
 // These types uses constant spaces on disk.
 template <typename T>
-struct uses_constant_space_on_disk<T, std::enable_if_t<std::is_arithmetic_v<T> 
+struct uses_constant_space_on_disk<T, std::enable_if_t<std::is_arithmetic_v<T>
     || std::is_enum_v<T>>> : std::true_type {};
 
 #define CHECK_CONSTANT_SPACE_ON_DISK(...) \
@@ -424,9 +426,10 @@ struct Out : public Basic
                              const uint8_t file_format_version)
     {
         if (file_format_description.size() > file_format_desc_size) {
-            throw std::domain_error("The file format description \"" + file_format_description
-                                    + "\" is larger than the file format size (i.e., "
-                                    + std::to_string(file_format_desc_size) + ").");
+            throw Error<std::domain_error>("The file format description \""
+                                           + file_format_description
+                                           + "\" is larger than the file format size (i.e., "
+                                           + std::to_string(file_format_desc_size) + ").");
         }
 
         size_t i=0;
@@ -538,7 +541,8 @@ struct In : public Basic
     static void read_header(ARCHIVE& archive, std::string& file_format_description, uint8_t& file_format_version)
     {
         if (archive.size() - archive.tellg()<file_format_desc_size+1) {
-            throw std::runtime_error("The " + to_string(archive.filepath) + " is not a CLONES archive.");
+            throw Error<std::runtime_error>("The " + to_string(archive.filepath)
+                                            + " is not a CLONES archive.");
         }
 
         file_format_description = std::string(file_format_desc_size+1, '\n');
@@ -1641,7 +1645,7 @@ Out& Out::operator&(const std::shared_ptr<T>& obj_ptr)
 
     if (!res.second) {
         // the pointer was not inserted
-        throw std::runtime_error("Error in saving a pointed object");
+        throw Error<std::runtime_error>("Error in saving a pointed object");
     }
 
     *this & *obj_ptr;
@@ -1692,12 +1696,12 @@ In& In::operator&(std::shared_ptr<T>& obj_ptr)
 
         auto it = dm_lookup.find(idx);
         if (it == dm_lookup.end()) {
-            throw std::runtime_error("The search object has not been loaded yet");
+            throw Error<std::runtime_error>("The search object has not been loaded yet");
         }
 
         if (it->second.first != typeid(T).hash_code()) {
-            throw std::runtime_error("Wrong hash code for index "
-                                        + std::to_string(idx));
+            throw Error<std::runtime_error>("Wrong hash code for index "
+                                            + std::to_string(idx));
         }
 
         obj_ptr = std::static_pointer_cast<T>(it->second.second);
@@ -1714,7 +1718,7 @@ In& In::operator&(std::shared_ptr<T>& obj_ptr)
 
         if (!res.second) {
             // the pointer was not inserted
-            throw std::runtime_error("Error in loading an object");
+            throw Error<std::runtime_error>("Error in loading an object");
         }
 
         *this & *obj_ptr;
@@ -1784,7 +1788,7 @@ ByteCounter& ByteCounter::operator&(const std::shared_ptr<T>& obj_ptr)
 
     if (!res.second) {
         // the pointer was not inserted
-        throw std::runtime_error("Error in saving a pointed object");
+        throw Error<std::runtime_error>("Error in saving a pointed object");
     }
 
     *this & *obj_ptr;

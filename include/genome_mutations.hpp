@@ -2,8 +2,8 @@
  * @file genome_mutations.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines genome and chromosome data structures
- * @version 1.18
- * @date 2026-05-22
+ * @version 1.19
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -48,6 +48,7 @@
 #include "cell.hpp"
 
 #include "progress_bar.hpp"
+#include "error.hpp"
 
 namespace CLONES
 {
@@ -240,7 +241,7 @@ private:
 
             oss << "Chromosome " << GenomicPosition::chrtos(chr_mutations.id())
                 <<  " has not allele " << Allele::format_id(allele_id) << ".";
-            throw std::out_of_range(oss.str());
+            throw Error<std::out_of_range>(oss.str());
         }
 
         return it->second;
@@ -387,7 +388,7 @@ public:
      * @return `true` if and only if the chromosome have an allele having `allele_id`
      *          as allele identifier and the whole `genomic_region` is contained
      *          in this allele
-     * @throw std::domain_error `genomic_region` does not lie in this chromosome
+     * @throw std::domain_error `genomic_region` does not lay in this chromosome
      * @throw std::out_of_range the chromosome does not contain the allele `allele_id`
      */
     bool allele_contains(const AlleleId& allele_id, const GenomicRegion& genomic_region) const;
@@ -433,7 +434,7 @@ public:
      * @param mutation is a mutation
      * @return `true` if and only if the allele does not contains
      *      SID mutations in the one-base neighborhood of `mutation`
-     * @throw std::domain_error `mutation` does not lie in the chromosome
+     * @throw std::domain_error `mutation` does not lay in the chromosome
      */
     bool has_context_free(const SID& mutation) const;
 
@@ -452,7 +453,7 @@ public:
      * @param[in] nature is the nature of the amplification
      * @return `true` if and only if the all the fragments touching `genomic_region`
      *      have `allele_id` among their allele ids and the region has been amplified
-     * @throw std::domain_error `genomic_region` does not lie in this chromosome
+     * @throw std::domain_error `genomic_region` does not lay in this chromosome
      */
     bool amplify_region(const GenomicRegion& genomic_region, const AlleleId& allele_id,
                         AlleleId& new_allele_id,
@@ -471,7 +472,7 @@ public:
      * @param[in] nature is the nature of the amplification
      * @return `true` if and only if the all the fragments touching `genomic_region`
      *      have `allele_id` among their allele ids and the region has been amplified
-     * @throw std::domain_error `genomic_region` does not lie in this chromosome
+     * @throw std::domain_error `genomic_region` does not lay in this chromosome
      */
     inline bool amplify_region(const GenomicRegion& genomic_region, const AlleleId& allele_id,
                                const Mutation::Nature& nature=Mutation::UNDEFINED)
@@ -494,7 +495,7 @@ public:
      * @param nature is the nature of the deletion
      * @return `true` if and only if the all the fragments touching `genomic_region`
      *      have `allele_id` among their allele ids and the allele has been removed
-     * @throw std::domain_error `genomic_region` does not lie in this chromosome
+     * @throw std::domain_error `genomic_region` does not lay in this chromosome
      */
     bool remove_region(const GenomicRegion& genomic_region, const AlleleId& allele_id,
                        const Mutation::Nature& nature=Mutation::UNDEFINED);
@@ -546,9 +547,9 @@ public:
      *      must be placed
      * @return `true` if and only if the chromosome does not contain any other
      *      SID mutations in `mutation`'s mutational context
-     * @throw std::domain_error `mutation` does not lie in the chromosome
+     * @throw std::domain_error `mutation` does not lay in the chromosome
      * @throw std::out_of_range the chromosome does not have the allele
-     *      `allele_id` or `mutation` does not lie in the allele
+     *      `allele_id` or `mutation` does not lay in the allele
      */
     bool insert_in_object(const SID& mutation, const AlleleId& allele_id);
 
@@ -563,9 +564,9 @@ public:
      * @param mutation_spec is the SID mutation to be applied in the chromosome
      * @return `true` if and only if the chromosome does not contain any other
      *      SID mutations in `mutation`'s mutational context
-     * @throw std::domain_error `mutation` does not lie in the chromosome
+     * @throw std::domain_error `mutation` does not lay in the chromosome
      * @throw std::out_of_range the chromosome does not have the allele
-     *      `allele_id` or `mutation` does not lie in the allele
+     *      `allele_id` or `mutation` does not lay in the allele
      */
     inline bool insert_in_object(const MutationSpec<SID>& mutation_spec)
     {
@@ -585,9 +586,9 @@ public:
      *      must be placed
      * @return `true` if and only if the chromosome does not contain any other
      *      SID mutations in `mutation`'s mutational context
-     * @throw std::domain_error `mutation` does not lie in the chromosome
+     * @throw std::domain_error `mutation` does not lay in the chromosome
      * @throw std::out_of_range the chromosome does not contain the allele
-     *      `allele_id` or `mutation` does not lie in the allele
+     *      `allele_id` or `mutation` does not lay in the allele
      */
     bool insert_in_reference(const SID& mutation, const AlleleId& allele_id);
 
@@ -602,9 +603,9 @@ public:
      * @param mutation_spec is the SID mutation to be applied in the chromosome
      * @return `true` if and only if the chromosome does not contain any other
      *      SID mutations in `mutation`'s mutational context
-     * @throw std::domain_error `mutation` does not lie in the chromosome
+     * @throw std::domain_error `mutation` does not lay in the chromosome
      * @throw std::out_of_range the chromosome does not contain the allele
-     *      `allele_id` or `mutation` does not lie in the allele
+     *      `allele_id` or `mutation` does not lay in the allele
      */
     inline bool insert_in_reference(const MutationSpec<SID>& mutation_spec)
     {
@@ -677,7 +678,7 @@ public:
      * @param genomic_position is the position of the SID mutation to be
      *      removed
      * @return `true` if and only if a SID occurred at `genomic_position`
-     * @throw std::domain_error `genomic_position` does not lie in the
+     * @throw std::domain_error `genomic_position` does not lay in the
      *      chromosome
      */
     bool remove_from_object_at(const GenomicPosition& genomic_position);
@@ -692,10 +693,10 @@ public:
      * @param mutation_spec is the SID mutation to be removed from the
      *      chromosome
      * @return `true` if and only if a SID occurred at `genomic_position`
-     * @throw std::domain_error `genomic_position` does not lie in the
+     * @throw std::domain_error `genomic_position` does not lay in the
      *      chromosome
      * @throw std::out_of_range the chromosome does not contain the
-     *      specified allele or `genomic_position` does not lie in the
+     *      specified allele or `genomic_position` does not lay in the
      *      allele
      */
     bool remove_from_object(const MutationSpec<SID>& mutation_spec);
@@ -708,7 +709,7 @@ public:
      * @param genomic_position is the position of the SID mutation to be
      *      removed
      * @return `true` if and only if a SID occurred at `genomic_position`
-     * @throw std::domain_error `genomic_position` does not lie in the
+     * @throw std::domain_error `genomic_position` does not lay in the
      *      chromosome
      */
     bool remove_from_reference_at(const GenomicPosition& genomic_position);
@@ -976,7 +977,7 @@ public:
      * @param genomic_region is the region on which the check is performed
      * @return `true` if and only if the whole `genomic_region` is contained
      *          in the allele `allele_id` of the corresponding chromosome
-     * @throw std::domain_error `genomic_region` does not lie in this chromosome
+     * @throw std::domain_error `genomic_region` does not lay in this chromosome
      * @throw std::out_of_range the chromosome does not contain the allele `allele_id`
      */
     bool allele_contains(const AlleleId& allele_id, const GenomicRegion& genomic_region) const;
@@ -996,7 +997,7 @@ public:
      * @param[in] nature is the nature of the amplification
      * @return `true` if and only if the all the fragments touching `genomic_region`
      *      have `allele_id` among their allele ids and the region has been amplified
-     * @throw std::domain_error `genomic_region` does not lie in this chromosome
+     * @throw std::domain_error `genomic_region` does not lay in this chromosome
      */
     bool amplify_region(const GenomicRegion& genomic_region, const AlleleId& allele_id,
                         AlleleId& new_allele_id,
@@ -1015,7 +1016,7 @@ public:
      * @param[in] nature is the nature of the amplification
      * @return `true` if and only if the all the fragments touching `genomic_region`
      *      have `allele_id` among their allele ids and the region has been amplified
-     * @throw std::domain_error `genomic_region` does not lie in this chromosome
+     * @throw std::domain_error `genomic_region` does not lay in this chromosome
      */
     inline bool amplify_region(const GenomicRegion& genomic_region, const AlleleId& allele_id,
                                const Mutation::Nature& nature=Mutation::UNDEFINED)
@@ -1144,9 +1145,9 @@ public:
      *      must be placed
      * @return `true` if and only if the genome does not contain any other
      *      SID mutations in `mutation`'s mutational context
-     * @throw std::domain_error `mutation` does not lie in the genome
+     * @throw std::domain_error `mutation` does not lay in the genome
      * @throw std::out_of_range the genome does not contain the allele
-     *      `allele_id` or `mutation` does not lie in the allele
+     *      `allele_id` or `mutation` does not lay in the allele
      */
     bool insert_in_object(const SID& mutation, const AlleleId& allele_id);
 
@@ -1161,9 +1162,9 @@ public:
      * @param mutation_spec is the SID mutation to be applied in the genome
      * @return `true` if and only if the genome does not contain any other
      *      SID mutations in `mutation`'s mutational context
-     * @throw std::domain_error `mutation` does not lie in the genome
+     * @throw std::domain_error `mutation` does not lay in the genome
      * @throw std::out_of_range the genome does not contain the allele
-     *      `allele_id` or `mutation` does not lie in the allele
+     *      `allele_id` or `mutation` does not lay in the allele
      */
     bool insert_in_object(const MutationSpec<SID>& mutation_spec);
 
@@ -1180,9 +1181,9 @@ public:
      *      must be placed
      * @return `true` if and only if the genome does not contain any other
      *      SID mutations in `mutation`'s mutational context
-     * @throw std::domain_error `mutation` does not lie in the genome
+     * @throw std::domain_error `mutation` does not lay in the genome
      * @throw std::out_of_range the genome does not contain the allele
-     *      `allele_id` or `mutation` does not lie in the allele
+     *      `allele_id` or `mutation` does not lay in the allele
      */
     bool insert_in_reference(const SID& mutation, const AlleleId& allele_id);
 
@@ -1197,9 +1198,9 @@ public:
      * @param mutation_spec is the SID mutation to be applied in the genome
      * @return `true` if and only if the genome does not contain any other
      *      SID mutations in `mutation`'s mutational context
-     * @throw std::domain_error `mutation` does not lie in the genome
+     * @throw std::domain_error `mutation` does not lay in the genome
      * @throw std::out_of_range the genome does not contain the allele
-     *      `allele_id` or `mutation` does not lie in the allele
+     *      `allele_id` or `mutation` does not lay in the allele
      */
     bool insert_in_reference(const MutationSpec<SID>& mutation_spec);
 
@@ -1260,7 +1261,7 @@ public:
      * @param mutation is a mutation
      * @return `true` if and only if the allele does not contains
      *      SID mutations in the one-base neighborhood of `mutation`
-     * @throw std::domain_error `mutation` does not lie in the genome
+     * @throw std::domain_error `mutation` does not lay in the genome
      */
     bool has_context_free(const SID& mutation) const;
 

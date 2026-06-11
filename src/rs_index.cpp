@@ -2,8 +2,8 @@
  * @file rs_index.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements a class to compute the repeated substring index
- * @version 1.4
- * @date 2026-05-25
+ * @version 1.5
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -33,6 +33,7 @@
 #include "utils.hpp"
 #include "basic_IO.hpp"
 #include "fasta_chr_reader.hpp"
+#include "error.hpp"
 
 namespace CLONES
 {
@@ -48,7 +49,8 @@ RSIndex::RepetitionStorage::RepetitionStorage():
 const Repetition<RSIndex::RepetitionType>& RSIndex::RepetitionStorage::extract(const size_t& pos)
 {
     if (pos >= stored_repetitions) {
-        throw std::out_of_range("Position not available in the storage");
+        throw Error<std::out_of_range>("Position " + std::to_string(pos)
+                                       + " not available in storage.");
     }
 
     if (pos+1 != stored_repetitions) {
@@ -467,7 +469,7 @@ void RSIndex::add_polymer(const ChromosomeId& chr_id, const ChrPosition& begin,
                           const char& previous_base)
 {
     if (unit_size==0) {
-        throw std::domain_error("Only initialized repetitions can be added.");
+        throw Error<std::domain_error>("Only initialized repetitions can be added.");
     }
 
     RepetitionMap* r_map;
@@ -534,7 +536,8 @@ size_t RSIndex::count_available_for(const IDType& id_type) const
                                        id_type.sl_index, id_type.insertion);
             break;
         default:
-            throw std::domain_error("Unsupported indel type.");
+            throw Error<std::runtime_error>("Unsupported indel type "
+                                            + std::to_string(static_cast<uint>(id_type.ftype)) + ".");
     }
 
     size_t total_size{0};
@@ -562,7 +565,9 @@ RSIndex::select(const IDType& id_type, const bool remove)
             rep_reference = find_a_microhomology(id_type.fl_index, id_type.sl_index);
             break;
         default:
-            throw std::domain_error("Unsupported indel type.");
+            throw Error<std::runtime_error>("Unsupported indel type "
+                                            + std::to_string(static_cast<uint>(id_type.ftype))
+                                            + ".");
     }
 
     if (remove) {
@@ -584,7 +589,7 @@ void RSIndex::restore(const IDType& id_type)
             r_map = &(homo_map->at(id_type.fl_index));
             break;
         default:
-            throw std::domain_error("Microhomology is not supported yet.");
+            throw Error<std::runtime_error>("Microhomology is not supported yet.");
     }
 
     r_map->at(get_second_index(id_type.sl_index, id_type.insertion)).restore();
@@ -608,7 +613,7 @@ RSIndex RSIndex::build_index(const std::filesystem::path& genome_fasta,
                              const int seed, UI::ProgressBar* progress_bar)
 {
     if (regions_to_avoid.size()>0) {
-        throw std::domain_error("The region to avoid parameter is not supported yet.");
+        throw Error<std::domain_error>("The `region_to_avoid` parameter is not supported yet.");
     }
 
     using namespace IO::FASTA;

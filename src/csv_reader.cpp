@@ -2,8 +2,8 @@
  * @file csv_reader.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements a class to read CSV
- * @version 1.3
- * @date 2026-02-06
+ * @version 1.4
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -34,6 +34,8 @@
 
 #include "utils.hpp"
 
+#include "error.hpp"
+
 namespace CLONES
 {
 
@@ -60,10 +62,10 @@ const std::string& CSVReader::CSVRow::get_field(const size_t& index) const
         return fields[index];
     }
 
-    throw std::out_of_range("The CSV row contains "
-                            + std::to_string(fields.size())
-                            + " fields. Requested field in position "
-                            + std::to_string(index));
+    throw Error<std::out_of_range>("The CSV row contains "
+                                   + std::to_string(fields.size())
+                                   + " fields. Requested field in position "
+                                   + std::to_string(index) + ".");
 }
 
 bool CSVReader::const_iterator::get_row(CSVReader::CSVRow& row)
@@ -100,28 +102,28 @@ CSVReader::CSVReader(const std::filesystem::path& filename, const bool has_heade
     filename(filename), col_sep(column_separator), first_row_pos(0)
 {
     if (!std::filesystem::exists(filename)) {
-        throw std::domain_error("\"" + to_string(filename)
-                                + "\" does not exists.");
+        throw Error<std::domain_error>("\"" + to_string(filename)
+                                        + "\" does not exists.");
     }
 
     if (!std::filesystem::is_regular_file(filename)) {
-        throw std::domain_error("\"" + to_string(filename)
-                                + "\" is not a regular file.");
+        throw Error<std::domain_error>("\"" + to_string(filename)
+                                       + "\" is not a regular file.");
     }
 
     std::ifstream ifs(filename);
 
     if (!ifs.is_open()) {
-        throw std::domain_error("\"" + to_string(filename)
-                                + "\" cannot be read.");
+        throw Error<std::domain_error>("\"" + to_string(filename)
+                                       + "\" cannot be read.");
     }
 
     if (has_header) {
         std::string line;
 
         if (!getline(ifs, line)) {
-            throw std::runtime_error("\"" + to_string(filename)
-                                     + "\" does not have a header row.");
+            throw Error<std::runtime_error>("\"" + to_string(filename)
+                                            + "\" does not have a header row.");
         }
 
         std::string column_name;

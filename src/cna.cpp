@@ -2,8 +2,8 @@
  * @file cna.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements a class for copy number alterations
- * @version 1.1
- * @date 2026-02-06
+ * @version 1.2
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -29,6 +29,8 @@
  */
 
 #include "cna.hpp"
+
+#include "error.hpp"
 
 namespace CLONES
 {
@@ -148,8 +150,9 @@ std::ostream& operator<<(std::ostream& out, const CLONES::Mutations::CNA& cna)
             }
             break;
         default:
-            throw std::runtime_error("Unsupported CNA type "
-                                     + std::to_string(static_cast<int>(cna.type)));
+            throw CLONES::Error<std::runtime_error>("Unsupported CNA type "
+                                                    + std::to_string(static_cast<int>(cna.type))
+                                                    + ".");
     }
 
     out << ")";

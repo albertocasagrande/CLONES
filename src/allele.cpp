@@ -2,8 +2,8 @@
  * @file allele.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements allele representation
- * @version 1.8
- * @date 2026-05-22
+ * @version 1.9
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -29,6 +29,8 @@
  */
 
 #include "allele.hpp"
+
+#include "error.hpp"
 
 namespace CLONES
 {
@@ -83,8 +85,8 @@ bool AlleleFragment::has_context_free(const SID& mutation) const
 bool AlleleFragment::insert_in_object(const SID& mutation)
 {
     if (!contains(mutation)) {
-        throw std::out_of_range("The allele fragment does not "
-                                "contain mutation region");
+        throw Error<std::out_of_range>("The allele fragment does not "
+                                       "contain mutation region");
     }
 
     if (has_context_free(mutation)) {
@@ -101,8 +103,11 @@ bool AlleleFragment::insert_in_object(const SID& mutation)
 bool AlleleFragment::insert_in_reference(const SID& mutation)
 {
     if (!contains(mutation)) {
-        throw std::out_of_range("The allele fragment does not "
-                                "contain mutation region");
+        std::ostringstream oss;
+
+        oss << *this << " does not contains " << mutation << ".";
+
+        throw Error<std::domain_error>(oss.str());
     }
 
     if (has_context_free(mutation)) {
@@ -117,7 +122,11 @@ bool AlleleFragment::insert_in_reference(const SID& mutation)
 bool AlleleFragment::remove_from_object_at(const GenomicPosition& genomic_position)
 {
     if (!contains(genomic_position)) {
-        return false;
+        std::ostringstream oss;
+
+        oss << *this << " does not contains " << genomic_position << ".";
+
+        throw Error<std::domain_error>(oss.str());
     }
 
     auto backup_data = make_data_exclusive();
@@ -204,13 +213,13 @@ bool AlleleFragment::includes(const SID& mutation) const
 AlleleFragment AlleleFragment::split(const GenomicPosition& split_point)
 {
     if (!contains(split_point)) {
-        throw std::out_of_range("The allele fragment does not "
-                                "contain mutation region");
+        throw Error<std::out_of_range>("The allele fragment does not "
+                                       "contain mutation region");
     }
 
     if (begin() == split_point.position) {
-        throw std::domain_error("The split point cannot be the "
-                                "initial position of the fragment");
+        throw Error<std::domain_error>("The split point cannot be the "
+                                       "initial position of the fragment");
     }
 
     make_data_exclusive();
@@ -446,7 +455,8 @@ Allele Allele::copy(const AlleleId& new_allele_id, const GenomicRegion& genomic_
     auto it = find_not_after(fragments, genomic_region.get_initial_position());
 
     if (it == fragments.end() || !it->second.contains(genomic_region)) {
-        throw std::domain_error("The allele does not fully contain the genomic region.");
+        throw Error<std::domain_error>("The allele does not fully "
+                                       "contain the genomic region.");
     }
 
     auto new_fragment = it->second.copy(genomic_region);
@@ -578,7 +588,7 @@ bool operator==(const CLONES::Mutations::AlleleFragment& lhs,
     if (lhs.get_mutations().size() != rhs.get_mutations().size()) {
         return false;
     }
-    
+
     auto lhs_it = lhs.get_mutations().begin();
     for (const auto& [pos, rhs_sid_ptr] : rhs.get_mutations()) {
         if (*rhs_sid_ptr != *(lhs_it->second)) {
@@ -603,7 +613,7 @@ bool operator!=(const CLONES::Mutations::AlleleFragment& lhs,
     if (lhs.get_mutations().size() != rhs.get_mutations().size()) {
         return true;
     }
-    
+
     auto lhs_it = lhs.get_mutations().begin();
     for (const auto& [pos, rhs_sid_ptr] : rhs.get_mutations()) {
         if (*rhs_sid_ptr != *(lhs_it->second)) {

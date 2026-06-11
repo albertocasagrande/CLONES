@@ -2,8 +2,8 @@
  * @file binary_logger.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements a binary simulation logger
- * @version 1.4
- * @date 2026-06-10
+ * @version 1.5
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -39,6 +39,8 @@
 
 #include "tissue_simulation.hpp"
 #include "utils.hpp"
+
+#include "error.hpp"
 
 namespace CLONES
 {
@@ -96,17 +98,13 @@ std::filesystem::path BinaryLogger::find_last_snapshot_in(const std::filesystem:
     namespace fs = std::filesystem;
 
     if (!fs::exists(directory)) {
-        std::ostringstream oss;
-
-        oss << "The path "<< directory<< " does not exist";
-        throw std::runtime_error(oss.str());
+        throw Error<std::runtime_error>("The path \"" + to_string(directory)
+                                        + "\" does not exist.");
     }
 
     if (!fs::is_directory(directory)) {
-        std::ostringstream oss;
-
-        oss << directory<< " is not a directory";
-        throw std::runtime_error(oss.str());
+        throw Error<std::runtime_error>("\"" + to_string(directory)
+                                        + "\" is not a directory.");
     }
 
     std::regex re = build_regex(to_string(directory / (snapshot_prefix+"_\\d+-\\d+.dat")));
@@ -126,10 +124,8 @@ std::filesystem::path BinaryLogger::find_last_snapshot_in(const std::filesystem:
     }
 
     if (!found) {
-        std::ostringstream oss;
-
-        oss << "No CLONES simulation snapshot in "<< directory<< "";
-        throw std::runtime_error(oss.str());
+        throw Error<std::runtime_error>("No CLONES simulation snapshot in \""
+                                        + to_string(directory) + "\".");
     }
 
     return last;
@@ -182,7 +178,7 @@ BinaryLogger::CellReader::CellReader(const std::filesystem::path& directory):
 Cell BinaryLogger::CellReader::operator[](const CellId& cell_id)
 {
     if (cell_id >= number_of_cells) {
-        throw std::out_of_range("The cell has not been created");
+        throw Error<std::out_of_range>("The cell has not been created.");
     }
 
     uint16_t aimed_id = static_cast<uint16_t>(cell_id / cells_per_archive);
@@ -203,9 +199,11 @@ Cell BinaryLogger::CellReader::operator[](const CellId& cell_id)
     auto cell = Cell::load(cell_archive);
 
     if (cell.get_id()!=cell_id) {
-        std::cerr << "Aiming cell id " << cell_id << " read "
-                  << cell << std::endl;
-        throw std::runtime_error("Wrong cell file format.");
+        std::ostringstream oss;
+
+        oss << "Wrong cell file format. Aiming cell id "
+            << cell_id << " read " << cell << ".";
+        throw Error<std::runtime_error>(oss.str());
     }
 
     return cell;
@@ -273,7 +271,7 @@ void BinaryLogger::record(const CellEventType& type, const CellInTissue& cell, c
 void BinaryLogger::record_initial_cell(const CellInTissue& cell)
 {
     if (cell.get_id() != cell.get_parent_id()) {
-        throw std::domain_error("The provided cell is not an initial cell");
+        throw Error<std::domain_error>("The provided cell is not an initial cell.");
     }
 
     record_cell(cell);

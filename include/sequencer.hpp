@@ -2,8 +2,8 @@
  * @file sequencer.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines sequencer models
- * @version 1.9
- * @date 2026-02-06
+ * @version 1.10
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -39,6 +39,8 @@
 #include "genomic_position.hpp"
 #include "genomic_sequence.hpp"
 #include "read.hpp"
+
+#include "error.hpp"
 
 namespace CLONES
 {
@@ -307,7 +309,7 @@ public:
          mean(mean_qual_function), stddev(stddev_qual_function)
     {
         if constexpr(!std::is_base_of_v<QUALITY_CODEC, SangerQualityCodec>) {
-            throw std::logic_error("This class only supports `SangerQualityCodec` at the moment");
+            throw Error<std::domain_error>("This class only supports `SangerQualityCodec`.");
         }
     }
 

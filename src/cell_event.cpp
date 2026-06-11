@@ -2,8 +2,8 @@
  * @file cell_event.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements cell events
- * @version 1.2
- * @date 2026-06-10
+ * @version 1.3
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -32,6 +32,8 @@
 #include <map>
 
 #include "cell_event.hpp"
+
+#include "error.hpp"
 
 namespace CLONES
 {
@@ -62,7 +64,7 @@ CellEventType CellEvent::get_event_id(const std::string& event_name)
     }
   }
 
-  throw std::domain_error("Unknown event name \"" + event_name + "\".");
+  throw Error<std::domain_error>("Unknown event name \"" + event_name + "\".");
 }
 
 }

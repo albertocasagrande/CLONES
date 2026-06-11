@@ -2,8 +2,8 @@
  * @file mutations_sim.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Main file for the CLONES mutations simulator
- * @version 1.6
- * @date 2026-02-06
+ * @version 1.7
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -57,7 +57,9 @@ template<>
 std::string
 boost::lexical_cast<std::string, CLONES::Mutations::SequencingTissueSimulations::ReadSimulator<>::Mode>(const CLONES::Mutations::SequencingTissueSimulations::ReadSimulator<>::Mode& mode)
 {
+    using namespace CLONES;
     using namespace CLONES::Mutations::SequencingTissueSimulations;
+
     switch (mode) {
         case ReadSimulator<>::Mode::CREATE:
             return "create";
@@ -66,7 +68,7 @@ boost::lexical_cast<std::string, CLONES::Mutations::SequencingTissueSimulations:
         case ReadSimulator<>::Mode::UPDATE:
             return "update";
         default:
-            throw std::runtime_error("Unknown mode");
+            throw Error<std::runtime_error>("Unknown mode " + std::to_string(static_cast<uint>(mode)) + ".");
     }
 }
 
@@ -141,19 +143,20 @@ class MutationsSimulator : public BasicExecutable
     std::list<CLONES::Mutants::Evolutions::TissueSample>
     get_samples(CLONES::Mutants::Evolutions::TissueSimulation& simulation, const nlohmann::json& simulation_cfg) const
     {
+        using namespace CLONES;
         using namespace CLONES::Mutants;
         using namespace CLONES::Mutants::Evolutions;
 
-        std::list<CLONES::Mutants::Evolutions::TissueSample> samples;
+        std::list<TissueSample> samples;
 
         if (simulation_cfg.contains("sample regions")) {
             const auto& sample_regions_json = simulation_cfg["sample regions"];
             if (!sample_regions_json.is_array()) {
-                throw std::domain_error("The \"sample regions\" field must be an array.");
+                throw Error<std::runtime_error>("The \"sample regions\" field must be an array.");
             }
 
             for (const auto& sample_region_json: sample_regions_json) {
-                auto sample_specification = CLONES::ConfigReader::get_sample_specification(sample_region_json);
+                auto sample_specification = ConfigReader::get_sample_specification(sample_region_json);
                 samples.push_back(simulation.simulate_sampling(sample_specification));
             }
 
@@ -294,28 +297,30 @@ class MutationsSimulator : public BasicExecutable
 
     static CLONES::Mutations::GenomicRegion get_CNA_region(const CLONES::IO::CSVReader::CSVRow& row, const size_t& row_num)
     {
+        using namespace CLONES;
         using namespace CLONES::Mutations;
 
         if (row.size()<5) {
-            throw std::runtime_error("The CNA CSV must contains at least 5 columns");
+            throw Error<std::runtime_error>("The CNA CSV must contains at least 5 columns. "
+                                            + std::to_string(row.size()) + " found.");
         }
         ChromosomeId chr_id;
 
         try {
             chr_id = GenomicPosition::stochr(row.get_field(0));
         } catch (std::invalid_argument const&) {
-            throw std::domain_error("Unknown chromosome specification " + row.get_field(0)
-                                    + " in row number " + std::to_string(row_num)
-                                    + ".");
+            throw Error<std::runtime_error>("Unknown chromosome specification "
+                                            + row.get_field(0) + " in row number "
+                                            + std::to_string(row_num) + ".");
         }
 
         uint32_t begin_pos;
         try {
             begin_pos = stoul(row.get_field(1));
         } catch (std::invalid_argument const&) {
-            throw std::domain_error("Unknown begin specification " + row.get_field(1)
-                                    + " in row number " + std::to_string(row_num)
-                                    + ".");
+            throw Error<std::runtime_error>("Unknown begin specification "
+                                            + row.get_field(1) + " in row number "
+                                            + std::to_string(row_num) + ".");
         }
 
         GenomicPosition pos(chr_id, begin_pos);
@@ -324,14 +329,17 @@ class MutationsSimulator : public BasicExecutable
         try {
             end_pos = stoul(row.get_field(2));
         } catch (std::invalid_argument const&) {
-            throw std::domain_error("Unknown end specification " + row.get_field(2)
-                                    + " in row number " + std::to_string(row_num)
-                                    + ".");
+            throw Error<std::runtime_error>("Unknown end specification "
+                                           + row.get_field(2) + " in row number "
+                                           + std::to_string(row_num) + ".");
         }
 
         if (begin_pos>end_pos) {
-            throw std::domain_error("The CNA begin lays after the end in row number "
-                                    + std::to_string(row_num));
+            throw Error<std::runtime_error>("The CNA begin (i.e., "
+                                            + std::to_string(begin_pos)
+                                            + ") lays after its end (i.e., "
+                                            + std::to_string(end_pos)
+                                            + ").");
         }
 
         return {pos, end_pos+1-begin_pos};
@@ -441,8 +449,8 @@ class MutationsSimulator : public BasicExecutable
         auto rs_index = load_rs_index(rs_index_filename);
 
         if (!simulation_cfg.contains("exposures")) {
-            throw std::runtime_error("The passengers simulation configuration must contain "
-                                     "a \"exposures\" field");
+            throw Error<std::runtime_error>("The passengers simulation configuration "
+                                            "must contain a \"exposures\" field");
         }
 
         auto num_of_alleles = get_number_of_alleles(context_index, simulation_cfg);
@@ -616,6 +624,7 @@ class MutationsSimulator : public BasicExecutable
 public:
     static std::vector<CLONES::Mutations::CNA> load_passenger_CNAs(const std::filesystem::path& CNAs_csv)
     {
+        using namespace CLONES;
         using namespace CLONES::Mutations;
 
         std::vector<CNA> CNAs;
@@ -632,9 +641,8 @@ public:
                     CNAs.emplace_back(region.get_initial_position(), region.size(), CNA::Type::AMPLIFICATION);
                 }
             } catch (std::invalid_argument const&) {
-                throw std::domain_error("Unknown major specification " + major
-                                        + " in row number " + std::to_string(row_num)
-                                        + ".");
+                throw Error<std::runtime_error>("Unknown major specification " + major
+                                                + " in row number " + std::to_string(row_num) + ".");
             }
 
             const auto minor = row.get_field(4);
@@ -643,9 +651,8 @@ public:
                     CNAs.emplace_back(region.get_initial_position(), region.size(), CNA::Type::DELETION);
                 }
             } catch (std::invalid_argument const&) {
-                throw std::domain_error("Unknown minor specification " + major
-                                        + " in row number " + std::to_string(row_num)
-                                        + ".");
+                throw Error<std::runtime_error>("Unknown minor specification " + major
+                                                + " in row number " + std::to_string(row_num) + ".");
             }
 
             ++row_num;
@@ -769,9 +776,12 @@ public:
         quiet = vm.count("quiet")>0;
 
         if (sequencer_error_rate<0 || sequencer_error_rate>1) {
-            throw std::out_of_range(std::string("The sequencer error rate must be "
-                                                "in the interval [0,1]. ")
-                                    + "Given " + std::to_string(sequencer_error_rate) + ".");
+            using namespace CLONES;
+
+            throw Error<std::out_of_range>(("The sequencer error rate must be "
+                                            "in the interval [0,1]. Got ")
+                                           + std::to_string(sequencer_error_rate)
+                                           + ".");
         }
 
         {

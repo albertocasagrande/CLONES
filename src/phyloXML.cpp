@@ -2,8 +2,8 @@
  * @file phyloXML.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements phyloXML stream
- * @version 1.2
- * @date 2026-02-06
+ * @version 1.3
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -34,6 +34,8 @@
 
 #include "descendant_forest.hpp"
 #include "palette.hpp"
+
+#include "error.hpp"
 
 namespace CLONES
 {
@@ -67,7 +69,7 @@ void phyloXMLStream::change_indentation_level(const size_t level)
 phyloXMLStream& phyloXMLStream::operator<<(const DescendantForest& forest)
 {
     if (closed) {
-        throw std::runtime_error("The stream has been already closed");
+        throw Error<std::runtime_error>("The stream has been already closed.");
     }
 
     const auto roots = forest.get_roots();
@@ -118,7 +120,7 @@ phyloXMLStream& phyloXMLStream::operator<<(const SpeciesId& species_id)
 phyloXMLStream& phyloXMLStream::operator<<(const DescendantForest::const_node& node)
 {
     if (closed) {
-        throw std::runtime_error("The stream has been already closed");
+        throw Error<std::runtime_error>("The stream has been already closed.");
     }
 
     const Cell& cell = node;

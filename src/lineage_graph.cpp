@@ -2,8 +2,8 @@
  * @file lineage_graph.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements lineage graphs
- * @version 1.1
- * @date 2026-02-06
+ * @version 1.2
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -30,6 +30,8 @@
 
 #include "lineage_graph.hpp"
 
+#include "error.hpp"
+
 namespace CLONES
 {
 
@@ -53,7 +55,8 @@ LineageGraph::LineageGraph()
 LineageGraph& LineageGraph::add_edge(const LineageEdge& edge, const Time& time)
 {
     if (has_edge(edge)) {
-        throw std::domain_error("The edge is already present in the lineage graph.");
+        throw Error<std::runtime_error>("The edge is already present "
+                                        "in the lineage graph.");
     }
 
     first_occurrence.insert({edge, time});

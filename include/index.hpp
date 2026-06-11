@@ -2,8 +2,8 @@
  * @file index.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines index
- * @version 1.1
- * @date 2026-02-06
+ * @version 1.2
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -33,10 +33,13 @@
 
 #include <map>
 #include <memory>
+#include <sstream>
 #include <type_traits>
 
 #include "bucket.hpp"
 #include "progress_bar.hpp"
+
+#include "error.hpp"
 
 namespace CLONES
 {
@@ -54,9 +57,9 @@ namespace Archive
  * of values, named classes, whose union consists in all values
  * representable by the type.
  *
- * The default is partition of a type consists of singleton 
+ * The default is partition of a type consists of singleton
  * classes.
- * 
+ *
  * @tparam TYPE is the type for which this structure defines
  *      the partition
  */
@@ -87,7 +90,7 @@ struct partition
  * of key buckets and a map file containing the map key-bucket.
  * This class is a base class for both `IndexBuilder` and
  * `IndexReader`.
- * 
+ *
  * @tparam KEY is a type of the index keys
  */
 template<class KEY>
@@ -102,8 +105,8 @@ class IndexBase
 protected:
     /**
      * @brief Set the prefix of the index bucket filenames
-     * 
-     * @param bucket_prefix is the new prefix of bucket filename 
+     *
+     * @param bucket_prefix is the new prefix of bucket filename
      */
     inline void set_bucket_prefix(const std::string& bucket_prefix)
     {
@@ -120,7 +123,7 @@ public:
 
     /**
      * @brief A constructor
-     * 
+     *
      * @param index_path is the path of the index directory
      * @param cache_size is the index cache size in bytes
      * @param bucket_prefix is the prefix of the index bucket
@@ -133,16 +136,16 @@ public:
         bucket_prefix{bucket_prefix}
     {
         if (cache_size==0) {
-            throw std::domain_error("Index cache size must be greater than 0.");
+            throw Error<std::domain_error>("Index cache size must be greater than 0.");
         }
     }
 
     /**
      * @brief Get the path of a bucket file
-     * 
-     * This method returns the path of the bucket file associated to 
+     *
+     * This method returns the path of the bucket file associated to
      * a key.
-     * 
+     *
      * @param key is the key associated to the aimed bucket file path
      * @return the path of the bucket file associated to `key`
      */
@@ -157,7 +160,7 @@ public:
 
     /**
      * @brief Get the prefix of the bucket filenames
-     * 
+     *
      * @return the prefix of the bucket filenames
      */
     inline const std::string& get_bucket_prefix() const
@@ -167,12 +170,12 @@ public:
 
     /**
      * @brief Get the filename of the index map file
-     * 
+     *
      * Any index is saved in a directory as a file mapping
      * any key to a bucket, named *map file*, and the
      * corresponding buckets.
      * This method returns the filename of the map file.
-     * 
+     *
      * @return the filename of the index map file
      */
     inline static constexpr std::string map_filename()
@@ -182,7 +185,7 @@ public:
 
     /**
      * @brief Get the index map file path
-     * 
+     *
      * Any index is saved in a directory as a file mapping
      * any key to a bucket, named *map file*, and the
      * corresponding buckets.
@@ -198,7 +201,7 @@ public:
 
     /**
      * @brief Get the index directory path
-     * 
+     *
      * @return the index directory path
      */
     inline const std::filesystem::path& get_path() const
@@ -208,7 +211,7 @@ public:
 
     /**
      * @brief Get the index cache size
-     * 
+     *
      * @return the index cache size in bytes
      */
     inline const size_t& get_cache_size() const
@@ -218,9 +221,9 @@ public:
 
     /**
      * @brief Get the cache size per index bucket
-     * 
+     *
      * @param num_of_keys is the number of index keys
-     * @return the cache size per index bucket in bytes if the index 
+     * @return the cache size per index bucket in bytes if the index
      *      has `num_of_keys` keys
      */
     inline size_t cache_size_per_bucket(const size_t num_of_keys) const
@@ -271,16 +274,16 @@ private:
 
     /**
      * @brief Associated a new bucket to a key
-     * 
+     *
      * This method associated a new bucket to a key in the
      * key-bucket map. If the corresponding bucket file
      * already exists or new association cannot be added
      * to the index map, a `std::runtime_error` is thrown.
-     * 
+     *
      * @param key is the key to which the new bucket is
      *      associated
      * @return an iterator of the key-bucket map referring
-     *      to the just inserted pair `key`-`key`'s bucket 
+     *      to the just inserted pair `key`-`key`'s bucket
      */
     BucketMapType::iterator add_bucket_for(const KEY& key)
     {
@@ -289,9 +292,9 @@ private:
         if (std::filesystem::exists(bucket_path)) {
             std::ostringstream oss;
 
-            oss << "IndexBuilder::index: the bucket file "
-                << "for \"" << key << "\" already exists.";
-            throw std::runtime_error(oss.str());
+            oss << "The bucket file for \""
+                << key << "\" already exists.";
+            throw Error<std::runtime_error>(oss.str());
         }
 
         const auto bucket_cache_size = this->cache_size_per_bucket(buckets.size()+1);
@@ -309,14 +312,15 @@ private:
 
         std::ostringstream oss;
 
-        oss << "The bucket for \"" << key << "\" cannot be added to the index.";
-        throw std::runtime_error(oss.str());
+        oss << "The bucket for \"" << key
+            << "\" cannot be added to the index.";
+        throw Error<std::runtime_error>(oss.str());
     }
 
 public:
     /**
      * @brief Construct a new index builder
-     * 
+     *
      * @param index_path is the path to the directory storing the index
      * @param cache_size is the write cache size in bytes
      * @param bucket_prefix is the prefix of the bucket filenames
@@ -327,16 +331,13 @@ public:
         IndexBase<KEY>{index_path, cache_size, bucket_prefix}
     {
         if (cache_size==0) {
-            throw std::domain_error("IndexBuilder: The cache size must "
-                                    "be greater than 0.");
+            throw Error<std::domain_error>("The cache size must "
+                                           "be greater than 0.");
         }
 
         if (std::filesystem::exists(index_path)) {
-            std::ostringstream oss;
-
-            oss << "IndexBuilder: \"" << to_string(index_path)
-                << "\" already exists.";
-            throw std::domain_error(oss.str());
+            throw Error<std::domain_error>("\"" + to_string(index_path)
+                                            + "\" already exists.");
         }
 
         std::filesystem::create_directory(index_path);
@@ -389,7 +390,7 @@ public:
         for (auto& [key, bucket]: buckets) {
             bucket.flush();
         }
-        
+
         // use all the cache and sequentially shuffle each bucket
         for (auto& [key, bucket]: buckets) {
             bucket.shuffle(random_generator, this->get_cache_size(), tmp_dir);
@@ -398,7 +399,7 @@ public:
 
     /**
      * @brief Save the map file on disk
-     * 
+     *
      * This method saves the map file in the index directory
      */
     void save_map_on_disk()
@@ -424,7 +425,7 @@ public:
 
     /**
      * @brief Destroy the Index Builder
-     * 
+     *
      * This method saves the index map file in the index directory
      * and destroys the index builder object.
      */
@@ -496,11 +497,11 @@ private:
 
     /**
      * @brief Add a tour iterator to the key-bucket iterator map
-     * 
+     *
      * This method associates a key with a random tour iterator over the bucket
      * that corresponds to the key in the key-bucket iterator map. If the new
      * association cannot be added to the map, a `std::runtime_error` is thrown.
-     * 
+     *
      * @param key is the key associated to the bucket whose random tour iterator
      *      must be added to the key-bucket iterator map
      * @return an iterator to the added association in the key-bucket iterator map
@@ -517,10 +518,10 @@ private:
         if (!result.second) {
             std::ostringstream oss;
 
-            oss << "The iterator for " << key
-                << "'s bucket cannot be initialised.";
+            oss << "The iterator for \"" << key
+                << "\"'s bucket cannot be initialised.";
 
-            throw std::runtime_error(oss.str());
+            throw Error<std::runtime_error>(oss.str());
         }
 
         return result.first;
@@ -536,7 +537,7 @@ public:
 
     /**
      * @brief A constructor
-     * 
+     *
      * @param index_path is the path of the index directory
      * @param cache_size is the read cache size in bytes
      */
@@ -547,28 +548,19 @@ public:
     {
 
         if (!std::filesystem::exists(index_path)) {
-            std::ostringstream oss;
-
-            oss << "IndexReader: \"" << to_string(index_path)
-                << "\" does not exist.";
-            throw std::domain_error(oss.str());
+            throw Error<std::domain_error>("\"" + to_string(index_path)
+                                           + "\" does not exist.");
         }
-    
-        if (!std::filesystem::is_directory(index_path)) {
-            std::ostringstream oss;
 
-            oss << "IndexReader: \"" << to_string(index_path)
-                << "\" is not a directory.";
-            throw std::domain_error(oss.str());
+        if (!std::filesystem::is_directory(index_path)) {
+            throw Error<std::domain_error>("\"" + to_string(index_path)
+                                           + "\" is not a directory.");
         }
 
         const auto map_path = this->get_map_path();
         if (!std::filesystem::exists(map_path)) {
-            std::ostringstream oss;
-
-            oss << "IndexReader: \"" << to_string(map_path)
-                << "\" does not exist.";
-            throw std::domain_error(oss.str());
+            throw Error<std::domain_error>("\"" + to_string(map_path)
+                                           + "\" does not exist.");
         }
 
         Binary::In archive(map_path);
@@ -601,7 +593,7 @@ public:
 
     /**
      * @brief Get the index keys
-     * 
+     *
      * @return a vector containing the index keys
      */
     std::vector<KEY> get_keys() const
@@ -669,8 +661,8 @@ public:
 
     /**
      * @brief Return the number of keys in the index
-     * 
-     * @return the number of keys in the index 
+     *
+     * @return the number of keys in the index
      */
     inline size_t num_of_keys() const
     {
@@ -704,7 +696,7 @@ public:
 
             oss << "No more values available for " << key << ".";
 
-            throw std::runtime_error(oss.str());
+            throw Error<std::runtime_error>(oss.str());
         }
 
         VALUE value{*(found_it->second)};
@@ -760,7 +752,7 @@ public:
      *
      * @tparam KEY_PARTITION is a partition of key type
      * @param key is the a representant of the searched key class
-     * @return the number of extractable values associated to the 
+     * @return the number of extractable values associated to the
      *      class of `key`
      */
     template<typename KEY_PARTITION=partition<KEY>>
@@ -804,7 +796,8 @@ public:
         }
 
         if (available_in_class==0) {
-            throw std::runtime_error("No value available in the key class.");
+            throw Error<std::runtime_error>("No value available in the "
+                                            "key class.");
         }
 
         std::uniform_int_distribution<size_t> dist(0, available_in_class-1);
@@ -851,7 +844,8 @@ public:
         }
 
         if (available_in_class==0) {
-            throw std::runtime_error("No value available in the key class.");
+            throw Error<std::runtime_error>("No value available in the "
+                                            "key class.");
         }
 
         std::uniform_int_distribution<size_t> dist(0, available_in_class-1);

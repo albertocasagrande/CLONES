@@ -2,8 +2,8 @@
  * @file logger.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements simulation loggers
- * @version 1.1
- * @date 2026-02-06
+ * @version 1.2
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -36,6 +36,7 @@
 #include "tissue.hpp"
 
 #include "utils.hpp"
+#include "error.hpp"
 
 namespace CLONES
 {
@@ -105,7 +106,10 @@ void BasicLogger::record(const CellEventType& type, const CellInTissue& cell, co
 void BasicLogger::record_initial_cell(const CellInTissue& cell)
 {
     if (cell.get_id() != cell.get_parent_id()) {
-        throw std::domain_error("The provided cell is not an initial cell");
+        std::ostringstream oss;
+
+        oss << cell << " is not not an initial cell.";
+        throw Error<std::domain_error>(oss.str());
     }
 
     (void)cell;

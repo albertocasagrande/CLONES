@@ -2,8 +2,8 @@
  * @file tissue.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Define tissue class
- * @version 1.4
- * @date 2026-06-10
+ * @version 1.5
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -32,6 +32,8 @@
 
 #include "tissue.hpp"
 #include "mutant_properties.hpp"
+
+#include "error.hpp"
 
 namespace CLONES
 {
@@ -76,17 +78,13 @@ const Species& Tissue::SpeciesView::get_species_by_epistate(const std::string& e
         }
     }
 
-    std::ostringstream oss;
-
     if (size()==0) {
-        oss << "The mutant has no epigenetic states";
+        throw Error<std::out_of_range>("The mutant has no epigenetic states.");
     }
 
-    oss << "\"" << (*this)[0].get_mutant_name()
-        << "\" does not have the epigenetic state \""
-        << epistate_name << "\"";
-
-    throw std::out_of_range(oss.str());
+    throw Error<std::out_of_range>("\"" + (*this)[0].get_mutant_name()
+                                   + "\" does not have the epigenetic state \""
+                                   + epistate_name + "\".");
 }
 
 size_t Tissue::SpeciesView::num_of_cells() const
@@ -176,7 +174,7 @@ Tissue::CellInTissueProxy::operator CellInTissue&()
         return *ptr;
     }
 
-    throw std::runtime_error("Wild-type cell");
+    throw Error<std::runtime_error>("Wild-type cell");
 }
 
 Tissue::Tissue(const std::string& name, const std::vector<AxisSize>& sizes):
@@ -187,7 +185,9 @@ Tissue::Tissue(const std::string& name, const std::vector<AxisSize>& sizes):
         z_size = sizes[2];
     } else {
         if (dimensions!=2) {
-            throw std::domain_error("The tissue must be a either a 3D or 2D shape");
+            throw Error<std::domain_error>("The tissue must be a either a 3D or 2D shape. "
+                                           + std::to_string(sizes.size()) + " dimensions "
+                                           + "have been specified.");
         }
     }
 
@@ -276,8 +276,9 @@ const Species& Tissue::get_species(const SpeciesId& species_id) const
 {
     const auto pos_it = id_pos.find(species_id);
     if (pos_it == id_pos.end()) {
-        throw std::out_of_range("Species identifier \""+
-                                std::to_string(static_cast<int>(species_id))+"\" is unknown");
+        throw Error<std::out_of_range>("Species identifier \""
+                                       + std::to_string(static_cast<uint>(species_id))
+                                       + "\" is unknown.");
     }
 
     return species[pos_it->second];
@@ -287,8 +288,9 @@ Species& Tissue::get_species(const SpeciesId& species_id)
 {
     const auto pos_it = id_pos.find(species_id);
     if (pos_it == id_pos.end()) {
-        throw std::out_of_range("Species identifier \""+
-                                std::to_string(static_cast<int>(species_id))+"\" is unknown");
+        throw Error<std::out_of_range>("Species identifier \""
+                                       + std::to_string(static_cast<uint>(species_id))
+                                       + "\" is unknown.");
     }
 
     return species[pos_it->second];
@@ -299,7 +301,8 @@ const Species& Tissue::get_species(const std::string& species_name) const
 {
     const auto pos_it = name_pos.find(species_name);
     if (pos_it == name_pos.end()) {
-        throw std::out_of_range("Species \""+species_name+"\" is unknown");
+        throw Error<std::out_of_range>("Species \"" + species_name
+                                       + "\" is unknown.");
     }
 
     return species[pos_it->second];
@@ -309,7 +312,8 @@ Species& Tissue::get_species(const std::string& species_name)
 {
     const auto pos_it = name_pos.find(species_name);
     if (pos_it == name_pos.end()) {
-        throw std::out_of_range("Species \""+species_name+"\" is unknown");
+        throw Error<std::out_of_range>("Species \"" + species_name
+                                       + "\" is unknown.");
     }
 
     return species[pos_it->second];
@@ -319,13 +323,30 @@ const CellInTissue& Tissue::place_cell(const CellId& id, const SpeciesId& specie
                                        const PositionInTissue position)
 {
     if (!is_valid(position)) {
-        throw std::runtime_error("The position is not in the tissue");
+        std::ostringstream oss;
+
+        const auto size_sizes = size();
+
+        oss << "Position " << position << " does not belong to the "
+            << static_cast<uint>(size_sizes[0]) << "x"
+            << static_cast<uint>(size_sizes[1]);
+
+        if (size_sizes.size()>2) {
+            oss << "x" << static_cast<uint>(size_sizes[2]);
+        }
+
+        oss << "-tissue.";
+        throw Error<std::out_of_range>(oss.str());
     }
 
     auto*& cell_ptr = space[position.x][position.y][position.z];
 
     if (cell_ptr!=nullptr) {
-        throw std::runtime_error("The position is not free");
+        std::ostringstream oss;
+
+        oss << "Position " << position << " is already taken by "
+            << "a cancer cell.";
+        throw Error<std::runtime_error>(oss.str());
     }
 
     Species& species = get_species(species_id);
@@ -357,21 +378,21 @@ Tissue& Tissue::add_mutant_species(const MutantProperties& mutant)
 {
     // check whether the mutant is already in the tissue
     if (mutant_pos.count(mutant.get_id())>0) {
-        throw std::runtime_error("Clone already in the tissue");
+        throw Error<std::runtime_error>("The mutant " + mutant.get_name()
+                                        + " is already in the tissue.");
     }
 
     // check whether any of the species is already in the tissue
     for (const auto& [epistate_name, species]: mutant.get_species()) {
         if (id_pos.count(species.get_id())>0) {
-            throw std::runtime_error("Species id "
-                                     + std::to_string(static_cast<int>(species.get_id()))
-                                     + "(i.e., " + species.get_name()
-                                     + ") already in the tissue");
+            throw Error<std::runtime_error>("Species id "
+                                            + std::to_string(static_cast<int>(species.get_id()))
+                                            + "(i.e., " + species.get_name()
+                                            + ") already in the tissue.");
         }
         if (name_pos.count(species.get_name())>0) {
-            throw std::runtime_error("Species \""
-                                     + species.get_name()
-                                     + "\" already in the tissue");
+            throw Error<std::runtime_error>("Species \"" + species.get_name()
+                                            + "\" already in the tissue");
         }
     }
 

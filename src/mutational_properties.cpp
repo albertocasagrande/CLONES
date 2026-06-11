@@ -2,8 +2,8 @@
  * @file mutational_properties.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements a class to represent the mutational properties
- * @version 1.6
- * @date 2026-06-10
+ * @version 1.7
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -31,6 +31,8 @@
 #include <sstream>
 
 #include "mutational_properties.hpp"
+
+#include "error.hpp"
 
 namespace CLONES
 {
@@ -71,8 +73,8 @@ MutationalProperties::add_mutant(const std::string& mutant_name,
                                  const std::list<DriverMutations::MutationType>& application_order)
 {
     if (driver_mutations.count(mutant_name)>0) {
-        throw std::domain_error("The mutational properties of mutant \""+mutant_name+
-                                "\" has been already added.");
+        throw Error<std::domain_error>("The mutational properties of mutant \"" + mutant_name +
+                                       "\" has been already added.");
     }
 
     driver_mutations.insert({mutant_name, {mutant_name, driver_SIDs,
@@ -107,7 +109,7 @@ void MutationalProperties::set_mutant_drivers(const DriverMutations& mutant_driv
     auto found = this->driver_mutations.find(mutant_drivers.name);
 
     if (found == this->driver_mutations.end()) {
-        throw std::runtime_error("Unknown mutant \"" + mutant_drivers.name + "\".");
+        throw Error<std::runtime_error>("Unknown mutant \"" + mutant_drivers.name + "\".");
     }
 
     found->second = mutant_drivers;

@@ -2,8 +2,8 @@
  * @file simulation.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Define a tumour evolution simulation
- * @version 1.7
- * @date 2026-06-10
+ * @version 1.8
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -28,11 +28,13 @@
  * SOFTWARE.
  */
 
-#include "tissue_simulation.hpp"
-
 #include <set>
 #include <list>
 #include <string>
+
+#include "tissue_simulation.hpp"
+
+#include "error.hpp"
 
 namespace CLONES
 {
@@ -106,7 +108,8 @@ TissueSimulation& TissueSimulation::operator=(TissueSimulation&& orig)
 const Tissue& TissueSimulation::tissue() const
 {
     if (tissues.size()==0) {
-        throw std::runtime_error("No tissue has been associated to the simulation yet.");
+        throw Error<std::runtime_error>("No tissue has been associated "
+                                        "to the simulation yet.");
     }
     return tissues[0];
 }
@@ -114,7 +117,8 @@ const Tissue& TissueSimulation::tissue() const
 Tissue& TissueSimulation::tissue()
 {
     if (tissues.size()==0) {
-        throw std::runtime_error("No tissue has been associated to the simulation yet.");
+        throw Error<std::runtime_error>("No tissue has been associated "
+                                        "to the simulation yet.");
     }
     return tissues[0];
 }
@@ -155,7 +159,7 @@ void select_next_event_in_species(CellEvent& event, Tissue& tissue,
             }
         }
     }
-        
+
     if (selected_new_event) {
         // at the end select cell selection
 
@@ -177,14 +181,14 @@ TissueSimulation::choose_cell_in(const MutantId& mutant_id, const CellEventType&
     }
 
     if (total == 0) {
-        throw std::runtime_error("No cell available for the mutant " + 
-                                 std::to_string(mutant_id));
+        throw Error<std::runtime_error>("No cell available for the mutant " +
+                                        std::to_string(mutant_id));
     }
 
     std::discrete_distribution<size_t> distribution(num_of_cells.begin(),
                                                     num_of_cells.end());
     const size_t species_idx = distribution(random_gen);
-    
+
     return species[species_idx].choose_a_cell(random_gen, event_type);
 }
 
@@ -231,8 +235,8 @@ const CellInTissue& TissueSimulation::choose_cell_in(const MutantId& mutant_id,
 
     std::ostringstream oss;
 
-    oss <<"No cell in the specified mutant is available in " << rectangle;
-    throw std::domain_error(oss.str());
+    oss <<"No cell in the specified mutant is available in " << rectangle << ".";
+    throw Error<std::runtime_error>(oss.str());
 }
 
 const CellInTissue& TissueSimulation::choose_cell_in(const std::string& mutant_name,
@@ -347,12 +351,12 @@ const CellInTissue& TissueSimulation::choose_border_cell_in(const MutantId& muta
 
     for (const auto& [m_name, m_id]: mutant_name2id) {
         if (m_id == mutant_id) {
-            throw std::runtime_error("No border cells available for \"" + m_name + "\".");
+            throw Error<std::runtime_error>("No border cells available for \"" + m_name + "\".");
         }
     }
 
-    throw std::runtime_error("No border cells available for unknown mutant (id: "
-                             + std::to_string(mutant_id) + ").");
+    throw Error<std::runtime_error>("No border cells available for unknown mutant (id: "
+                                    + std::to_string(mutant_id) + ").");
 }
 
 const CellInTissue& TissueSimulation::choose_border_cell_in(const MutantId& mutant_id)
@@ -525,7 +529,9 @@ void TissueSimulation::handle_timed_event_queue(CellEvent& candidate_event)
                 }
                 break;
             default:
-                throw std::domain_error("Unsupported timed event");
+                throw Error<std::runtime_error>("Unsupported timed event "
+                                                + std::to_string(static_cast<uint>(timed_event.type))
+                                                + ".");
         }
     }
 }
@@ -542,7 +548,7 @@ CellEvent TissueSimulation::select_next_cell_event()
     }
 
     if (event.delay == std::numeric_limits<Time>::max()) {
-        throw std::runtime_error("No event available for the selection.");
+        throw Error<std::runtime_error>("No event available for the selection.");
     }
 
     return event;
@@ -718,7 +724,7 @@ inline const Direction& select_min_push_direction(GENERATOR& random_gen,
         ++it;
     }
 
-    throw std::runtime_error("The direction has not been selected");
+    throw Error<std::runtime_error>("No direction has not been selected.");
 }
 
 template<typename GENERATOR, typename T>
@@ -837,12 +843,12 @@ TissueSimulation::schedule_mutation(const MutantProperties& src, const MutantPro
     // case, it throws an std::runtime_error
     (void)tissue();
 
-    if (src.has_the_same_epistates(dst)) {
+    if (!src.has_the_same_epistates(dst)) {
         std::ostringstream oss;
 
         oss << "\"" << src.get_name() << "\" and \"" << dst.get_name()
-            << "\" differ in epistates.";
-        throw std::domain_error(oss.str());
+            << "\" differ in epigenetic state.";
+        throw Error<std::domain_error>(oss.str());
     }
 
     Mutation mutation(src, dst);
@@ -856,7 +862,7 @@ const MutantId& TissueSimulation::find_mutant_id(const std::string& mutant_name)
 {
     auto found_mutant = mutant_name2id.find(mutant_name);
     if (found_mutant == mutant_name2id.end()) {
-        throw std::out_of_range("Unknown mutant name \""+mutant_name+"\"");
+        throw Error<std::out_of_range>("Unknown mutant name \"" + mutant_name + "\".");
     }
 
     return found_mutant->second;
@@ -870,7 +876,7 @@ const std::string& TissueSimulation::find_mutant_name(const MutantId& mutant_id)
         }
     }
 
-    throw std::out_of_range("Unknown mutant id "+std::to_string(mutant_id));
+    throw Error<std::out_of_range>("Unknown mutant id "+std::to_string(mutant_id) + ".");
 }
 
 TissueSimulation&
@@ -935,7 +941,8 @@ void TissueSimulation::reset()
 TissueSimulation& TissueSimulation::add_mutant(const MutantProperties& mutant)
 {
     if (mutant_name2id.count(mutant.get_name())>0) {
-        throw std::out_of_range("Clone \""+mutant.get_name()+"\" already in the simulation");
+        throw Error<std::runtime_error>("Clone \"" + mutant.get_name()
+                                        + "\" already in the simulation");
     }
 
     tissue().add_mutant(mutant);
@@ -1060,8 +1067,8 @@ TissueSample
 TissueSimulation::sample_tissue(const SampleSpecification& specification)
 {
     if (name2sample.count(specification.get_name())>0) {
-        throw std::domain_error("Sample name \"" + specification.get_name()
-                                + "\" has been already used");
+        throw Error<std::runtime_error>("Sample name \"" + specification.get_name()
+                                        + "\" has been already used.");
     }
 
     auto proxies = collect_cell_proxies_in(specification.get_bounding_box());
@@ -1109,8 +1116,9 @@ double TissueSimulation::evaluate(const Logics::Variable& variable) const
         case Logics::Variable::Type::TIME:
             return get_time();
         default:
-            throw std::domain_error("Unsupported variable type "
-                                    + std::to_string(static_cast<size_t>(variable.get_type())));
+            throw Error<std::runtime_error>("Unsupported variable type "
+                                            + std::to_string(static_cast<size_t>(variable.get_type()))
+                                            + ".");
     }
 }
 

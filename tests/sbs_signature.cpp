@@ -2,8 +2,8 @@
  * @file sbs_signature.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Some SBS example
- * @version 1.0
- * @date 2026-02-06
+ * @version 1.1
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -42,17 +42,20 @@
 
 #include "sbs_signature.hpp"
 
+#include "error.hpp"
+
 
 BOOST_AUTO_TEST_CASE(sbs_context_creation)
 {
+    using namespace CLONES;
     using namespace CLONES::Mutations;
 
     BOOST_CHECK_NO_THROW(SBSContext());
     BOOST_CHECK_NO_THROW(SBSContext("AAA"));
     BOOST_CHECK_NO_THROW(SBSContext("ACA"));
-    BOOST_CHECK_THROW(SBSContext("AA"), std::domain_error);
-    BOOST_CHECK_THROW(SBSContext("AAAA"), std::domain_error);
-    BOOST_CHECK_THROW(SBSContext("AZA"), std::domain_error);
+    BOOST_CHECK_THROW(SBSContext("AA"), Error<std::domain_error>);
+    BOOST_CHECK_THROW(SBSContext("AAAA"), Error<std::domain_error>);
+    BOOST_CHECK_THROW(SBSContext("AZA"), Error<std::runtime_error>);
 }
 
 struct ContextFixture
@@ -206,6 +209,7 @@ BOOST_AUTO_TEST_CASE(sbs_context_reverse_complement)
 
 BOOST_AUTO_TEST_CASE(SBS_type_create)
 {
+    using namespace CLONES;
     using namespace CLONES::Mutations;
 
     BOOST_CHECK_NO_THROW(SBSType());
@@ -222,8 +226,8 @@ BOOST_AUTO_TEST_CASE(SBS_type_create)
                         BOOST_CHECK_NO_THROW(SBSType(seq, base));
                         BOOST_CHECK_NO_THROW(SBSType(context, base));
                     } else {
-                        BOOST_CHECK_THROW(SBSType(seq, base), std::domain_error);
-                        BOOST_CHECK_THROW(SBSType(context, base), std::domain_error);
+                        BOOST_CHECK_THROW(SBSType(seq, base), Error<std::domain_error>);
+                        BOOST_CHECK_THROW(SBSType(context, base), Error<std::domain_error>);
                     }
                 }
             }
@@ -373,7 +377,7 @@ BOOST_AUTO_TEST_CASE(SBS_type_read_error)
         std::istringstream is(error);
         SBSType type;
 
-        BOOST_CHECK_THROW(is >> type, std::runtime_error);
+        BOOST_CHECK_THROW(is >> type, CLONES::Error<std::domain_error>);
     }
 }
 

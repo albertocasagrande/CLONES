@@ -2,8 +2,8 @@
  * @file genomic_region.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements genomic region
- * @version 1.1
- * @date 2026-02-06
+ * @version 1.2
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -34,6 +34,8 @@
 
 #include "sid.hpp"
 
+#include "error.hpp"
+
 namespace CLONES
 {
 
@@ -50,7 +52,7 @@ GenomicRegion::GenomicRegion(const ChromosomeId chromosome_id, const Length leng
     initial_pos(chromosome_id, 1), length(length)
 {
     if (length == 0) {
-        throw std::domain_error("the genomic region length must greater than 0");
+        throw Error<std::domain_error>("The genomic region length must greater than 0.");
     }
 }
 
@@ -58,7 +60,7 @@ GenomicRegion::GenomicRegion(const GenomicPosition initial_pos, const Length len
     initial_pos(initial_pos), length(length)
 {
     if (length == 0) {
-        throw std::domain_error("the genomic region length must greater than 0");
+        throw Error<std::domain_error>("The genomic region length must greater than 0.");
     }
 }
 
@@ -73,11 +75,21 @@ bool GenomicRegion::overlaps(const GenomicRegion& genomic_region) const
 GenomicRegion GenomicRegion::split(const GenomicPosition& split_point)
 {
     if (!contains(split_point)) {
-        throw std::domain_error("the fragment does not contain the split point");
+        std::ostringstream oss;
+
+        oss << *this << " does not contain the split point " << split_point << ".";
+
+        throw Error<std::domain_error>(oss.str());
     }
 
     if (split_point==initial_pos) {
-        throw std::domain_error("the fragment initial position and the split point are the same");
+
+        std::ostringstream oss;
+
+        oss << *this << "'s initial position and the split point " << split_point
+            << " are the same.";
+
+        throw Error<std::domain_error>(oss.str());
     }
 
     GenomicRegion new_region(split_point, length-(split_point.position-initial_pos.position));
@@ -94,7 +106,11 @@ GenomicRegion& GenomicRegion::join(GenomicRegion& contiguous_region)
     }
 
     if (!precedes(contiguous_region)) {
-        throw std::domain_error("the two genomic regions are not contiguous");
+        std::ostringstream oss;
+
+        oss << *this << " and " << contiguous_region
+            << " are not contiguous.";
+        throw Error<std::domain_error>(oss.str());
     }
 
     length += contiguous_region.length;

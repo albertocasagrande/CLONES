@@ -2,8 +2,8 @@
  * @file ending_conditions.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements simulation ending conditions
- * @version 1.2
- * @date 2026-06-10
+ * @version 1.3
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -29,6 +29,8 @@
  */
 
 #include "ending_conditions.hpp"
+
+#include "error.hpp"
 
 namespace CLONES
 {
@@ -90,8 +92,8 @@ EventCountTest::EventCountTest(const CellEventType& event_type,
         case CellEventType::DUP_AND_EPI_SWITCH:
             return;
         default:
-            throw std::domain_error("EventCountTest does not support event "+
-                                    cell_event_names[event_type]);
+            throw Error<std::runtime_error>("Unsupported event "
+                                           + cell_event_names[event_type] + ".");
     }
 }
 
@@ -130,8 +132,8 @@ size_t EventCountTest::get_event_number(const TissueSimulation& simulation) cons
         case CellEventType::DUP_AND_EPI_SWITCH:
             return get_epigenetic_events_to(s_stats, dst_id);
         default:
-            throw std::domain_error("EventCountTest does not support event "+
-                                    cell_event_names[event_type]);
+            throw Error<std::runtime_error>("Unsupported event "
+                                           + cell_event_names[event_type] + ".");
     }
 }
 

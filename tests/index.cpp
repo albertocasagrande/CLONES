@@ -2,8 +2,8 @@
  * @file index.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Index tests
- * @version 1.1
- * @date 2026-02-06
+ * @version 1.2
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -46,6 +46,7 @@
 #include "genomic_position.hpp"
 
 #include "utils.hpp"
+#include "error.hpp"
 
 #define DATASET_SIZE 10000
 #define WRITE_CACHE_SIZE 7000
@@ -134,12 +135,12 @@ void create_index()
 
     using IndexBuilderType = IndexBuilder<KEY,VALUE>;
 
-    BOOST_CHECK_THROW(IndexBuilderType("/"), std::domain_error);
+    BOOST_CHECK_THROW(IndexBuilderType("/"), CLONES::Error<std::domain_error>);
 
     BOOST_CHECK_THROW(IndexBuilderType("/Pippo"), std::filesystem::filesystem_error);
 
     BOOST_CHECK_THROW(IndexBuilderType(get_a_temporary_path(), 0),
-                      std::domain_error);
+                      CLONES::Error<std::domain_error>);
 }
 
 template<class KEY, class VALUE>
@@ -180,13 +181,13 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(create_bucket_T, T, test_types)
     using IndexBuilderType = IndexBuilder<typename T::first_type,
                                           typename T::second_type>;
 
-    BOOST_CHECK_THROW(IndexBuilderType("/"), std::domain_error);
+    BOOST_CHECK_THROW(IndexBuilderType("/"), CLONES::Error<std::domain_error>);
 
     BOOST_CHECK_THROW(IndexBuilderType("/Pippo"),
                       std::filesystem::filesystem_error);
 
     BOOST_CHECK_THROW(IndexBuilderType(get_a_temporary_path(), 0),
-                      std::domain_error);
+                      CLONES::Error<std::domain_error>);
 }
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(load_index_T, T, test_types, IndexFixture<T>)

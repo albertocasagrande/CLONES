@@ -2,8 +2,8 @@
  * @file tissue.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines tissue class
- * @version 1.4
- * @date 2026-06-10
+ * @version 1.5
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -43,6 +43,8 @@
 #include "species.hpp"
 #include "cell.hpp"
 #include "logics.hpp"
+
+#include "error.hpp"
 
 namespace CLONES
 {
@@ -335,11 +337,11 @@ public:
 
         /**
          * @brief Get the species by epigenetic state name
-         * 
+         *
          * @param epistate_name is the epigenetic state name of the aimed species
          * @return a constant reference to the species having `epistate_name` as
          *      epigenetic state name. If none of the species in the view have this
-         *      epigenetic state name, an `std::out_of_range` is thrown. 
+         *      epigenetic state name, an `std::out_of_range` is thrown.
          */
         const Species& get_species_by_epistate(const std::string& epistate_name) const;
 
@@ -418,9 +420,9 @@ public:
                     oss << "," << position.z;
                 }
 
-                oss << ") does not belong to the tissue";
+                oss << ") does not belong to the tissue.";
 
-                throw std::out_of_range(oss.str());
+                throw Error<std::out_of_range>(oss.str());
             }
         }
     public:
@@ -523,7 +525,7 @@ public:
                 return *ptr;
             }
 
-            throw std::runtime_error("Wild-type cell");
+            throw Error<std::runtime_error>("Wild-type cell.");
         }
 
         friend class Tissue;

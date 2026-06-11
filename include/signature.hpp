@@ -2,8 +2,8 @@
  * @file signature.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines mutational signatures
- * @version 1.3
- * @date 2026-02-06
+ * @version 1.4
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -41,6 +41,8 @@
 
 #include <istream>
 #include <sstream>
+
+#include "error.hpp"
 
 namespace CLONES
 {
@@ -115,10 +117,10 @@ public:
         if (value>1 || value<0) {
             std::ostringstream oss;
 
-            oss << "the multiplying value must be in the real interval [0,1]. "
+            oss << "The multiplying value must be in the real interval [0,1]. "
                 << std::to_string(value) << " passed.";
 
-            throw std::domain_error(oss.str());
+            throw Error<std::domain_error>(oss.str());
         }
 
         for (auto& prob: probabilities) {
@@ -299,7 +301,7 @@ class Signature
                 std::ostringstream oss;
 
                 oss << "The header and the row number " << row_number << " differ in size.";
-                throw std::runtime_error(oss.str());
+                throw Error<std::runtime_error>(oss.str());
             }
 
             MUTATION_TYPE type(row.front());
@@ -342,18 +344,18 @@ public:
             if (prob<0 || prob>1) {
                 std::ostringstream oss;
 
-                oss << type << ": " << prob;
-                throw std::domain_error("The parameter is not a probability distribution: "
-                                        + oss.str());
+                oss << type << ": " << prob << ".";
+                throw Error<std::domain_error>("The parameter is not a probability distribution: "
+                                                   + oss.str());
             }
             partial += prob;
         }
         if (!is_about(partial,1)) {
             std::ostringstream oss;
             oss << "The parameter is not a probability distribution: 1 minus the sum of"
-                << " the probabilities is " << (1-partial);
+                << " the probabilities is " << (1-partial) << ".";
 
-            throw std::domain_error(oss.str());
+            throw Error<std::domain_error>(oss.str());
         }
     }
 
@@ -445,8 +447,8 @@ public:
                 std::ostringstream oss;
 
                 oss << "Column \"" << name << "\" is not a signature: "
-                    << ex.what();
-                throw std::runtime_error(oss.str());
+                    << ex.what() << ".";
+                throw Error<std::runtime_error>(oss.str());
             }
         }
 

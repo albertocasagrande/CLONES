@@ -2,8 +2,8 @@
  * @file position_set.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements classes to represent tissue position set
- * @version 1.1
- * @date 2026-02-06
+ * @version 1.2
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -30,6 +30,8 @@
 
 #include "position_set.hpp"
 
+#include "error.hpp"
+
 namespace CLONES
 {
 
@@ -38,12 +40,16 @@ namespace Mutants
 
 BasicPositionSet::const_iterator BasicPositionSet::begin() const
 {
-    throw std::runtime_error("The BasicPositionSet class must be inherited");
+    static_assert(true, "The `BasicPositionSet` class must be inherited.");
+
+    return BasicPositionSet::const_iterator();
 }
 
 BasicPositionSet::const_iterator BasicPositionSet::end() const
 {
-    throw std::runtime_error("The BasicPositionSet class must be inherited");
+    static_assert(true, "The `BasicPositionSet` class must be inherited.");
+
+    return BasicPositionSet::const_iterator();
 }
 
 BasicPositionSet::~BasicPositionSet()
@@ -93,7 +99,7 @@ RectangleSet::const_iterator& RectangleSet::const_iterator::operator++()
     }
 
     if (is_invalid_in(pos, *rectangle)) {
-        throw std::runtime_error("The iterator has already reached the end of the set");
+        throw Error<std::runtime_error>("The iterator has already reached the end of the set.");
     }
 
     if (increase_and_update(pos.z, rectangle->lower_corner.z, rectangle->upper_corner.z)) {
@@ -129,7 +135,7 @@ RectangleSet::const_iterator& RectangleSet::const_iterator::operator--()
     }
 
     if (is_invalid_in(pos, *rectangle)) {
-        throw std::runtime_error("The iterator has already reached the end of the set");
+        throw Error<std::runtime_error>("The iterator has already reached the end of the set.");
     }
 
     if (decrease_and_update(pos.z, rectangle->lower_corner.z, rectangle->upper_corner.z)) {
@@ -175,7 +181,11 @@ RectangleSet::RectangleSet(const Evolutions::PositionInTissue& lower_corner,
     upper_corner(lower_corner.x+x_size-1,lower_corner.y+y_size-1)
 {
     if (lower_corner.z!=0) {
-        throw std::domain_error("The lower corner must be a 2D position.");
+        std::ostringstream oss;
+
+        oss << "Expected a 2D position. Got " << lower_corner << ".";
+
+        throw Error<std::domain_error>(oss.str());
     }
 }
 

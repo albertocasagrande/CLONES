@@ -2,8 +2,8 @@
  * @file bucket.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines bucket
- * @version 1.4
- * @date 2026-02-06
+ * @version 1.5
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -41,6 +41,8 @@
 
 #include "archive.hpp"
 #include "utils.hpp"
+
+#include "error.hpp"
 
 namespace CLONES
 {
@@ -101,7 +103,7 @@ class Bucket
         }
 
         if (!archive.eof()) {
-            throw std::runtime_error("load_buffer: The file is larger than the buffer");
+            throw Error<std::runtime_error>("The file is larger than the buffer");
         }
 
         return buffer_it;
@@ -317,10 +319,8 @@ class Bucket
     {
         if (std::filesystem::exists(filepath)) {
             if (!std::filesystem::is_regular_file(filepath)) {
-                std::ostringstream oss;
-
-                oss << "\"" << to_string(filepath) << "\" is not a block file.";
-                throw std::domain_error(oss.str());
+                throw Error<std::runtime_error>("\"" + to_string(filepath)
+                                                + "\" is not a block file.");
             }
 
             Archive::Binary::In archive(filepath);
@@ -445,7 +445,7 @@ public:
         inline const VALUE& operator*() const
         {
             if (is_end()) {
-                throw std::runtime_error("No value is available.");
+                throw Error<std::runtime_error>("No value is available.");
             }
             return cache[index];
         }
@@ -755,11 +755,8 @@ public:
     void set_max_cache_size(const size_t& cache_size)
     {
         if (cache_size<sizeof(VALUE)) {
-            std::ostringstream oss;
-
-            oss << "Bucket: the minimum cache size is "
-                << sizeof(VALUE) << ".";
-            throw std::domain_error(oss.str());
+            throw Error<std::domain_error>("The minimum cache size is "
+                                            + std::to_string(sizeof(VALUE)) + ".");
         }
 
         this->cacheable_values = cache_size/sizeof(VALUE);
@@ -804,7 +801,7 @@ public:
     VALUE operator[](const size_t& i) const
     {
         if (i>= size()) {
-            throw std::out_of_range("The index is out of the bucket's boundaries.");
+            throw Error<std::out_of_range>("The index is out of the bucket's boundaries.");
         }
         std::streamoff value_pos = get_value_pos(i);
 
@@ -861,7 +858,7 @@ public:
     VALUE choose(RANDOM_GENERATOR& random_generator) const
     {
         if (this->size()==0) {
-            throw std::runtime_error("No value in the bucket.");
+            throw Error<std::runtime_error>("No value in the bucket.");
         }
 
         std::uniform_int_distribution<size_t> dist(0, this->size()-1);
@@ -1099,7 +1096,7 @@ public:
         inline const VALUE& operator*() const
         {
             if (is_end()) {
-                throw std::runtime_error("No more value available.");
+                throw Error<std::runtime_error>("No more value available.");
             }
             return cache[available_in_cache-1];
         }
@@ -1246,11 +1243,9 @@ public:
     void set_max_cache_size(const size_t& cache_size)
     {
         if (cache_size<sizeof(VALUE)) {
-            std::ostringstream oss;
+            throw Error<std::domain_error>("The minimum cache size is "
+                                           + std::to_string(sizeof(VALUE)) + ".");
 
-            oss << "BucketRandomTour: the minimum cache size is "
-                << sizeof(VALUE) << ".";
-            throw std::domain_error(oss.str());
         }
 
         this->cacheable_values = cache_size/sizeof(VALUE);

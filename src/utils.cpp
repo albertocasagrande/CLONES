@@ -2,8 +2,8 @@
  * @file utils.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implement utility functions
- * @version 1.1
- * @date 2026-02-06
+ * @version 1.2
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -35,28 +35,23 @@
 
 #include "utils.hpp"
 
+#include "error.hpp"
+
+
 std::filesystem::path
 get_a_temporary_path(const std::string& prefix,
                      const std::filesystem::path parent_dir)
 {
     if (!std::filesystem::exists(parent_dir)) {
-        std::ostringstream oss;
-
-        oss << "get_a_temporary_path: the directory \""
-            << to_string(parent_dir)
-            << "\" does not exist.";
-
-        throw std::domain_error(oss.str());
+        throw CLONES::Error<std::domain_error>("The directory \""
+                                               + to_string(parent_dir)
+                                               + "\" does not exist.");
     }
 
     if (!std::filesystem::is_directory(parent_dir)) {
-        std::ostringstream oss;
-
-        oss << "get_a_temporary_path: the directory \""
-            << to_string(parent_dir)
-            << "\" is not a directory.";
-
-        throw std::domain_error(oss.str());
+        throw CLONES::Error<std::domain_error>("The directory \""
+                                               + to_string(parent_dir)
+                                               + "\" is not a directory.");
     }
 
     size_t counter{0};

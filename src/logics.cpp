@@ -2,8 +2,8 @@
  * @file logics.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implement a logic about the simulation
- * @version 1.2
- * @date 2026-06-10
+ * @version 1.3
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -29,6 +29,8 @@
  */
 
 #include "logics.hpp"
+
+#include "error.hpp"
 
 struct Context;
 
@@ -62,12 +64,9 @@ Variable::Variable(const CellEventType& event_type, const SpeciesId& species_id,
         case CellEventType::DUP_AND_EPI_SWITCH:
             break;
         default:
-            {
-                std::ostringstream oss;
-
-                oss << __PRETTY_FUNCTION__ << ": Unsupported event type";
-                throw std::domain_error(oss.str());
-            }
+            throw Error<std::runtime_error>("Unsupported event type "
+                                            + cell_event_names[event_type]
+                                            + ".");
     }
 }
 
@@ -85,12 +84,9 @@ std::ostream& operator<<(std::ostream& os, const Variable& variable)
             os << "Time";
             break;
         default:
-            {
-                std::ostringstream oss;
-
-                oss << __PRETTY_FUNCTION__ << ": Unsupported event type";
-                throw std::domain_error(oss.str());
-            }
+            throw Error<std::runtime_error>("Unsupported variable type "
+                                            + std::to_string(static_cast<uint>(variable.get_type()))
+                                            + ".");
     }
 
     return os;
@@ -150,8 +146,9 @@ std::ostream& operator<<(std::ostream& os, const Expression& expression)
             }
             break;
         default:
-            throw std::runtime_error("Unknown expression type code "
-                                     + std::to_string(static_cast<unsigned int>(expression.type)));
+            throw Error<std::runtime_error>("Unsupported expression type "
+                                            + std::to_string(static_cast<uint>(expression.type))
+                                            + ".");
     }
 
     return os;
@@ -182,8 +179,9 @@ std::ostream& operator<<(std::ostream& os, const Relation& relation)
             os << "!=";
             break;
         default:
-            throw std::runtime_error("Unknown relation type code "
-                                     + std::to_string(static_cast<unsigned int>(relation.type)));
+            throw Error<std::runtime_error>("Unsupported relation type "
+                                            + std::to_string(static_cast<uint>(relation.type))
+                                            + ".");
     }
     os << relation.rhs;
 
@@ -200,12 +198,12 @@ Formula::Formula(const Type& type, const Formula& lhs, const Formula& rhs):
     rhs(std::make_shared<Formula>(rhs))
 {
     if (type == Type::RELATION) {
-        throw std::domain_error("Building a formula with type relation "
-                                "requires a relation as the parameter.");
+        throw Error<std::domain_error>("Building a formula with type relation "
+                                       "requires a relation as the parameter.");
     }
     if (type == Type::NEG) {
-        throw std::domain_error("Building a formula with type negation "
-                                "requires a single formula as the parameter.");
+        throw Error<std::domain_error>("Building a formula with type negation "
+                                       "requires a single formula as the parameter.");
     }
 }
 
@@ -214,12 +212,12 @@ Formula::Formula(const Type& type, const Formula& subformula):
     rhs(nullptr)
 {
     if (type == Type::RELATION) {
-        throw std::domain_error("Building a formula with type relation "
-                                "requires a relation as the parameter.");
+        throw Error<std::domain_error>("Building a formula with type relation "
+                                       "requires a relation as the parameter.");
     }
     if (type != Type::NEG) {
-        throw std::domain_error("Building a formula with a type different "
-                                "from negation requires two formulas.");
+        throw Error<std::domain_error>("Building a formula with a type different "
+                                       "from negation requires two formulas.");
     }
 }
 
@@ -233,12 +231,12 @@ Formula::Formula(const Type& type, Formula&& lhs, Formula&& rhs):
     rhs(std::make_shared<Formula>(std::move(rhs)))
 {
     if (type == Type::RELATION) {
-        throw std::domain_error("Building a formula with type relation "
-                                "requires a relation as the parameter.");
+        throw Error<std::domain_error>("Building a formula with type relation "
+                                       "requires a relation as the parameter.");
     }
     if (type == Type::NEG) {
-        throw std::domain_error("Building a formula with type negation "
-                                "requires a single formula as the parameter.");
+        throw Error<std::domain_error>("Building a formula with type negation "
+                                       "requires a single formula as the parameter.");
     }
 }
 
@@ -247,12 +245,12 @@ Formula::Formula(const Type& type, Formula&& subformula):
     rhs(nullptr)
 {
     if (type == Type::RELATION) {
-        throw std::domain_error("Building a formula with type relation "
-                                "requires a relation as the parameter.");
+        throw Error<std::domain_error>("Building a formula with type relation "
+                                       "requires a relation as the parameter.");
     }
     if (type != Type::NEG) {
-        throw std::domain_error("Building a formula with a type different "
-                                "from negation requires two formulas.");
+        throw Error<std::domain_error>("Building a formula with a type different "
+                                       "from negation requires two formulas.");
     }
 }
 
@@ -294,8 +292,9 @@ std::ostream& operator<<(std::ostream& os, const Formula& formula)
             print_with_parenthesis(os,  *(formula.rhs), Formula::Type::AND);
             break;
         default:
-            throw std::runtime_error("Unknown formula type code "
-                                     + std::to_string(static_cast<unsigned int>(formula.type)));
+            throw Error<std::runtime_error>("Unknown formula type code "
+                                            + std::to_string(static_cast<unsigned int>(formula.type))
+                                            + "." );
     }
 
     return os;

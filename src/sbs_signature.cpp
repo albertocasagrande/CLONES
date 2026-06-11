@@ -2,8 +2,8 @@
  * @file sbs_signature.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements SBS signature
- * @version 1.3
- * @date 2026-02-06
+ * @version 1.4
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -36,6 +36,7 @@
 
 #include "sbs_signature.hpp"
 
+#include "error.hpp"
 
 namespace CLONES
 {
@@ -60,12 +61,8 @@ char read_a_base(std::istream& in)
         case 't':
             return toupper(symbol);
         default:
-        {
-            std::ostringstream oss;
-
-            oss << "'" << symbol << "' is not a base.";
-            throw std::runtime_error(oss.str());
-        }
+            throw Error<std::runtime_error>(std::string("\"") + symbol
+                                            + "\" is not a base.");
     }
 }
 
@@ -76,10 +73,8 @@ std::istream& read_symbol(std::istream& in, const char& symbol)
     in >> read_symbol;
 
     if (read_symbol != symbol) {
-        std::ostringstream oss;
-
-        oss << " Expected '" << symbol << "'; got '" << read_symbol <<"'.";
-        throw std::runtime_error(oss.str());
+        throw Error<std::domain_error>(std::string("Expected '") + symbol
+                                       + "'. Got '" + read_symbol + "'.");
     }
 
     return in;
@@ -100,15 +95,12 @@ SBSType::SBSType(const SBSContext& context, const char& replace_base)
             << " the second nucleotide in the context. Got \""
             << context.get_sequence() +"\" and '" << replace_base << "'";
 
-        throw std::domain_error(oss.str());
+        throw Error<std::domain_error>(oss.str());
     }
 
     if (!GenomicSequence::is_a_DNA_base(replace_base)) {
-        std::ostringstream oss;
-
-        oss << "Expected a replace base. Got '" << replace_base << "'";
-
-        throw std::domain_error(oss.str());
+        throw Error<std::domain_error>(std::string("Expected a replace base. Got '")
+                                       + replace_base + "'.");
     }
 
     if (central_nucleotide != 'C' && central_nucleotide != 'T') {
@@ -130,7 +122,7 @@ SBSType::SBSType(const std::string& context, const char& replace_base):
             << " the second nucleotide in the context. Got \""
             << context +"\" and '" << replace_base << "'";
 
-        throw std::domain_error(oss.str());
+        throw Error<std::domain_error>(oss.str());
     }
 
     if (!GenomicSequence::is_a_DNA_base(replace_base)) {
@@ -138,7 +130,7 @@ SBSType::SBSType(const std::string& context, const char& replace_base):
 
         oss << "Expected a replace base. Got '" << replace_base << "'";
 
-        throw std::domain_error(oss.str());
+        throw Error<std::domain_error>(oss.str());
     }
 
     if (context[1] != 'C' &&  context[1] != 'T' && context[1] != 'c' &&  context[1] != 't') {
@@ -197,11 +189,8 @@ std::istream& operator>>(std::istream& in, CLONES::Mutations::SBSType& type)
     read_symbol(in, ']');
     seq.push_back(read_a_base(in));
 
-    try {
-        type = SBSType(seq, replace_base);
-    } catch (std::domain_error& err) {
-        throw std::runtime_error(err.what());
-    }
+    type = SBSType(seq, replace_base);
+
     return in;
 }
 

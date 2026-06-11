@@ -2,8 +2,8 @@
  * @file read_simulator.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements classes to simulate sequencing
- * @version 1.8
- * @date 2026-06-10
+ * @version 1.9
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -37,6 +37,7 @@
 #include "read_simulator.hpp"
 
 #include "utils.hpp"
+#include "error.hpp"
 
 namespace CLONES
 {
@@ -94,7 +95,7 @@ ChrCoverage::ChrCoverage(const ChromosomeId& chromosome_id, const GenomicRegion:
     chr_id(chromosome_id), coverage(size)
 {
     if (size == 0) {
-        throw std::domain_error("A chromosome cannot have length 0.");
+        throw Error<std::domain_error>("A chromosome cannot have length 0.");
     }
 }
 
@@ -103,10 +104,11 @@ void ChrCoverage::increase_coverage(const ChrPosition& begin_pos, const size_t& 
     if (begin_pos+read_size-2 > coverage.size()) {
         using namespace CLONES::Mutants;
 
-        throw std::runtime_error("The chromosome " + GenomicPosition::chrtos(chr_id) + " has length "
-                                 + std::to_string(coverage.size())+". Coverage cannot be increased "
-                                 + "up to position " + std::to_string(begin_pos) + "+"
-                                 + std::to_string(read_size) + " as requested.");
+        throw Error<std::runtime_error>("The chromosome " + GenomicPosition::chrtos(chr_id)
+                                        + " has length " + std::to_string(coverage.size())
+                                        + ". Coverage cannot be increased up to position "
+                                        + std::to_string(begin_pos) + "+"
+                                        + std::to_string(read_size) + " as requested.");
     }
 
     for (auto base=coverage.begin()+begin_pos-1;
@@ -126,7 +128,7 @@ void check_in(const GenomicPosition& pos, const ChromosomeId& chr_id)
         oss << pos << " does not belong to the chromosome "
             << GenomicPosition::chrtos(chr_id) << ".";
 
-        throw std::domain_error(oss.str());
+        throw Error<std::domain_error>(oss.str());
     }
 }
 
@@ -135,11 +137,11 @@ const BaseCoverage& ChrCoverage::get_coverage(const GenomicPosition& position) c
     check_in(position, chr_id);
 
     if (position.position == 0 && coverage.size() < position.position) {
-        throw std::out_of_range("Position must lie in the interval [1,"
-                                + std::to_string(coverage.size())
-                                + "]: requested coverage of position "
-                                + std::to_string(position.position)
-                                + ".");
+        throw Error<std::out_of_range>("Position must lay in the interval [1,"
+                                       + std::to_string(coverage.size())
+                                       + "]: requested coverage of position "
+                                       + std::to_string(position.position)
+                                       + ".");
     }
 
     return coverage[position.position-1];
@@ -150,24 +152,21 @@ void check_same_chr(const ChrCoverage& a, const ChrCoverage& b)
     if (a.get_chr_id() != b.get_chr_id()) {
         using namespace CLONES::Mutants;
 
-        std::ostringstream oss;
-
-        oss << "The two sequencing chromosome statistics refer "
-            << "to different chromosomes: " << GenomicPosition::chrtos(a.get_chr_id())
-            << " and " << GenomicPosition::chrtos(b.get_chr_id()) << ".";
-
-        throw std::domain_error(oss.str());
+        throw Error<std::domain_error>(("The two sequencing chromosome statistics "
+                                        "refer to different chromosomes: ")
+                                       + GenomicPosition::chrtos(a.get_chr_id())
+                                       + " and "
+                                       + GenomicPosition::chrtos(b.get_chr_id())
+                                       + ".");
     }
 
     if (a.size() != b.size()) {
         using namespace CLONES::Mutants;
 
-        std::ostringstream oss;
-
-        oss << "The two coverages have different lengths: " << a.size()
-            << " and " << b.size() << ".";
-
-        throw std::domain_error(oss.str());
+        throw Error<std::domain_error>(("The two coverages have different "
+                                        "lengths: ") + std::to_string(a.size())
+                                       + " and " + std::to_string(b.size())
+                                       + ".");
     }
 }
 
@@ -311,10 +310,10 @@ void check_in(const SID& mutation, const ChromosomeId& chr_id)
 
         std::ostringstream oss;
 
-        oss << mutation << " does not lie in the chromosome "
+        oss << mutation << " does not lay in the chromosome "
             << GenomicPosition::chrtos(chr_id) << ".";
 
-        throw std::domain_error(oss.str());
+        throw Error<std::domain_error>(oss.str());
     }
 }
 
@@ -382,7 +381,7 @@ void update_data(std::map<SID, SIDData>& a, const std::map<SID, SIDData>& b)
             // found an SID not laying before b_it->first
 
             if (!before(b_it->first, a_it->first)) {
-                // if the found SID does not lie after b_it->first,
+                // if the found SID does not lay after b_it->first,
                 // then it is in the same SID
 
                 a_it->second.update(b_it->second);
@@ -437,8 +436,8 @@ void create_dir(const std::filesystem::path& directory)
     }
 
     if (!is_directory(directory)) {
-        throw std::runtime_error("\"" + to_string(directory)
-                                 + "\" exists, but it is not a directory.");
+        throw Error<std::runtime_error>("\"" + to_string(directory)
+                                        + "\" exists, but it is not a directory.");
     }
 }
 
@@ -449,9 +448,9 @@ void SampleStatistics::add_coverage(const ChrSampleStatistics& chr_stats)
     if (chr_ids.count(chr_id)>0) {
         using namespace CLONES::Mutants;
 
-        throw std::runtime_error("SampleStatistics " + sample_name + " already "
-                                 + "includes statistics about chromosome "
-                                 + GenomicPosition::chrtos(chr_id) + ".");
+        throw Error<std::runtime_error>("The statistics about sample \"" + sample_name
+                                        + "\" already includes data about chromosome "
+                                        + GenomicPosition::chrtos(chr_id) + ".");
     }
 
     for (const auto&[mutation, data] : chr_stats.get_data()) {
@@ -488,15 +487,17 @@ void SampleStatistics::add_chr_statistics(ChrSampleStatistics&& chr_stats)
 ChrCoverage SampleStatistics::get_chr_coverage(const ChromosomeId& chr_id) const
 {
     if (!save_coverage) {
-        throw std::runtime_error("Coverage data is not available.");
+        throw Error<std::runtime_error>(("Coverage data is not available for "
+                                         "chromosome ")
+                                        + GenomicPosition::chrtos(chr_id) + ".");
     }
 
     if (chr_ids.count(chr_id)==0) {
         using namespace CLONES::Mutants;
 
-        throw std::runtime_error("SampleStatistics " + sample_name + " does not "
-                                 + "include statistics about chromosome "
-                                 + GenomicPosition::chrtos(chr_id) + ".");
+        throw Error<std::runtime_error>("The statistics for sample \"" + sample_name
+                                        + "\" do not include data about chromosome "
+                                        + GenomicPosition::chrtos(chr_id) + ".");
     }
 
     const auto chr_filename = get_coverage_filename(chr_id);
@@ -523,7 +524,7 @@ const BaseCoverage& SampleStatistics::get_coverage(const GenomicPosition& pos) c
         oss << "\"" << sample_name
             << "\" does not contain any SID in position "
             << pos << ".";
-        throw std::runtime_error(oss.str());
+        throw Error<std::runtime_error>(oss.str());
     }
 
     return found->second;
@@ -678,7 +679,8 @@ const SampleStatistics& SampleSetStatistics::add_statistics(const SampleStatisti
     auto found = stats_map->find(name);
 
     if (found != stats_map->end()) {
-        throw std::domain_error("The current object already contains a statistics for sample.");
+        throw Error<std::domain_error>("No statistics available for sample \""
+                                       + name + "\".");
     }
 
     return stats_map->emplace(name, sample_statistics).first->second;
@@ -688,8 +690,8 @@ const SampleStatistics& SampleSetStatistics::operator[](const std::string& sampl
 {
     auto found = find(sample_name);
     if (found == end()) {
-        throw std::runtime_error("This object does not contain data about of "
-                                 "the sample \"" + sample_name + "\".");
+        throw Error<std::domain_error>("No statistics available for sample \""
+                                       + sample_name + "\".");
     }
 
     return found->second;
@@ -817,7 +819,8 @@ void SampleSetStatistics::save_VAF_CSV(const std::filesystem::path& filename,
                                        const ChromosomeId& chr_id) const
 {
     if (!is_canonical()) {
-        throw std::runtime_error("Only canonical statistics can save CAV CSV. Canonize it.");
+        throw Error<std::runtime_error>("Only canonical statistics can "
+                                        "save VAF CSV. Canonize it.");
     }
 
     const char separator='\t';
@@ -914,7 +917,8 @@ void SampleSetStatistics::save_coverage_image(const std::filesystem::path& filen
                                      const ChromosomeId& chromosome_id) const
 {
     if (!is_canonical()) {
-        throw std::runtime_error("Only canonical statistics can save coverage image. Canonize it.");
+        throw Error<std::runtime_error>("Only canonical statistics can "
+                                        "save coverage image. Canonize it.");
     }
 
     using namespace matplot;
@@ -1046,7 +1050,8 @@ void SampleSetStatistics::save_SID_histogram(const std::filesystem::path& filena
                                              const ChromosomeId& chromosome_id) const
 {
     if (!is_canonical()) {
-        throw std::runtime_error("Only canonical statistics can save SID histogram. Canonize it.");
+        throw Error<std::runtime_error>("Only canonical statistics can "
+                                        "save SID histogram. Canonize it.");
     }
 
     using namespace matplot;

@@ -2,8 +2,8 @@
  * @file germline.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements the functions to generate and load germline mutations
- * @version 1.7
- * @date 2026-05-22
+ * @version 1.8
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -40,6 +40,7 @@
 #include "fasta_chr_reader.hpp"
 
 #include "utils.hpp"
+#include "error.hpp"
 
 namespace CLONES
 {
@@ -243,8 +244,8 @@ bool is_male(const std::map<ChromosomeId, std::filesystem::path>& germline_chr_m
 
     std::ifstream VCF_X_stream(chr_it->second);
     if (!VCF_X_stream.good()) {
-        throw std::runtime_error("The file \"" + to_string(chr_it->second)
-                                 + "\" is not readable.");
+        throw Error<std::runtime_error>("The file \"" + to_string(chr_it->second)
+                                        + "\" is not readable.");
     }
 
     std::string header;
@@ -268,8 +269,8 @@ get_chromosome_regions_from_VCF(const std::map<ChromosomeId, std::filesystem::pa
     std::ifstream VCF_stream(germline_chr_map.begin()->second);
 
     if (!VCF_stream.good()) {
-        throw std::runtime_error("The file \"" + to_string(germline_chr_map.begin()->second)
-                                 + "\" is not readable.");
+        throw Error<std::runtime_error>("The file \"" + to_string(germline_chr_map.begin()->second)
+                                        + "\" is not readable.");
     }
 
     const std::regex chr_regex = build_regex("^##contig=<([0-9a-zA-Z=]+,)*ID=([0-9]+|X|Y).*");
@@ -348,7 +349,8 @@ get_subject_column(const std::string& header, const std::string& subject)
         ++pos;
     }
 
-    throw std::runtime_error(subject + " not present.");
+    throw Error<std::runtime_error>("Subject \"" + subject
+                                    + "\" is not available.");
 }
 
 MutationType::Type get_mutation_type(const std::string& line, size_t pos=0)
@@ -535,14 +537,14 @@ void add_VCF_mutations(GenomeMutations& mutations, const std::filesystem::path& 
     std::ifstream VCF_stream(VCF_file);
 
     if (!VCF_stream.good()) {
-        throw std::runtime_error("The file \"" + to_string(VCF_file)
-                                 + "\" is not readable.");
+        throw Error<std::runtime_error>("The file \"" + to_string(VCF_file)
+                                        + "\" is not readable.");
     }
 
     std::string header;
     if (!read_up_to_header(header, VCF_stream)) {
-        throw std::runtime_error("The VCF file \"" + to_string(VCF_file)
-                                 + "\" misses the standard header line.");
+        throw Error<std::runtime_error>("The file \"" + to_string(VCF_file)
+                                        + "\" misses the standard header line.");
     }
 
     size_t subject_column;
@@ -550,9 +552,9 @@ void add_VCF_mutations(GenomeMutations& mutations, const std::filesystem::path& 
     try {
         subject_column = get_subject_column(header, subject);
     } catch(std::runtime_error& ex) {
-        throw std::runtime_error("\"" + to_string(VCF_file)
-                                 + "\" does not contains "
-                                 + subject + "'s mutations.");
+        throw Error<std::runtime_error>("\"" + to_string(VCF_file)
+                                        + "\" does not contains \""
+                                        + subject + "\"'s mutations.");
     }
 
     std::string line;
@@ -565,10 +567,14 @@ void add_VCF_mutations(GenomeMutations& mutations, const std::filesystem::path& 
             auto column_separators = find_occurrences(line, "\t");
 
             if (column_separators.size()+1 < subject_column) {
-                throw std::runtime_error("Wrong number of columns in file \""
-                                         + to_string(VCF_file)
-                                         + "\" line number "
-                                         + std::to_string(line_num) + ".");
+                std::ostringstream oss;
+
+                oss << "Wrong number of columns in file \""
+                    << (VCF_file) << "\" line number "
+                    << line_num << ": expected " << subject_column
+                    << "; got " << (column_separators.size()+1) << ".";
+
+                throw Error<std::runtime_error>(oss.str());
             }
 
             add_mutation(mutations, line, column_separators,

@@ -2,8 +2,8 @@
  * @file cna.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a class for copy number alterations
- * @version 1.4
- * @date 2026-02-06
+ * @version 1.5
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -34,6 +34,8 @@
 #include "allele.hpp"
 #include "mutation.hpp"
 #include "genomic_region.hpp"
+
+#include "error.hpp"
 
 namespace CLONES
 {
@@ -237,8 +239,8 @@ struct CNA : public Mutation
             case Type::DELETION:
                 return;
             default:
-                throw std::runtime_error("CNA::save: Unsupported CNA::type "+
-                                         std::to_string(static_cast<int>(type)));
+                throw Error<std::runtime_error>("Unsupported CNA::type " +
+                                                std::to_string(static_cast<int>(type)));
         }
     }
 
@@ -268,9 +270,9 @@ struct CNA : public Mutation
                 break;
             default:
             {
-                auto type = static_cast<int>(cna.type);
-                throw std::runtime_error("CNA::save: Unsupported CNA::type "+
-                                         std::to_string(type));
+                const auto type = static_cast<int>(cna.type);
+                throw Error<std::runtime_error>("Unsupported CNA::type " +
+                                               std::to_string(type));
             }
         }
 

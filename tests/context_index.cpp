@@ -2,8 +2,8 @@
  * @file context_index.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Testing CLONES::Mutations::ContextIndex class
- * @version 1.0
- * @date 2026-02-06
+ * @version 1.1
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -37,6 +37,7 @@
 
 #include "context_index.hpp"
 
+#include "error.hpp"
 
 BOOST_AUTO_TEST_CASE(context_index_creation)
 {
@@ -52,7 +53,7 @@ BOOST_AUTO_TEST_CASE(context_index_creation)
 
     BOOST_CHECK_NO_THROW(ContextIndex<>::build_index(FASTA_FILE, regions));
 
-    BOOST_CHECK_THROW(ContextIndex<>::build_index("/TEST-ERROR"), std::runtime_error);
+    BOOST_CHECK_THROW(ContextIndex<>::build_index("/TEST-ERROR"), CLONES::Error<std::runtime_error>);
 }
 
 template<typename GENOME_WIDE_POSITION>
@@ -102,7 +103,8 @@ BOOST_AUTO_TEST_CASE(context_index_whole_genome)
         if (positions_test.size() != 0) {
             BOOST_CHECK_NO_THROW(positions = get_genomic_positions(context_index, context_test));
         } else {
-            BOOST_CHECK_THROW(positions = get_genomic_positions(context_index, context_test), std::domain_error);
+            BOOST_CHECK_THROW(positions = get_genomic_positions(context_index, context_test),
+                              CLONES::Error<std::domain_error>);
         }
 
         BOOST_CHECK_EQUAL(positions.size(), positions_test.size());
@@ -153,7 +155,8 @@ BOOST_AUTO_TEST_CASE(context_index_regions)
         if (positions_test.size() != 0) {
             BOOST_CHECK_NO_THROW(positions = get_genomic_positions(context_index, context_test));
         } else {
-            BOOST_CHECK_THROW(positions = get_genomic_positions(context_index, context_test), std::domain_error);
+            BOOST_CHECK_THROW(positions = get_genomic_positions(context_index, context_test),
+                              CLONES::Error<std::domain_error>);
         }
         BOOST_CHECK_EQUAL(positions.size(), positions_test.size());
 

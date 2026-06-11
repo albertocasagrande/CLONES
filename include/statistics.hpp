@@ -2,8 +2,8 @@
  * @file statistics.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines simulation statistics
- * @version 1.1
- * @date 2026-02-06
+ * @version 1.2
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -36,6 +36,7 @@
 #include "species.hpp"
 #include "cell_event.hpp"
 
+#include "error.hpp"
 
 namespace CLONES
 {
@@ -466,7 +467,7 @@ public:
     inline void set_history_delta(const Time& delta)
     {
         if (delta<0) {
-            throw std::domain_error("The history time delta must be non-negative");
+            throw Error<std::domain_error>("The history time delta must be non-negative.");
         }
 
         history_delta = delta;

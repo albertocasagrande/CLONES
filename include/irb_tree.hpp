@@ -2,8 +2,8 @@
  * @file irb_tree.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines indexed red-black trees
- * @version 1.5
- * @date 2026-05-25
+ * @version 1.6
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2024-2025
  *
@@ -35,6 +35,8 @@
 #include <utility>
 #include <functional>
 
+#include "error.hpp"
+
 namespace CLONES
 {
 
@@ -46,7 +48,7 @@ namespace CLONES
  * field accounts the number of nodes in the subtree rooted in the specific node.
  * Finding the i-th key in the tree can be achieved by using the `subtree_size`
  * fields in time \f$O(\log \texttt{size()})\f$.
- * 
+ *
  * [1] Thomas H. Cormen, Charles E. Leiserson, Ronald L. Rivest, Clifford Stein:
  *     Introduction to Algorithms, 3rd Edition. MIT Press 2009,
  *     ISBN 978-0-262-03384-8, pp. I-XIX, 1-1292
@@ -151,11 +153,12 @@ class IRBTree
         IRBNode* set_child(IRBNode* new_child, const Side side)
         {
             if (child[side] != nullptr) {
-                throw std::runtime_error("The node already have a "
-                                          + side_str(side) + " child.");
+                throw Error<std::runtime_error>("The node already have a "
+                                                + side_str(side) + " child.");
             }
             if (new_child == nullptr) {
-                throw std::runtime_error("The new child must differ from nullptr.");
+                throw Error<std::runtime_error>("The new child must differ "
+                                                "from nullptr.");
             }
             child[side] = new_child;
             new_child->parent = this;
@@ -655,9 +658,9 @@ class IRBTree
             }
         }
 
-        throw std::out_of_range("The container has " + std::to_string(size())
-                                + " keys; requested the element in position "
-                                + std::to_string(index) + ".");
+        throw Error<std::out_of_range>("The container has " + std::to_string(size())
+                                           + " keys; requested the element in position "
+                                           + std::to_string(index) + ".");
     }
 
     /**
@@ -749,9 +752,9 @@ class IRBTree
             }
         }
 
-        throw std::out_of_range("The container has " + std::to_string(size())
-                                + " keys; requested the element in position "
-                                + std::to_string(index) + ".");
+        throw Error<std::out_of_range>("The container has " + std::to_string(size())
+                                           + " keys; requested the element in position "
+                                           + std::to_string(index) + ".");
     }
 
     /**
@@ -777,8 +780,8 @@ class IRBTree
         IRBNode* y = x->child[opposite_side];
 
         if (y == nullptr) {
-            throw std::domain_error("Cannot perform rotation on the "
-                                    + IRBNode::side_str(side) +".");
+            throw Error<std::domain_error>("Cannot perform rotation on the "
+                                           + IRBNode::side_str(side) +".");
         }
         x->child[opposite_side] = y->child[side];
 
@@ -1708,7 +1711,8 @@ public:
     iterator erase(const iterator& it)
     {
         if (it.root != root) {
-            throw std::domain_error("The iterator does not refer to the tree");
+            throw Error<std::domain_error>("The iterator does not "
+                                           "refer to the tree.");
         }
 
         iterator next_it = it;

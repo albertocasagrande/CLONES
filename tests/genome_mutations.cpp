@@ -2,8 +2,8 @@
  * @file genome_mutations.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Testing CLONES::Mutations::GenomeMutations class
- * @version 1.2
- * @date 2026-05-22
+ * @version 1.3
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -37,6 +37,7 @@
 
 #include "genome_mutations.hpp"
 
+#include "error.hpp"
 
 BOOST_AUTO_TEST_CASE(chromosome_mutations_creation)
 {
@@ -60,7 +61,8 @@ BOOST_AUTO_TEST_CASE(genome_mutations_creation)
 
     BOOST_CHECK_NO_THROW(GenomeMutations(chr_regions, 2));
 
-    BOOST_CHECK_THROW(GenomeMutations({{1, 100, 3}, {1, 100, 2}}), std::domain_error);
+    BOOST_CHECK_THROW(GenomeMutations({{1, 100, 3}, {1, 100, 2}}),
+                      CLONES::Error<std::domain_error>);
 }
 
 struct GenomeMutationsFixture
@@ -107,7 +109,8 @@ BOOST_AUTO_TEST_CASE(genome_applied_SNVs)
         // snv in a wrong position
         SID snv_err(snv0.chr_id, chr.size()+1, 'A', 'G');
 
-        BOOST_CHECK_THROW(test_genome_mutations.insert_in_object(snv_err, 0), std::domain_error);
+        BOOST_CHECK_THROW(test_genome_mutations.insert_in_object(snv_err, 0),
+                          CLONES::Error<std::domain_error>);
     }
 
     // apply snv0 in allele 1: true (free context, non-free context in a different allele)
@@ -123,7 +126,8 @@ BOOST_AUTO_TEST_CASE(genome_applied_SNVs)
     BOOST_CHECK(!test_genome_mutations.insert_in_object(snv2, 1));
 
     // apply snv3 in allele 7: ko (unknown allele)
-    BOOST_CHECK_THROW(test_genome_mutations.insert_in_object(snv3, 7), std::out_of_range);
+    BOOST_CHECK_THROW(test_genome_mutations.insert_in_object(snv3, 7),
+                      CLONES::Error<std::out_of_range>);
 
     {
         const auto chr = test_genome_mutations.get_chromosomes().at(snv3.chr_id);
@@ -168,7 +172,8 @@ BOOST_AUTO_TEST_CASE(genome_delete_SNVs)
         // snv in a wrong position
         SID snv_err(snv0.chr_id, chr.size()+1, 'A', 'G');
 
-        BOOST_CHECK_THROW(test_genome_mutations.remove_from_object_at(snv_err), std::domain_error);
+        BOOST_CHECK_THROW(test_genome_mutations.remove_from_object_at(snv_err),
+                          CLONES::Error<std::domain_error>);
     }
 
     test_genome_mutations.insert_in_object(snv0, 0);
@@ -240,7 +245,7 @@ BOOST_AUTO_TEST_CASE(genome_amplify_region)
         GenomicRegion gr_err(snv0, chr.size()+1);
 
         BOOST_CHECK_THROW(test_genome_mutations.amplify_region(gr_err, 0),
-                          std::domain_error);
+                          CLONES::Error<std::domain_error>);
     }
 
     // apply snv1 (chromosome1, position 64)
@@ -341,7 +346,8 @@ BOOST_AUTO_TEST_CASE(genome_remove_region)
         // snv in a wrong position
         GenomicRegion gr_err(snv0, chr.size()+1);
 
-        BOOST_CHECK_THROW(test_genome_mutations.remove_region(gr_err, 0), std::domain_error);
+        BOOST_CHECK_THROW(test_genome_mutations.remove_region(gr_err, 0),
+                          CLONES::Error<std::domain_error>);
     }
 
     // amplify allele 0 from 10 to 110: fail (allele 0 does not contain fragment 60-80 anymore)

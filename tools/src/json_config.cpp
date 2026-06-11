@@ -2,8 +2,8 @@
  * @file json_config.cpp
  * @author Alberto Casagrande (alberto.casagrande@units.it)
  * @brief Implements classes and function for reading JSON configurations
- * @version 1.1
- * @date 2026-02-06
+ * @version 1.2
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -32,6 +32,29 @@
 
 #include "timed_event.hpp"
 
+#include "error.hpp"
+
+
+namespace std
+{
+
+std::ostream& operator<<(std::ostream& out, const std::vector<CLONES::Mutants::Evolutions::AxisPosition>& pos)
+{
+    char sep{'['};
+
+    for (const auto& value : pos) {
+        out << sep << value;
+
+        sep = ',';
+    }
+
+    out << "]";
+
+    return out;
+}
+
+}
+
 namespace CLONES
 {
 
@@ -39,14 +62,15 @@ std::vector<CLONES::Mutants::Evolutions::AxisPosition>
 ConfigReader::get_corner(const nlohmann::json& sampler_region_json, const std::string& corner_field_name)
 {
     if (!sampler_region_json.contains(corner_field_name)) {
-        throw std::runtime_error("The \"sampler region\" must contain a "
-                                    "\"" + corner_field_name + "\" field");
+        throw Error<std::runtime_error>("The \"sampler region\" must contain a "
+                                        "\"" + corner_field_name + "\" field.");
     }
 
     auto corner_json = sampler_region_json[corner_field_name];
 
     if (!corner_json.is_array()) {
-        throw std::runtime_error("The \"" + corner_field_name + "\" must be an array of natural values");
+        throw Error<std::runtime_error>("The \"" + corner_field_name
+                                        + "\" must be an array of natural values.");
     }
 
     std::vector<CLONES::Mutants::Evolutions::AxisPosition> corner;
@@ -56,7 +80,8 @@ ConfigReader::get_corner(const nlohmann::json& sampler_region_json, const std::s
     }
 
     if (corner.size()<2 || corner.size()>3) {
-        throw std::runtime_error("\""+corner_field_name+"\" must be either a 2D or 3D array");
+        throw Error<std::runtime_error>("\"" + corner_field_name
+                                        + "\" must be either a 2D or 3D array.");
     }
 
     return corner;
@@ -66,8 +91,8 @@ std::pair<std::string, CLONES::Mutations::PassengerRates>
 ConfigReader::get_epistate_passenger_rates(const nlohmann::json& epistate_rates_json)
 {
     if (!epistate_rates_json.is_object()) {
-        throw std::runtime_error("All the elements in \"passenger rates\" "
-                                    "must be objects");
+        throw Error<std::runtime_error>("All the elements in \"passenger rates\" "
+                                        "must be objects.");
     }
 
     double indel_rate{0}, SNV_rate{0}, CNA_rate{0};
@@ -104,8 +129,9 @@ ConfigReader::get_CNA_type(const nlohmann::json& CNA_json)
         return CLONES::Mutations::CNA::Type::DELETION;
     }
 
-    throw std::runtime_error("Unknown CNA \""+
-                                CNA_json["subtype"].template get<std::string>()+"\"");
+    throw Error<std::runtime_error>("Unknown CNA \""
+                                    + CNA_json["subtype"].template get<std::string>()
+                                    +"\".");
 }
 
 void
@@ -131,7 +157,11 @@ ConfigReader::add_CNA(std::list<CLONES::Mutations::CNA>& CNAs,
                                              Mutation::DRIVER));
             break;
         default:
-            throw std::runtime_error("Unsupported CNA type");
+            {
+                const uint CNA_type_code = static_cast<uint>(get_CNA_type(CNA_json));
+                throw Error<std::runtime_error>("Unsupported CNA type "
+                                                + std::to_string(CNA_type_code) + ".");
+            }
     }
 }
 
@@ -166,8 +196,8 @@ ConfigReader::get_passenger_rates(const nlohmann::json& passenger_rates_json)
     std::map<std::string, CLONES::Mutations::PassengerRates> passenger_rates;
 
     if (!passenger_rates_json.is_array()) {
-        throw std::runtime_error("The \"passenger rates\" field must be an array "
-                                "of passenger mutation rates");
+        throw Error<std::runtime_error>("The \"passenger rates\" field must be "
+                                        "an array of passenger mutation rates.");
     }
 
     for (const auto& passenger_rate_json : passenger_rates_json) {
@@ -184,7 +214,7 @@ ConfigReader::schedule_mutation(const std::string& mutant_name,
                                 const nlohmann::json& mutation_json)
 {
     if (!mutation_json.is_object()) {
-        throw std::runtime_error("All the elements in \"mutations\" must be objects");
+        throw Error<std::runtime_error>("All the elements in \"mutations\" must be objects.");
     }
 
     auto type = get_from<std::string>("type", mutation_json,
@@ -201,7 +231,7 @@ ConfigReader::schedule_mutation(const std::string& mutant_name,
         return;
     }
 
-    throw std::runtime_error("Unsupported mutations type \""+type+"\"");
+    throw Error<std::runtime_error>("Unsupported mutations type \"" + type + "\".");
 }
 
 double
@@ -210,7 +240,9 @@ ConfigReader::get_fraction(const nlohmann::json& fraction_json)
     const double fraction = fraction_json.template get<double>();
 
     if (fraction<0) {
-        throw std::runtime_error("The \"fraction\" field must be a non-negative value");
+        throw Error<std::runtime_error>("The \"fraction\" field must be a "
+                                        "non-negative value. Got "
+                                        + std::to_string(fraction) + ".");
     }
 
     return fraction;
@@ -221,16 +253,16 @@ ConfigReader::add_mutational_properties(CLONES::Mutations::MutationalProperties&
                                         const nlohmann::json& mutational_properties_json)
 {
     if (!mutational_properties_json.is_object()) {
-        throw std::runtime_error("All the elements in \"driver properties\" "
-                                    "must be objects");
+        throw Error<std::runtime_error>("All the elements in \"driver properties\" "
+                                        "must be objects.");
     }
 
     auto mutant_name = get_from<std::string>("name", mutational_properties_json,
                                              "All the elements in \"driver properties\"");
 
     if (!mutational_properties_json.contains("passenger rates")) {
-        throw std::runtime_error("All the elements in \"driver properties\" "
-                                "must contain a \"passenger rates\" field");
+        throw Error<std::runtime_error>("All the elements in \"driver properties\" "
+                                        "must contain a \"passenger rates\" field.");
     }
     auto passenger_rates = get_passenger_rates(mutational_properties_json["passenger rates"]);
 
@@ -248,7 +280,7 @@ CLONES::Mutations::MutationalExposure
 ConfigReader::get_default_exposure(const std::string& mutation_name, const nlohmann::json& exposures_json)
 {
     if (!exposures_json.is_object()) {
-        throw std::runtime_error("The \"" + mutation_name + "\" field must be an object");
+        throw Error<std::runtime_error>("The \"" + mutation_name + "\" field must be an object.");
     }
 
     expecting("default", exposures_json, "The \"" + mutation_name + "\" field");
@@ -263,7 +295,8 @@ ConfigReader::get_timed_exposures(const std::string& mutation_name,
     std::map<double, CLONES::Mutations::MutationalExposure> timed_exposures;
 
     if (!exposures_json.is_object()) {
-        throw std::runtime_error("The \"" + mutation_name + "\" field must be an object");
+        throw Error<std::runtime_error>("The \"" + mutation_name
+                                        + "\" field must be an object.");
     }
 
     if (exposures_json.contains("timed")) {
@@ -271,12 +304,13 @@ ConfigReader::get_timed_exposures(const std::string& mutation_name,
         auto& timed_coeff_json = exposures_json["timed"];
 
         if (!timed_coeff_json.is_array()) {
-            throw std::runtime_error("The optional \"timed\" field must be an array");
+            throw Error<std::runtime_error>("The optional \"timed\" field must be an array.");
         }
 
         for (const auto& timed_json : timed_coeff_json) {
             if (!timed_json.is_object()) {
-                throw std::runtime_error("The elements of the \"timed\" field must be objects");
+                throw Error<std::runtime_error>("The elements of the \"timed\" "
+                                                "field must be objects.");
             }
 
             double time = get_from<double>("time", timed_json,
@@ -285,7 +319,7 @@ ConfigReader::get_timed_exposures(const std::string& mutation_name,
                 std::ostringstream oss;
 
                 oss << "Two elements of the \"timed\" field have time " << time << ".";
-                throw std::runtime_error(oss.str());
+                throw Error<std::runtime_error>(oss.str());
             }
 
             expecting("exposure", timed_json, "The elements of the \"timed\" field");
@@ -302,7 +336,8 @@ ConfigReader::get_sample_specification(const nlohmann::json& sample_specificatio
                                        const std::string& field_name)
 {
     if (!sample_specification_json.is_object()) {
-        throw std::runtime_error("The \""+field_name+"\" field must be objects");
+        throw Error<std::runtime_error>("The \"" + field_name
+                                        + "\" field must be objects.");
     }
 
     auto region = ConfigReader::get_sample_region(sample_specification_json, field_name);
@@ -321,7 +356,8 @@ ConfigReader::get_sample_region(const nlohmann::json& sample_region_json,
                                 const std::string& field_name)
 {
     if (!sample_region_json.is_object()) {
-        throw std::runtime_error("The \""+field_name+"\" field must be objects");
+        throw Error<std::runtime_error>("The \"" + field_name
+                                        + "\" field must be objects.");
     }
 
     ConfigReader::expecting("lower corner", sample_region_json, field_name.c_str());
@@ -331,8 +367,13 @@ ConfigReader::get_sample_region(const nlohmann::json& sample_region_json,
     auto upper_vector = get_corner(sample_region_json, "upper corner");
 
     if (lower_vector.size() != upper_vector.size()) {
-        throw std::runtime_error("The \"lower corner\" and \"upper corner\" arrays must "
-                                    "have the same size");
+        std::ostringstream oss;
+
+        oss << "The \"lower corner\" and \"upper corner\" "
+            << "arrays must have the same size. Got " <<  lower_vector
+            << " and " << upper_vector << ".";
+
+        throw Error<std::runtime_error>(oss.str());
     }
 
     using namespace CLONES::Mutants::Evolutions;
@@ -353,8 +394,9 @@ ConfigReader::collect_mutations(const std::string& mutant_name,
                                 const nlohmann::json& mutations_json)
 {
     if (!mutations_json.is_array()) {
-        throw std::runtime_error("The \"mutations\" field must be an array "
-                                    "of mutations");
+        throw Error<std::runtime_error>(("All \"mutations\" fields must be an arrays "
+                                         "of mutations. This is not the case for mutant \"")
+                                        + mutant_name + "\".");
     }
 
     for (const auto& mutation_json : mutations_json) {
@@ -374,8 +416,8 @@ ConfigReader::get_mutational_properties(const nlohmann::json& configuration_json
     auto& mutational_properties_json = configuration_json["mutant properties"];
 
     if (!mutational_properties_json.is_array()) {
-        throw std::runtime_error("The \"mutant properties\" field must be an array "
-                                 "of species mutational properties");
+        throw Error<std::runtime_error>("The \"mutant properties\" field must be an array "
+                                        "of species mutational properties.");
     }
 
     for (const auto& species_properties_json : mutational_properties_json) {
@@ -413,7 +455,8 @@ double get_rate(const nlohmann::json& rate_json)
     double rate = rate_json.template get<double>();
 
     if (rate < 0) {
-        throw std::domain_error("the rate must be non-negative");
+        throw Error<std::domain_error>("The rate must be non-negative. Got "
+                                       + std::to_string(rate) + ".");
     }
 
     return rate;
@@ -429,7 +472,7 @@ get_cell_event_type_by_name(const std::string& event_name)
         }
     }
 
-    throw std::runtime_error("Unknown cell event type \""+event_name+"\"");
+    throw Error<std::runtime_error>("Unknown cell event type \""+event_name+"\".");
 }
 
 const CLONES::Mutants::Evolutions::Species&
@@ -442,7 +485,7 @@ find_species_by_name(const CLONES::Mutants::Evolutions::TissueSimulation& simula
         }
     }
 
-    throw std::runtime_error("Unknown species \""+name+"\"");
+    throw Error<std::runtime_error>("Unknown species \""+name+"\".");
 }
 
 CLONES::Mutants::Evolutions::TimedEvent
@@ -525,7 +568,7 @@ ConfigReader::get_timed_event(const CLONES::Mutants::Evolutions::TissueSimulatio
         return get_timed_sampling(timed_event_json);
     }
 
-    throw std::domain_error("Unsupported timed event \""+type_name+"\"");
+    throw Error<std::domain_error>("Unsupported timed event \"" + type_name + "\".");
 }
 
 void ConfigReader::expecting(const std::string& field_name, const nlohmann::json& json,
@@ -533,9 +576,11 @@ void ConfigReader::expecting(const std::string& field_name, const nlohmann::json
 {
     if (!json.contains(field_name)) {
         if (context.length()>0) {
-            throw std::runtime_error(context+ " must contains a \""+field_name+"\" field");
+            throw Error<std::runtime_error>(context + " must contains a \""
+                                            + field_name + "\" field.");
         } else {
-            throw std::runtime_error("Expected a missing \""+field_name+"\" field");
+            throw Error<std::runtime_error>("Expected a missing \"" + field_name
+                                            + "\" field in " + context + ".");
         }
     }
 }
@@ -544,8 +589,8 @@ void read_num_of_alleles_exception(std::map<Mutations::ChromosomeId, size_t>& nu
                                    const nlohmann::json& exception_json)
 {
     if (!exception_json.is_object()) {
-        throw std::runtime_error("Each element of the \"exceptions\" field in \"number of "
-                                 "alleles\" must be an object");
+        throw Error<std::runtime_error>("Each element of the \"exceptions\" field in "
+                                        "\"number of alleles\" must be an object");
     }
 
     auto alleles_in_chr = ConfigReader::get_from<int>("number of alleles", exception_json,
@@ -553,7 +598,8 @@ void read_num_of_alleles_exception(std::map<Mutations::ChromosomeId, size_t>& nu
                                                       "alleles\"");
 
     if (alleles_in_chr <= 0) {
-        throw std::runtime_error("The default number of alleles must be positive");
+        throw Error<std::runtime_error>("The default number of alleles must be positive. Got "
+                                        + std::to_string(alleles_in_chr) + ".");
     }
 
     auto chromosome_name = ConfigReader::get_from<std::string>("chromosome", exception_json,
@@ -573,8 +619,8 @@ void read_num_of_alleles_exceptions(std::map<Mutations::ChromosomeId, size_t>& n
     auto exceptions_json = num_of_alleles_json["exceptions"];
 
     if (!exceptions_json.is_array()) {
-        throw std::runtime_error("The \"exceptions\" field in \"number of "
-                                    "alleles\" must be an array");
+        throw Error<std::runtime_error>("The \"exceptions\" field in \"number "
+                                        "of alleles\" must be an array");
     }
 
     for (const auto& exception_json: exceptions_json) {
@@ -591,14 +637,15 @@ ConfigReader::get_number_of_alleles(const nlohmann::json& simulation_json,
     auto num_of_alleles_json = simulation_json["number of alleles"];
 
     if (!num_of_alleles_json.is_object()) {
-        throw std::runtime_error("The \"number of alleles\" field must be an object");
+        throw Error<std::runtime_error>("The \"number of alleles\" field must be an object.");
     }
 
     int default_number = get_from<int>("default", num_of_alleles_json,
                                        "The \"number of alleles\" field");
 
     if (default_number <= 0) {
-        throw std::runtime_error("The default number of alleles must be positive");
+        throw Error<std::runtime_error>(("The default number of alleles must be positive. "
+                                         "Got ") + std::to_string(default_number) + ".");
     }
 
     std::map<Mutations::ChromosomeId, size_t> num_of_alleles;
@@ -615,7 +662,7 @@ CLONES::Mutations::MutationalExposure
 ConfigReader::get_exposure(const nlohmann::json& exposure_json)
 {
     if (!exposure_json.is_array()) {
-        throw std::runtime_error("Exposures must be an array of object");
+        throw Error<std::runtime_error>("Exposures must be an array of object.");
     }
 
     double total=0;
@@ -624,13 +671,13 @@ ConfigReader::get_exposure(const nlohmann::json& exposure_json)
     for (const auto& exposures_json : exposure_json) {
 
         if (!exposures_json.is_object()) {
-            throw std::runtime_error("An exposure must be an object");
+            throw Error<std::runtime_error>("An exposure must be an object.");
         }
 
         const std::string name = get_from<std::string>("name", exposures_json,
                                                         "Every exposure");
         if (exposure.count(name)>0) {
-            throw std::runtime_error("\""+name+"\" already among exposures");
+            throw Error<std::runtime_error>("\"" + name + "\" already among exposures.");
         }
 
         double fraction = get_from<double>("fraction", exposures_json,
@@ -641,9 +688,9 @@ ConfigReader::get_exposure(const nlohmann::json& exposure_json)
             std::ostringstream oss;
 
             oss << "The sum of the \"fraction\" fields must be 1. "
-                << "The difference is " << (1-total);
+                << "The difference is " << (1-total) << ".";
 
-            throw std::runtime_error(oss.str());
+            throw Error<std::runtime_error>(oss.str());
         }
 
         exposure[name] = fraction;
@@ -653,9 +700,9 @@ ConfigReader::get_exposure(const nlohmann::json& exposure_json)
         std::ostringstream oss;
 
         oss << "The sum of the \"fraction\" fields must be 1. "
-            << "The difference is " << (1-total);
+            << "The difference is " << (1-total) << ".";
 
-        throw std::runtime_error(oss.str());
+        throw Error<std::runtime_error>(oss.str());
     }
 
     return exposure;

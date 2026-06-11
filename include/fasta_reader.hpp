@@ -2,8 +2,8 @@
  * @file fasta_reader.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a FASTA file reader and support structures
- * @version 1.6
- * @date 2026-02-06
+ * @version 1.7
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -42,6 +42,7 @@
 
 #include "utils.hpp"
 #include "basic_IO.hpp"
+#include "error.hpp"
 
 #include "progress_bar.hpp"
 
@@ -230,7 +231,8 @@ protected:
                 std::string char_s(">");
 
                 char_s[0] = c;
-                throw std::runtime_error("expecting '>' got '"+char_s+"'");
+                throw Error<std::runtime_error>("expecting '>' got '"
+                                                + char_s + "'.");
             }
             std::string read_header;
             std::getline(fasta_stream, read_header);
@@ -286,10 +288,8 @@ public:
         fasta_stream.open(fasta_filename, std::ios_base::in);
 
         if (!fasta_stream.good()) {
-            std::ostringstream oss;
-
-            oss << "\"" << to_string(fasta_filename) << "\" does not exist";
-            throw std::runtime_error(oss.str());
+            throw Error<std::runtime_error>("\"" + to_string(fasta_filename)
+                                            + "\" does not exist.");
         }
     }
 
@@ -516,8 +516,8 @@ public:
         auto found = _map.find(key);
 
         if (found == _map.end()) {
-            throw std::domain_error("The index has not entry having key \""
-                                    + key +"\"");
+            throw Error<std::domain_error>("The index has not entry having key \""
+                                           + key +"\".");
         }
         return found->second;
     }
@@ -568,19 +568,19 @@ public:
                 while (c != EOF && c != '>') {
                     std::string line;
                     if (byte_diff) {
-                        throw std::domain_error("\"" + key + "("+ entry.name
-                                                + ")\"'s line "
-                                                + std::to_string(line_number)
-                                                + " differs from the previous "
-                                                + "one by number of bytes.");
+                        throw Error<std::domain_error>("\"" + key + "("+ entry.name
+                                                       + ")\"'s line "
+                                                       + std::to_string(line_number)
+                                                       + " differs from the previous"
+                                                       + " one by number of bytes.");
                     }
 
                     if (base_diff) {
-                        throw std::domain_error("\"" + key + "("+ entry.name
-                                                + ")\"'s line "
-                                                + std::to_string(line_number)
-                                                + " differs from the previous "
-                                                + "one by length.");
+                        throw Error<std::domain_error>("\"" + key + "("+ entry.name
+                                                       + ")\"'s line "
+                                                       + std::to_string(line_number)
+                                                       + " differs from the previous "
+                                                       + "one by length.");
                     }
                     fasta_stream.unget();
 
@@ -699,7 +699,7 @@ public:
             auto found = _map.find(name);
 
             if (found == _map.end()) {
-                throw std::domain_error("Unknown sequence \"" + name + "\"");
+                throw Error<std::domain_error>("Unknown sequence \"" + name + "\".");
             }
 
             offset_name_map.emplace(found->second.offset, name);
@@ -798,10 +798,11 @@ class IndexedReader : public Reader<SEQUENCE_TYPE>
                                                      progress_bar);
 
         if (length != entry.length) {
-            throw std::runtime_error("The index length (" + std::to_string(entry.length)
-                                     + ") and the actual length ("
-                                     + std::to_string(length) + ") of \""
-                                     + entry.name + "\" do not match");
+            throw Error<std::runtime_error>("The index length ("
+                                            + std::to_string(entry.length)
+                                            + ") and the actual length ("
+                                            + std::to_string(length) + ") of \""
+                                            + entry.name + "\" do not match.");
         }
 
         return true;

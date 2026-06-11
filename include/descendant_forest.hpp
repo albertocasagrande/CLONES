@@ -2,8 +2,8 @@
  * @file descendant_forest.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines classes and function for descendant forests
- * @version 1.9
- * @date 2026-06-10
+ * @version 1.10
+ * @date 2026-06-11
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -43,6 +43,8 @@
 #include "cell.hpp"
 #include "binary_logger.hpp"
 #include "tissue_sample.hpp"
+
+#include "error.hpp"
 
 namespace CLONES
 {
@@ -234,7 +236,7 @@ protected:
         NODE_TYPE parent() const
         {
             if (forest==nullptr) {
-                throw std::runtime_error("The forest node has not been initialized");
+                throw Error<std::runtime_error>("The forest node has not been initialized.");
             }
 
             return NODE_TYPE(forest, forest->cells.at(cell_id).get_parent_id());
@@ -251,7 +253,7 @@ protected:
         std::vector<NODE_TYPE> children() const
         {
             if (forest==nullptr) {
-                throw std::runtime_error("The forest node has not been initialized");
+                throw Error<std::runtime_error>("The forest node has not been initialized.");
             }
 
             std::vector<NODE_TYPE> nodes;
@@ -321,13 +323,13 @@ protected:
         const Evolutions::TissueSample& get_sample() const
         {
             if (forest==nullptr) {
-                throw std::runtime_error("The forest node has not been initialized");
+                throw Error<std::runtime_error>("The forest node has not been initialized.");
             }
 
             auto found = forest->coming_from.find(cell_id);
 
             if (found == forest->coming_from.end()) {
-                throw std::domain_error("The node does not correspond to a sampled cell");
+                throw Error<std::domain_error>("The node does not correspond to a sampled cell.");
             }
 
             return forest->samples.at(found->second);
@@ -385,14 +387,14 @@ protected:
 
         /**
          * @brief Get the properties of the cell species
-         * 
+         *
          * @return The properties of the cell species
          */
         inline const SpeciesProperties& get_species_properties() const
         {
             return forest->species_data.at(get_species_id());
         }
-    
+
         /**
          * @brief Get the cell's birth time
          *
@@ -472,7 +474,7 @@ protected:
         NODE_TYPE parent()
         {
             if (_const_node<FOREST_TYPE>::forest==nullptr) {
-                throw std::runtime_error("The forest node has not been initialized");
+                throw Error<std::runtime_error>("The forest node has not been initialized.");
             }
 
             return NODE_TYPE(_const_node<FOREST_TYPE>::forest,
@@ -490,7 +492,7 @@ protected:
         std::vector<NODE_TYPE> children()
         {
             if (_const_node<FOREST_TYPE>::forest==nullptr) {
-                throw std::runtime_error("The forest node has not been initialized");
+                throw Error<std::runtime_error>("The forest node has not been initialized.");
             }
 
             std::vector<NODE_TYPE> nodes;
