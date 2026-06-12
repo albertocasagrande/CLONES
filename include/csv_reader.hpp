@@ -2,8 +2,8 @@
  * @file csv_reader.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a class to read CSV
- * @version 1.4
- * @date 2026-06-11
+ * @version 1.5
+ * @date 2026-06-12
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -147,10 +147,7 @@ public:
          */
         inline const CSVRow& operator*() const
         {
-            if (eof) {
-                throw Error<std::runtime_error>("No rows available: EOF have been reached.");
-            }
-            return curr_row;
+            return *(this->operator->());
         }
 
         /**
