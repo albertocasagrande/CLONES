@@ -2,8 +2,8 @@
  * @file mutations_sim.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Main file for the CLONES mutations simulator
- * @version 1.7
- * @date 2026-06-11
+ * @version 1.8
+ * @date 2026-06-12
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -55,10 +55,10 @@
 
 template<>
 std::string
-boost::lexical_cast<std::string, CLONES::Mutations::SequencingTissueSimulations::ReadSimulator<>::Mode>(const CLONES::Mutations::SequencingTissueSimulations::ReadSimulator<>::Mode& mode)
+boost::lexical_cast<std::string, CLONES::Mutations::SequencingSimulations::ReadSimulator<>::Mode>(const CLONES::Mutations::SequencingSimulations::ReadSimulator<>::Mode& mode)
 {
     using namespace CLONES;
-    using namespace CLONES::Mutations::SequencingTissueSimulations;
+    using namespace CLONES::Mutations::SequencingSimulations;
 
     switch (mode) {
         case ReadSimulator<>::Mode::CREATE:
@@ -73,15 +73,15 @@ boost::lexical_cast<std::string, CLONES::Mutations::SequencingTissueSimulations:
 }
 
 template<>
-CLONES::Mutations::SequencingTissueSimulations::ReadSimulator<>::Mode
-boost::lexical_cast<CLONES::Mutations::SequencingTissueSimulations::ReadSimulator<>::Mode, std::string>(const std::string& mode)
+CLONES::Mutations::SequencingSimulations::ReadSimulator<>::Mode
+boost::lexical_cast<CLONES::Mutations::SequencingSimulations::ReadSimulator<>::Mode, std::string>(const std::string& mode)
 {
     std::string upper_token = mode;
     for (auto& t_char: upper_token) {
         t_char = toupper(t_char);
     }
 
-    using namespace CLONES::Mutations::SequencingTissueSimulations;
+    using namespace CLONES::Mutations::SequencingSimulations;
 
     if (upper_token == "CREATE") {
         return ReadSimulator<>::Mode::CREATE;
@@ -121,7 +121,7 @@ class MutationsSimulator : public BasicExecutable
     double coverage;
     double purity;
     std::string seq_output_directory;
-    CLONES::Mutations::SequencingTissueSimulations::ReadSimulator<>::Mode read_simulator_output_mode;
+    CLONES::Mutations::SequencingSimulations::ReadSimulator<>::Mode read_simulator_output_mode;
     bool paired_read;
     size_t read_size;
     double insert_size_mean;
@@ -345,7 +345,7 @@ class MutationsSimulator : public BasicExecutable
         return {pos, end_pos+1-begin_pos};
     }
 
-    void saving_statistics_data_and_images(const CLONES::Mutations::SequencingTissueSimulations::SampleSetStatistics& statistics,
+    void saving_statistics_data_and_images(const CLONES::Mutations::SequencingSimulations::SampleSetStatistics& statistics,
                                            const std::string& base_name="chr_") const
     {
         statistics.save_VAF_CSVs(base_name, std::cout, quiet);
@@ -399,7 +399,7 @@ class MutationsSimulator : public BasicExecutable
         using namespace CLONES;
         using namespace CLONES::Mutants;
         using namespace CLONES::Mutations;
-        using namespace CLONES::Mutations::SequencingTissueSimulations;
+        using namespace CLONES::Mutations::SequencingSimulations;
 
         nlohmann::json simulation_cfg = get_simulation_json();
 
@@ -673,7 +673,7 @@ public:
     {
         namespace po = boost::program_options;
 
-        using namespace CLONES::Mutations::SequencingTissueSimulations;
+        using namespace CLONES::Mutations::SequencingSimulations;
 
         visible_options.at("mutations").add_options()
             ("germline-file,G", po::value<std::string>(&germline_csv_filename),
@@ -785,7 +785,7 @@ public:
         }
 
         {
-            using namespace CLONES::Mutations::SequencingTissueSimulations;
+            using namespace CLONES::Mutations::SequencingSimulations;
 
             read_simulator_output_mode = ((vm.count("overwrite")>0)?
                                           ReadSimulator<>::Mode::OVERWRITE:

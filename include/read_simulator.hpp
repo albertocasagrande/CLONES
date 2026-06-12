@@ -2,8 +2,8 @@
  * @file read_simulator.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines classes to simulate sequencing
- * @version 1.31
- * @date 2026-06-11
+ * @version 1.32
+ * @date 2026-06-12
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -74,7 +74,7 @@ namespace Mutations
  * @brief The sequencing simulation namespace
  */
 
-namespace SequencingTissueSimulations
+namespace SequencingSimulations
 {
 
 using BaseCoverage = uint16_t;
@@ -2473,7 +2473,7 @@ public:
     }
 };
 
-}   // SequencingTissueSimulations
+}   // SequencingSimulations
 
 }   // Mutations
 

@@ -2,8 +2,8 @@
  * @file sequencer.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines sequencer models
- * @version 1.10
- * @date 2026-06-11
+ * @version 1.11
+ * @date 2026-06-12
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -111,7 +111,7 @@ public:
      * @param[in] reverse is a Boolean flag for simulating reverse read
      * @return the quality scores of the read in Sanger FASTQ format
      */
-    virtual std::string simulate_seq(Mutations::SequencingTissueSimulations::Read& read,
+    virtual std::string simulate_seq(Mutations::SequencingSimulations::Read& read,
                                      const Mutations::GenomicPosition& position,
                                      const bool& reverse=false) = 0;
 
@@ -491,7 +491,7 @@ public:
      * @param[in] reverse is a Boolean flag for simulating reverse read
      * @return the quality scores of the read in Sanger FASTQ format
      */
-    std::string simulate_seq(Mutations::SequencingTissueSimulations::Read& read,
+    std::string simulate_seq(Mutations::SequencingSimulations::Read& read,
                              const Mutations::GenomicPosition& position,
                              const bool& reverse=false) override
     {
@@ -660,7 +660,7 @@ public:
      *      read
      * @return the quality scores of the read in Sanger FASTQ format
      */
-    std::string simulate_seq(Mutations::SequencingTissueSimulations::Read& read,
+    std::string simulate_seq(Mutations::SequencingSimulations::Read& read,
                              const Mutations::GenomicPosition& position,
                              const bool& reverse=false) override
     {

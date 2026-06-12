@@ -2,8 +2,8 @@
  * @file read.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements sequencing reads
- * @version 1.7
- * @date 2026-06-11
+ * @version 1.8
+ * @date 2026-06-12
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -43,7 +43,7 @@ namespace Mutations
 /**
  * @brief The sequencing simulation namespace
  */
-namespace SequencingTissueSimulations
+namespace SequencingSimulations
 {
 
 void Read::MutationIterator::set_current_mutation()
@@ -548,7 +548,7 @@ void Read::alter_base(const size_t pos, const char base)
     }
 }
 
-}   // SequencingTissueSimulations
+}   // SequencingSimulations
 
 }   // Mutations
 

@@ -2,8 +2,8 @@
  * @file read_simulator.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements classes to simulate sequencing
- * @version 1.9
- * @date 2026-06-11
+ * @version 1.10
+ * @date 2026-06-12
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -45,7 +45,7 @@ namespace CLONES
 namespace Mutations
 {
 
-namespace SequencingTissueSimulations
+namespace SequencingSimulations
 {
 
 SequencingTargets::SampleTarget::SampleTarget():
