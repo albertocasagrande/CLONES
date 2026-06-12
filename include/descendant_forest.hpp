@@ -2,8 +2,8 @@
  * @file descendant_forest.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines classes and function for descendant forests
- * @version 1.10
- * @date 2026-06-11
+ * @version 1.11
+ * @date 2026-06-12
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -372,15 +372,15 @@ protected:
          */
         inline const std::string& get_mutant_name() const
         {
-            return  get_species_properties().get_name();
+            return  get_species_properties().get_mutant_name();
         }
 
         /**
          * @brief Get the node epigenetic state name
          *
-         * @return the node epigenetic state name
+         * @return a constant reference to the node epigenetic state name
          */
-        inline std::string get_epistate_name() const
+        inline const std::string& get_epistate_name() const
         {
             return get_species_properties().get_epistate_name();
         }
