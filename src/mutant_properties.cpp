@@ -2,8 +2,8 @@
  * @file mutant_properties.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements the mutant properties
- * @version 1.4
- * @date 2026-06-11
+ * @version 1.5
+ * @date 2026-06-16
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -51,20 +51,9 @@ SpeciesProperties::SpeciesProperties():
 
 SpeciesProperties::SpeciesProperties(const MutantProperties& mutant,
                                      const std::string& epistate_name):
-    id(counter++), epistate_name{epistate_name}, mutant_id(mutant.get_id()),
-    mutant_name{mutant.get_name()}
+    id(counter++), mutant_id(mutant.get_id()),
+    species_name{mutant.get_name(), epistate_name}
 {}
-
-std::string SpeciesProperties::get_name(const std::string& mutant_name,
-                                        const std::string& epistate_name)
-{
-    if (epistate_name.size()==0) {
-        return mutant_name;
-    }
-
-    return mutant_name + "[" + epistate_name + "]";
-}
-
 double SpeciesProperties::get_rate(const CellEventType& event,
                                    const SpeciesId& dst_species) const
 {
@@ -110,7 +99,6 @@ SpeciesProperties& SpeciesProperties::set_rate(const CellEventType& event,
     switch(event) {
         case CellEventType::DEATH:
         case CellEventType::DUPLICATION:
-        case CellEventType::EPIGENETIC_SWITCH:
         case CellEventType::DUP_AND_EPI_SWITCH:
             event_rates[event][dst_species.get_id()] = rate;
 

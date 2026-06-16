@@ -2,8 +2,8 @@
  * @file mutational_properties.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a class to represent the mutational properties
- * @version 1.9
- * @date 2026-06-11
+ * @version 1.10
+ * @date 2026-06-16
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -360,14 +360,14 @@ class MutationalProperties
     /**
      * @brief Get the passenger rates for a species
      *
-     * @tparam MAP is the type of `passenger_rates`. It can be constant or non-constant
+     * @tparam T is the type of `passenger_rates`. It can be constant or non-constant
      * @param passenger_rates is a map associating species names to their rates
      * @param species_name is the name of the species whose rates are aimed
      * @return a (constant) reference to the rates associated to `species_name` by
      *      `passenger_rates`
      */
-    template<typename MAP>
-    static auto& get_passenger_rates(MAP& passenger_rates, const std::string& species_name)
+    template<typename T>
+    static auto& get_passenger_rates(T& passenger_rates, const std::string& species_name)
     {
         auto found = passenger_rates.find(species_name);
         if (found == passenger_rates.end()) {
@@ -381,7 +381,7 @@ class MutationalProperties
     /**
      * @brief Get the passenger rates for a species
      *
-     * @tparam MAP is the type of `passenger_rates`. It can be constant or non-constant
+     * @tparam T is the type of `passenger_rates`. It can be constant or non-constant
      * @param passenger_rates is a map associating species names to their rates
      * @param mutant_name is the mutant of the species whose rates are aimed
      * @param epistate is the epigenetic state representation of the species whose
@@ -394,7 +394,7 @@ class MutationalProperties
     inline static auto& get_passenger_rates(T& passenger_rates, const std::string& mutant_name,
                                             const std::string& epistate)
     {
-        const auto species_name = Mutants::SpeciesProperties::get_name(mutant_name, epistate);
+        const auto species_name = Mutants::SpeciesName(mutant_name, epistate);
 
         return get_passenger_rates(passenger_rates, species_name);
     }

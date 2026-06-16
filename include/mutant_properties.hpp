@@ -2,8 +2,8 @@
  * @file mutant_properties.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines mutant properties
- * @version 1.3
- * @date 2026-06-11
+ * @version 1.4
+ * @date 2026-06-16
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -35,6 +35,8 @@
 #include <string>
 #include <sstream>
 #include <ranges>
+
+#include "species_name.hpp"
 
 #include "archive.hpp"
 #include "cell_event.hpp"
@@ -134,10 +136,9 @@ private:
     static unsigned int counter;    //!< The total number of species along the computation
 
     SpeciesId id;               //!< The species identifier
-    std::string epistate_name;  //!< The epistate name
-
     MutantId mutant_id;         //!< The mutant identifier
-    std::string mutant_name;    //!< The mutant name
+
+    SpeciesName species_name;   //!< The species name
 
     EventRate event_rates;  //!< Event rates
 
@@ -168,21 +169,21 @@ public:
     /**
      * @brief Get the name of the species epigenetic state
      *
-     * @return the name of the species epigenetic state
+     * @return a constant reference to name of the epigenetic state
      */
     inline const std::string& get_epistate_name() const
     {
-        return epistate_name;
+        return species_name.get_epistate_name();
     }
 
     /**
      * @brief Get the mutant name
      *
-     * @return the mutant name
+     * @return a constant reference to the mutant name
      */
     inline const std::string& get_mutant_name() const
     {
-        return mutant_name;
+        return species_name.get_mutant_name();
     }
 
     /**
@@ -192,19 +193,8 @@ public:
      */
     inline std::string get_name() const
     {
-        return SpeciesProperties::get_name(mutant_name, epistate_name);
+        return static_cast<std::string>(species_name);
     }
-
-    /**
-     * @brief Get the species name from the mutant and the epistate names
-     *
-     * @param mutant_name is the mutant name
-     * @param epistate_name is the epigenetic state name
-     * @return The name of a species whose mutant and epigenetic state names
-     *      are `mutant_name` and `epistate_name`, respectively.
-     */
-    static std::string get_name(const std::string& mutant_name,
-                                const std::string& epistate_name);
 
     /**
      * @brief Get the mutant identifier
@@ -256,7 +246,7 @@ public:
      *
      * @param event is the event whose rate is set the
      *      event. If the event is not among `CellEventType::DEATH`,
-     *      `CellEventType::DUPLICATION`, `CellEventType::EPIGENETIC_SWITCH`,
+     *      `CellEventType::DUPLICATION`,
      *      and `CellEventType::DUP_AND_EPI_SWITCH` or `dst_species` and this
      *      object do not belong to the same mutant, a `std::domain_error`
      *      exception is thrown
@@ -279,9 +269,8 @@ public:
     void save(ARCHIVE& archive) const
     {
         archive & id
-                & epistate_name
                 & mutant_id
-                & mutant_name
+                & species_name
                 & event_rates;
     }
 
@@ -298,9 +287,8 @@ public:
         SpeciesProperties species_properties;
 
         archive & species_properties.id
-                & species_properties.epistate_name
                 & species_properties.mutant_id
-                & species_properties.mutant_name
+                & species_properties.species_name
                 & species_properties.event_rates;
 
         if (SpeciesProperties::counter < static_cast<unsigned int>(species_properties.id+1)) {

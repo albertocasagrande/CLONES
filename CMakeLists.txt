@@ -67,6 +67,7 @@ set(CLONES_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/allele.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/sid.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/simulation_event.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/species.cpp
+                ${CMAKE_CURRENT_SOURCE_DIR}/src/species_name.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/statistics.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/timed_event.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/tissue.cpp
@@ -137,6 +138,7 @@ set(CLONES_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/include/allele.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/signature.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/simulation_event.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/species.hpp
+                ${CMAKE_CURRENT_SOURCE_DIR}/include/species_name.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/statistics.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/time.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/timed_event.hpp
