@@ -2,8 +2,8 @@
  * @file simulation.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Define a tumour evolution simulation
- * @version 1.8
- * @date 2026-06-11
+ * @version 1.9
+ * @date 2026-06-17
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -440,7 +440,7 @@ bool TissueSimulation::handle_timed_mutation(const TimedEvent& timed_mutation, C
 }
 
 TissueSimulation& TissueSimulation::simulate_mutation(const PositionInTissue& position,
-                                                   const std::string& dst_mutant_name)
+                                                      const std::string& dst_mutant_name)
 {
     auto dst_mutant_id = find_mutant_id(dst_mutant_name);
 
@@ -774,9 +774,6 @@ TissueSimulation::simulate_duplication(const Position& position)
     Cell parent_cell = tissue(position);
 
     // push the cell in position towards a random direction
-    //const Direction& push_dir = select_random_value(random_gen, valid_directions);
-    //const Direction& push_dir = select_min_push_direction(random_gen, tissue, position,
-    //                                                      valid_directions);
     const Direction& push_dir = select_inverse_min_direction(random_gen, tissue, position,
                                                              valid_directions);
 
@@ -807,29 +804,46 @@ TissueSimulation::simulate_duplication(const Position& position)
     return affected;
 }
 
-typename TissueSimulation::EventAffectedCells
-TissueSimulation::simulate_duplication_and_mutation_event(const Position& position, const SpeciesId& final_id)
+bool TissueSimulation::set_cell_species(const Position& position, const SpeciesId& species_id)
 {
     Tissue& tissue = *(position.tissue);
 
+    if (tissue(position).is_wild_type()) {
+        return false;
+    }
+
+    Cell cell = tissue(position);
+
+    if (cell.get_species_id() != species_id) {
+        if (!lineage_graph.has_edge(cell.get_species_id(), species_id)) {
+            lineage_graph.add_edge(cell.get_species_id(), species_id, time);
+        }
+
+        cell.species_id = species_id;
+
+        tissue(position) = cell;
+
+        return true;
+    }
+
+    return false;
+}
+
+typename TissueSimulation::EventAffectedCells
+TissueSimulation::simulate_duplication_and_set_one_child_species(const Position& position, const SpeciesId& final_id)
+{
     auto affected = simulate_duplication(position);
 
     if (affected.new_cells.size()==0) {
         return affected;
     }
 
-    Cell cell = tissue(position);
+    if (set_cell_species(position, final_id)) {
+        Tissue& tissue = *(position.tissue);
 
-    if (!lineage_graph.has_edge(cell.get_species_id(), final_id)) {
-        lineage_graph.add_edge(cell.get_species_id(), final_id, time);
-    }
-
-    cell.species_id = final_id;
-
-    tissue(position) = cell;
-
-    for (auto& cell : affected.new_cells) {
-        cell = static_cast<Cell>(tissue(cell));
+        for (auto& cell : affected.new_cells) {
+            cell = static_cast<Cell>(tissue(cell));
+        }
     }
 
     return affected;

@@ -2,8 +2,8 @@
  * @file tissue_simulation.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a tumour evolution simulation
- * @version 1.5
- * @date 2026-06-11
+ * @version 1.6
+ * @date 2026-06-17
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -218,23 +218,32 @@ protected:
     EventAffectedCells simulate_mutation(const Position& position, const SpeciesId& final_id);
 
     /**
+     * @brief Set the species of a tumour cell
+     * 
+     * @param position is the position of a tumour cell
+     * @param species_id is the new species identifier
+     * @return `true` if and only if the cell in `position` is a tumour cell
+     *      and its species is different from `species_id`
+     */
+    bool set_cell_species(const Position& position, const SpeciesId& species_id);
+
+    /**
      * @brief Simulate a duplication and a mutation event
      *
      * This method simulates the duplication of a cell in the
-     * tissue and applies a mutation event on the children in
-     * the provided position.
+     * tissue and change the species of the child in the provided position.
      *
      * @param position is the position of the cell to be duplicate
      * @param final_id is the resulting species identifier of the cell
-     * @return list of the affected cells. Whenever the specified position
+     * @return The list of the affected cells. Whenever the specified position
      *      is not in the tissue or does correspond to a wild-type cell,
      *      the returned list is empty. If one of the two children is
      *      pushed outside the tissue borders, the returned list contains
      *      only the new cell in position `position`. In the remaining
      *      case, the returned list contains two cells
      */
-    EventAffectedCells simulate_duplication_and_mutation_event(const Position& position,
-                                                               const SpeciesId& final_id);
+    EventAffectedCells simulate_duplication_and_set_one_child_species(const Position& position,
+                                                                      const SpeciesId& final_id);
 
     /**
      * @brief Record tissue initial cells in log
@@ -1243,7 +1252,8 @@ TissueSimulation& TissueSimulation::simulate(const CellEvent& event, UI::TissueP
             break;
         case CellEventType::DUP_AND_EPI_SWITCH:
         case CellEventType::MUTATION:
-            affected = simulate_duplication_and_mutation_event(event.position, event.dst_species);
+            affected = simulate_duplication_and_set_one_child_species(event.position,
+                                                                      event.dst_species);
             break;
         default:
             throw Error<std::runtime_error>("Unhandled event type \""
