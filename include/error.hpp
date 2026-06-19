@@ -2,8 +2,8 @@
  * @file error.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines CLONES errors
- * @version 1.0
- * @date 2026-06-10
+ * @version 1.1
+ * @date 2026-06-19
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -92,7 +92,7 @@ public:
      */
     inline const char* what() const noexcept override
     {
-        return static_cast<const EXCEPTION_TYPE*>(this)->what();
+        return EXCEPTION_TYPE::what();
     }
 
     /**
