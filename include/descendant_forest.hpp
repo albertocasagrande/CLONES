@@ -2,8 +2,8 @@
  * @file descendant_forest.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines classes and function for descendant forests
- * @version 1.11
- * @date 2026-06-12
+ * @version 1.12
+ * @date 2026-06-19
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -372,7 +372,8 @@ protected:
          */
         inline const std::string& get_mutant_name() const
         {
-            return  get_species_properties().get_mutant_name();
+            return  get_species_properties().get_mutant_properties()
+                                            .get_name();
         }
 
         /**
@@ -737,11 +738,10 @@ public:
      * @return a constant reference to the name of the mutant having
      *          `mutant_id` as identifier
      */
-    /*inline const std::string& get_mutant_name(const MutantId& mutant_id) const
+    inline const std::string& get_mutant_name(const MutantId& mutant_id) const
     {
         return mutant_names.at(mutant_id);
     }
-        */
 
     /**
      * @brief Get the name of a species

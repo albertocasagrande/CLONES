@@ -2,8 +2,8 @@
  * @file simulation.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Define a tumour evolution simulation
- * @version 1.9
- * @date 2026-06-17
+ * @version 1.10
+ * @date 2026-06-19
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -174,9 +174,9 @@ TissueSimulation::choose_cell_in(const MutantId& mutant_id, const CellEventType&
     size_t total = 0;
 
     std::vector<size_t> num_of_cells;
-    const auto& species = tissue().get_mutant_species(mutant_id);
-    for (const auto& S : species) {
-        num_of_cells.push_back(S.num_of_cells_available_for(event_type));
+    auto m_view = tissue().get_mutant_view(mutant_id);
+    for (const auto& species : m_view) {
+        num_of_cells.push_back(species.num_of_cells_available_for(event_type));
         total += num_of_cells.back();
     }
 
@@ -189,7 +189,7 @@ TissueSimulation::choose_cell_in(const MutantId& mutant_id, const CellEventType&
                                                     num_of_cells.end());
     const size_t species_idx = distribution(random_gen);
 
-    return species[species_idx].choose_a_cell(random_gen, event_type);
+    return m_view[species_idx].choose_a_cell(random_gen, event_type);
 }
 
 const CellInTissue& TissueSimulation::choose_cell_in(const std::string& mutant_name, const CellEventType& event_type)
@@ -204,9 +204,7 @@ const CellInTissue& TissueSimulation::choose_cell_in(const MutantId& mutant_id,
                                                      const CellEventType& event_type)
 {
     std::set<SpeciesId> species_ids;
-    auto mutant_species = tissue().get_mutant_species(mutant_id);
-
-    for (const auto& species : mutant_species) {
+    for (const auto& species : tissue().get_mutant_view(mutant_id)) {
         species_ids.insert(species.get_id());
     }
 
@@ -326,11 +324,11 @@ bool choose_border_cell_in(PositionInTissue& pos, const Tissue& tissue, const Di
 }
 
 const CellInTissue& TissueSimulation::choose_border_cell_in(const MutantId& mutant_id,
-                                                      const RectangleSet& rectangle)
+                                                            const RectangleSet& rectangle)
 {
     std::set<SpeciesId> species_ids;
 
-    for (const auto& species : tissue().get_mutant_species(mutant_id)) {
+    for (const auto& species : tissue().get_mutant_view(mutant_id)) {
         species_ids.insert(species.get_id());
     }
 
@@ -415,9 +413,9 @@ CellEvent create_mutation_event(Tissue& tissue, const PositionInTissue& position
     const Species& src_species = tissue.get_species(event.src_species);
     const auto src_epistate = src_species.get_epistate_name();
 
-    const auto& mutant_species = tissue.get_mutant_species(final_id);
+    const auto& m_view = tissue.get_mutant_view(final_id);
 
-    event.dst_species = mutant_species.get_species_by_epistate(src_epistate).get_id();
+    event.dst_species = m_view.get_species_by_epistate(src_epistate).get_id();
 
     return event;
 }
@@ -857,14 +855,6 @@ TissueSimulation::schedule_mutation(const MutantProperties& src, const MutantPro
     // case, it throws an std::runtime_error
     (void)tissue();
 
-    if (!src.has_the_same_epistates(dst)) {
-        std::ostringstream oss;
-
-        oss << "\"" << src.get_name() << "\" and \"" << dst.get_name()
-            << "\" differ in epigenetic state.";
-        throw Error<std::domain_error>(oss.str());
-    }
-
     Mutation mutation(src, dst);
 
     timed_event_queue.emplace(time, mutation);
@@ -952,10 +942,17 @@ void TissueSimulation::reset()
     //death_activation_level = 1;
 }
 
+TissueSimulation& TissueSimulation::add_mutant(const std::string& mutant_name)
+{
+    MutantProperties properties{mutant_name};
+
+    return add_mutant(properties);
+}
+
 TissueSimulation& TissueSimulation::add_mutant(const MutantProperties& mutant)
 {
     if (mutant_name2id.count(mutant.get_name())>0) {
-        throw Error<std::runtime_error>("Clone \"" + mutant.get_name()
+        throw Error<std::runtime_error>("Mutant \"" + mutant.get_name()
                                         + "\" already in the simulation");
     }
 
@@ -964,6 +961,46 @@ TissueSimulation& TissueSimulation::add_mutant(const MutantProperties& mutant)
     mutant_name2id[mutant.get_name()] = mutant.get_id();
 
     return *this;
+}
+
+TissueSimulation& TissueSimulation::add_mutants(const std::list<std::string>& mutant_names)
+{
+    for (const auto& name: mutant_names) {
+        add_mutant(name);
+    }
+
+    return *this;
+}
+
+TissueSimulation& TissueSimulation::add_epigenetic_state(const std::string& epistate_name)
+{
+    tissue().add_epigenetic_state(epistate_name);
+
+    return *this;
+}
+
+TissueSimulation& TissueSimulation::add_epigenetic_states(const std::list<std::string>& epistate_names)
+{
+    for (const auto& name: epistate_names) {
+        add_epigenetic_state(name);
+    }
+
+    return *this;
+}
+
+TissueSimulation& TissueSimulation::place_cell(const std::string& species_name,
+                                               const PositionInTissue& position)
+{
+    if (!tissue().knowns(species_name)) {
+        throw Error<std::runtime_error>("\"" + species_name
+                                        + "\" has not been added to the simulation.");
+    }
+
+    SpeciesName name(species_name);
+
+    SpeciesProperties s_prop(name.get_mutant_name(), name.get_epistate_name());
+
+    return place_cell(s_prop.get_id(), position);
 }
 
 TissueSimulation& TissueSimulation::place_cell(const SpeciesId& species_id, const PositionInTissue& position)
@@ -999,7 +1036,7 @@ TissueSimulation& TissueSimulation::set_tissue(const std::string& name, const st
         reset();
     }
 
-    tissues.push_back(Tissue(name, sizes));
+    tissues.emplace_back(name, sizes);
 
     init_valid_directions();
 

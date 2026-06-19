@@ -2,8 +2,8 @@
  * @file tissue.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines tissue class
- * @version 1.5
- * @date 2026-06-11
+ * @version 1.6
+ * @date 2026-06-19
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -36,7 +36,7 @@
 #include <map>
 #include <set>
 #include <string>
-#include <memory> // SpeciesView::const_iterator
+#include <memory> // mutant_view::basic_iterator
 
 #include "archive.hpp"
 #include "time.hpp"
@@ -73,6 +73,8 @@ class Tissue {
     std::map<SpeciesId, size_t> id_pos;     //!< The identifier to position map
     std::map<std::string, size_t> name_pos; //!< The name to position map
     ClonePosition mutant_pos;     //!< The positions of the species associated to the same mutant
+
+    std::set<std::string>   epistate_names;  //!< The names of the epigenetic states
 
     uint8_t dimensions;   //!< The number of space dimension for the tissue
 
@@ -135,15 +137,12 @@ class Tissue {
     void register_species_cells();
 
     /**
-     * @brief Add mutant species to the tissue species
+     * @brief Add a species
      *
-     * This method add mutant species to the tissue species, but do not
-     * register their cells into tissue space
-     *
-     * @param mutant_properties is the mutant properties of the mutant
-     * @return a reference to the updated object
+     * @param species_properties are the properties of the species to
+     *    be added
      */
-    Tissue& add_mutant_species(const MutantProperties& mutant_properties);
+    Tissue& add_species(const SpeciesProperties& species_properties);
 
     /**
      * @brief Place a cell in the tissue
@@ -155,18 +154,25 @@ class Tissue {
      */
     const CellInTissue& place_cell(const CellId& id, const SpeciesId& species_id,
                                    const PositionInTissue position);
-public:
 
     /**
-     * @brief A view class for species
+     * @brief A class to go through the species of a mutant
      *
-     * This class allows to have a partial view of the
-     * tissue's species. For instance, it allows to
-     * list all the species in the same mutant.
+     * This class allows to have a view of the tissue's species of a
+     * specific mutant.
+     *
+     * @tparam IS_CONSTANT is a Boolean flag to establish whether
+     *      the view is constant
      */
-    class SpeciesView {
-        const std::vector<Species>& species;       //!< The species vector
-        const std::vector<size_t>& species_pos;    //!< The species position vector
+    template <bool IS_CONSTANT>
+    class basic_mutant_view
+    {
+        using vector_type = std::conditional_t<IS_CONSTANT, const std::vector<Species>,
+                                               std::vector<Species>>;
+        using species_type = std::conditional_t<IS_CONSTANT, const Species, Species>;
+
+        vector_type* species;       //!< The species vector
+        const std::vector<size_t>* species_pos;    //!< The species position vector
 
         /**
          * @brief A constructor
@@ -174,39 +180,68 @@ public:
          * @param species is a reference to the tissue's species vector
          * @param species_pos is a vector of valid positions for `vector`
          */
-        SpeciesView(const std::vector<Species>& species, const std::vector<size_t>& species_pos);
-    public:
+        basic_mutant_view(vector_type* species, const std::vector<size_t>& species_pos):
+            species{species}, species_pos{&species_pos}
+        {}
 
+    public:
         /**
-         * @brief A constant iterator over species views
+         * @brief An iterator over species views
+         *
+         * @tparam IS_CONSTANT_IT is a Boolean flag to establish whether
+         *      the iterator is constant
          */
-        class const_iterator {
-            const std::vector<Species>* species;    //!< The tissue's species vector
+        template <bool IS_CONSTANT_IT>
+        class basic_iterator {
+            using vector_type = std::conditional_t<IS_CONSTANT_IT, const std::vector<Species>,
+                                                   std::vector<Species>>;
+            using species_type = std::conditional_t<IS_CONSTANT_IT, const Species, Species>;
+
+            vector_type* species;    //!< The tissue's species vector
             std::shared_ptr<std::vector<size_t>::const_iterator> it; //!< A constant iterator over a vector of position in `species`
 
             /**
-             * @brief A private constructor
+             * @brief A protected constructor
              *
              * @param species is the vector of the tissue's species
              * @param it is a constant iterator over a vector of the positions in `species`
              */
-            const_iterator(const std::vector<Species>& species, const std::vector<size_t>::const_iterator it);
+            basic_iterator(vector_type* species, const std::vector<size_t>::const_iterator it):
+                species{species}, it{std::make_shared<std::vector<size_t>::const_iterator>(it)}
+            {}
         public:
             using difference_type   =   std::ptrdiff_t;
             using value_type        =   Species;
-            using pointer           =   const Species*;
-            using reference         =   const Species&;
+            using pointer           =   species_type*;
+            using reference         =   species_type&;
             using iterator_category =   std::random_access_iterator_tag;
+
+            /**
+             * @brief A copy constructor
+             *
+             * This copy constructor enables the implicit conversion from `basic_iterator<false>`
+             * into `basic_iterator<true>`.
+             *
+             * @tparam PARAM_CONST is the template parameter of the copied object.
+             * @param orig is the original basic iterator
+             */
+            template <bool PARAM_CONST>
+                requires (IS_CONSTANT_IT)
+            basic_iterator(const basic_iterator<PARAM_CONST>& orig) :
+                species{orig.species}, it{orig.it}
+            {}
 
             /**
              * @brief An empty constructor
              */
-            const_iterator();
+            basic_iterator():
+                species{nullptr}, it{nullptr}
+            {}
 
             /**
              * @brief Reference operator
              *
-             * @return a reference to the species pointer by the iterator
+             * @return a reference to the species by the iterator
              */
             inline reference operator*() const
             {
@@ -216,9 +251,9 @@ public:
             /**
              * @brief Pointer operator
              *
-             * @return a pointer to the species pointer by the iterator
+             * @return a pointer to the species by the iterator
              */
-            inline pointer operator->()
+            inline pointer operator->() const
             {
                 return &((*species)[**it]);
             }
@@ -228,9 +263,10 @@ public:
              *
              * @return a reference to the updated object
              */
-            inline const_iterator& operator++()
+            inline basic_iterator<IS_CONSTANT_IT>& operator++()
             {
                 ++(*it);
+
                 return *this;
             }
 
@@ -239,16 +275,24 @@ public:
              *
              * @return a copy of the original object
              */
-            const_iterator operator++(int);
+            basic_iterator<IS_CONSTANT_IT> operator++(int)
+            {
+                basic_iterator<IS_CONSTANT_IT> copy(*this);
+
+                this->operator++();
+
+                return copy;
+            }
 
             /**
              * @brief The prefix decrement
              *
              * @return a reference to the updated object
              */
-            inline const_iterator& operator--()
+            inline basic_iterator<IS_CONSTANT_IT>& operator--()
             {
                 --(*it);
+
                 return *this;
             }
 
@@ -257,7 +301,14 @@ public:
              *
              * @return a copy of the original object
              */
-            const_iterator operator--(int);
+            basic_iterator<IS_CONSTANT_IT> operator--(int)
+            {
+                basic_iterator<IS_CONSTANT_IT> copy(*this);
+
+                this->operator--();
+
+                return copy;
+            }
 
             /**
              * @brief Add operator
@@ -266,9 +317,9 @@ public:
              * @return a new iterator that points `delta` position ahead
              *      with respect to the original object
              */
-            inline const_iterator operator+(const int delta)
+            inline basic_iterator<IS_CONSTANT_IT> operator+(const int delta)
             {
-                return const_iterator(*species, *it + delta);
+                return basic_iterator<IS_CONSTANT_IT>(*species, *it + delta);
             }
 
             /**
@@ -278,9 +329,9 @@ public:
              * @return a new iterator that points `delta` position backwards
              *      with respect to the original object
              */
-            inline const_iterator operator-(const int delta)
+            inline basic_iterator<IS_CONSTANT_IT> operator-(const int delta)
             {
-                return const_iterator(*species, *it - delta);
+                return basic_iterator<IS_CONSTANT_IT>(*species, *it - delta);
             }
 
             /**
@@ -289,7 +340,8 @@ public:
              * @param delta is the value to add
              * @return a reference to the update object
              */
-            inline const_iterator& operator+=(const int& delta) {
+            inline basic_iterator<IS_CONSTANT_IT>& operator+=(const int& delta)
+            {
                 (*it) += delta;
 
                 return *this;
@@ -301,7 +353,8 @@ public:
              * @param delta is the value to subtract
              * @return a reference to the update object
              */
-            inline const_iterator& operator-=(const int& delta) {
+            inline basic_iterator<IS_CONSTANT_IT>& operator-=(const int& delta)
+            {
                 (*it) -= delta;
 
                 return *this;
@@ -327,23 +380,120 @@ public:
              * @return `true` if and only if the two iterators
              *      refer to the same object
              */
-            friend inline bool operator==(const const_iterator& a, const const_iterator& b)
+            friend inline bool operator==(const basic_iterator<IS_CONSTANT_IT>& a,
+                                          const basic_iterator<IS_CONSTANT_IT>& b)
             {
                 return (*a.it == *b.it) && (a.species == b.species);
             }
 
-            friend class Tissue::SpeciesView;
+            /**
+             * @brief Test whether two iterators differs
+             *
+             * @param a is the first iterator to compare
+             * @param b is the second iterator to compare
+             * @return `true` if and only if the two iterators
+             *      do not refer to the same object
+             */
+            friend inline bool operator!=(const basic_iterator<IS_CONSTANT_IT>& a,
+                                          const basic_iterator<IS_CONSTANT_IT>& b)
+            {
+                return !(a==b);
+            }
+
+            template<bool IS_CONSTANT_IT2>  friend class basic_iterator;
+            template<bool IS_CONSTANT2> friend class basic_mutant_view;
         };
+    public:
+
+        using const_iterator = basic_iterator<true>;
+        using iterator = std::conditional_t<IS_CONSTANT, void, basic_iterator<false>>;
+
+        /**
+         * @brief The empty constructor
+         */
+        basic_mutant_view():
+            species{nullptr}, species_pos{nullptr}
+        {}
+
+        /**
+         * @brief A copy constructor
+         *
+         * This copy constructor enables the implicit conversion from `basic_mutant_view<false>`
+         * into `basic_mutant_view<true>`.
+         *
+         * @tparam PARAM_CONST is the template parameter of the copied object.
+         * @param orig is the original basic species view
+         */
+        template <bool PARAM_CONST>
+            requires (IS_CONSTANT)
+        basic_mutant_view(const basic_mutant_view<PARAM_CONST>& orig) :
+            species{orig.species}, species_pos{orig.species_pos}
+        {}
 
         /**
          * @brief Get the species by epigenetic state name
          *
          * @param epistate_name is the epigenetic state name of the aimed species
-         * @return a constant reference to the species having `epistate_name` as
+         * @return a reference to the species having `epistate_name` as
          *      epigenetic state name. If none of the species in the view have this
          *      epigenetic state name, an `std::out_of_range` is thrown.
          */
-        const Species& get_species_by_epistate(const std::string& epistate_name) const;
+        const Species& get_species_by_epistate(const std::string& epistate_name) const
+        {
+            for (const auto& species: *this) {
+                if (species.get_epistate_name()==epistate_name) {
+                    return species;
+                }
+            }
+
+            if (size()==0) {
+                throw Error<std::out_of_range>("The mutant has no epigenetic states.");
+            }
+
+            throw Error<std::out_of_range>("\"" + (*this)[0].get_mutant_name()
+                                        + "\" does not have the epigenetic state \""
+                                        + epistate_name + "\".");
+        }
+
+
+        /**
+         * @brief Get the species by epigenetic state name
+         *
+         * @param epistate_name is the epigenetic state name of the aimed species
+         * @return a reference to the species having `epistate_name` as
+         *      epigenetic state name. If none of the species in the view have this
+         *      epigenetic state name, an `std::out_of_range` is thrown.
+         */
+        Species& get_species_by_epistate(const std::string& epistate_name)
+            requires(!IS_CONSTANT)
+        {
+            for (Species& species: *this) {
+                if (species.get_epistate_name()==epistate_name) {
+                    return species;
+                }
+            }
+
+            if (size()==0) {
+                throw Error<std::out_of_range>("The mutant has no epigenetic states.");
+            }
+
+            throw Error<std::out_of_range>("\"" + (*this)[0].get_mutant_name()
+                                        + "\" does not have the epigenetic state \""
+                                        + epistate_name + "\".");
+        }
+
+        /**
+         * @brief Index operator
+         *
+         * @param index is the index to access
+         * @return a non-constant reference to the `index`-th species
+         *      in the view
+         */
+        inline Species& operator[](const size_t& index)
+            requires(!IS_CONSTANT)
+        {
+            return (*species)[(*species_pos)[index]];
+        }
 
         /**
          * @brief Index operator
@@ -354,7 +504,44 @@ public:
          */
         inline const Species& operator[](const size_t& index) const
         {
-            return species[species_pos[index]];
+            return (*species)[(*species_pos)[index]];
+        }
+
+        /**
+         * @brief Index operator
+         *
+         * @param epistate_name is the epigenetic state name of the aimed species
+         * @return a constant reference to the species having `epistate_name` as
+         *      epigenetic state name. If none of the species in the view have this
+         *      epigenetic state name, an `std::out_of_range` is thrown.
+         */
+        inline const Species& operator[](const std::string& epistate_name) const
+        {
+            return get_species_by_epistate(epistate_name);
+        }
+
+        /**
+         * @brief Index operator
+         *
+         * @param epistate_name is the epigenetic state name of the aimed species
+         * @return a non-constant reference to the species having `epistate_name` as
+         *      epigenetic state name. If none of the species in the view have this
+         *      epigenetic state name, an `std::out_of_range` is thrown.
+         */
+        inline Species& operator[](const std::string& epistate_name)
+            requires(!IS_CONSTANT)
+        {
+            return get_species_by_epistate(epistate_name);
+        }
+
+        /**
+         * @brief Get the mutant properties
+         *
+         * @return The mutant properties
+         */
+        inline const MutantProperties& get_mutant() const
+        {
+            return operator[](0).get_mutant_properties();
         }
 
         /**
@@ -364,7 +551,7 @@ public:
          */
         inline size_t size() const
         {
-            return species_pos.size();
+            return species_pos->size();
         }
 
         /**
@@ -375,7 +562,7 @@ public:
          */
         inline const_iterator begin() const
         {
-            return const_iterator(species, species_pos.begin());
+            return const_iterator(species, species_pos->begin());
         }
 
         /**
@@ -385,7 +572,30 @@ public:
          */
         inline const_iterator end() const
         {
-            return const_iterator(species, species_pos.end());
+            return const_iterator(species, species_pos->end());
+        }
+
+        /**
+         * @brief Get the view begin
+         *
+         * @return a constant iterator to the first element
+         *      in the view
+         */
+        inline iterator begin()
+            requires (!IS_CONSTANT)
+        {
+            return iterator(species, species_pos->begin());
+        }
+
+        /**
+         * @brief Get the view end
+         *
+         * @return a constant iterator to the view end
+         */
+        inline iterator end()
+            requires (!IS_CONSTANT)
+        {
+            return iterator(species, species_pos->end());
         }
 
         /**
@@ -393,10 +603,22 @@ public:
          *
          * @return the number of cells in the species view
          */
-        size_t num_of_cells() const;
+        size_t num_of_cells() const
+        {
+            size_t num_of_cells{0};
+            for (auto species_it=begin(); species_it != end(); ++species_it) {
+                num_of_cells += species_it->num_of_cells();
+            }
+
+            return num_of_cells;
+        }
 
         friend class Tissue;
     };
+public:
+
+    using const_mutant_view = basic_mutant_view<true>;
+    using mutant_view = basic_mutant_view<false>;
 
     /**
      * @brief This class wraps pointer to constant cells in tissue space
@@ -596,27 +818,6 @@ public:
     Tissue(const AxisSize x_size, const AxisSize y_size);
 
     /**
-     * @brief A constructor for a 3D tissue
-     *
-     * @param mutants is the vector of mutants
-     * @param x_size is the size of the tissue on the x axis
-     * @param y_size is the size of the tissue on the y axis
-     * @param z_size is the size of the tissue on the z axis
-     */
-    Tissue(const std::vector<MutantProperties>& mutants, const AxisSize x_size,
-           const AxisSize y_size, const AxisSize z_size);
-
-    /**
-     * @brief A constructor for a 2D tissue
-     *
-     * @param mutants is the vector of mutants
-     * @param x_size is the size of the tissue on the x axis
-     * @param y_size is the size of the tissue on the y axis
-     */
-    Tissue(const std::vector<MutantProperties>& mutants, const AxisSize x_size,
-           const AxisSize y_size);
-
-    /**
      * @brief A constructor
      *
      * @param name is the tissue name
@@ -643,29 +844,6 @@ public:
      * @param y_size is the size of the tissue on the y axis
      */
     Tissue(const std::string& name, const AxisSize x_size, const AxisSize y_size);
-
-    /**
-     * @brief A constructor for a 3D tissue
-     *
-     * @param name is the tissue name
-     * @param mutants is the vector of mutants
-     * @param x_size is the size of the tissue on the x axis
-     * @param y_size is the size of the tissue on the y axis
-     * @param z_size is the size of the tissue on the z axis
-     */
-    Tissue(const std::string& name, const std::vector<MutantProperties>& mutants,
-           const AxisSize x_size, const AxisSize y_size, const AxisSize z_size);
-
-    /**
-     * @brief A constructor for a 2D tissue
-     *
-     * @param name is the tissue name
-     * @param mutants is the vector of mutants
-     * @param x_size is the size of the tissue on the x axis
-     * @param y_size is the size of the tissue on the y axis
-     */
-    Tissue(const std::string& name, const std::vector<MutantProperties>& mutants,
-           const AxisSize x_size, const AxisSize y_size);
 
     /**
      * @brief Get the initial iterator for the tissue species
@@ -727,12 +905,55 @@ public:
     Species& get_species(const std::string& species_name);
 
     /**
+     * @brief Get a tissue species by name
+     *
+     * @param species_name is the species name
+     * @return a constant reference to the tissue species
+     */
+    const Species& operator[](const std::string& species_name) const;
+
+    /**
+     * @brief Get a tissue species by name
+     *
+     * @param species_name is the species name
+     * @return a non-constant reference to the tissue species
+     */
+    Species& operator[](const std::string& species_name);
+
+    /**
      * @brief Add a mutant to the tissue
      *
      * @param mutant_properties is the mutant properties of the mutant
      * @return a reference to the updated object
      */
     Tissue& add_mutant(const MutantProperties& mutant_properties);
+
+    /**
+     * @brief Test whether the tissue knowns a species
+     *
+     * @param species_name is the species name
+     * @return `true` if and only if the species has been added to the
+     *      tissue
+     */
+    bool knowns(const std::string& species_name) const;
+
+    /**
+     * @brief Add an epigenetic state to the tissue mutants
+     *
+     * @param epistate_name is the name of the epigenetic state
+     * @return a reference to the updated tissue
+     */
+    Tissue& add_epigenetic_state(const std::string& epistate_name);
+
+    /**
+     * @brief Get the epigenetic state names
+     *
+     * @return The epigenetic state names
+     */
+    inline const std::set<std::string>& get_epigenetic_state_names() const
+    {
+        return epistate_names;
+    }
 
     /**
      * @brief Test whether a position is valid in a tissue
@@ -791,16 +1012,41 @@ public:
     size_t num_of_mutated_cells() const;
 
     /**
-     * @brief Get an iterator over the species having the same mutant
+     * @brief Get a view of a mutant species
+     *
+     * @param mutant_name is the name of the mutant whose species are aimed
+     * @return a const interator over the tissue's species having `mutant_name` as
+     *       mutant name
+     */
+    const_mutant_view get_mutant_view(const std::string& mutant_name) const;
+
+    /**
+     * @brief Get a view of a mutant species
+     *
+     * @param mutant_id is the identifier of the mutant whose species are aimed
+     * @return a const interator over the tissue's species having `mutant_id` as
+     *       mutant identifier
+     */
+    const_mutant_view get_mutant_view(const MutantId mutant_id) const;
+
+
+    /**
+     * @brief Get a view of a mutant species
+     *
+     * @param mutant_name is the name of the mutant whose species are aimed
+     * @return an interator over the tissue's species having `mutant_name` as
+     *       mutant name
+     */
+    mutant_view get_mutant_view(const std::string& mutant_name);
+
+    /**
+     * @brief Get a view of a mutant species
      *
      * @param mutant_id is the identifier of the mutant whose species are aimed
      * @return an interator over the tissue's species having `mutant_id` as
      *       mutant identifier
      */
-    inline SpeciesView get_mutant_species(const MutantId& mutant_id) const
-    {
-        return SpeciesView(species, mutant_pos.at(mutant_id));
-    }
+    mutant_view get_mutant_view(const MutantId mutant_id);
 
     /**
      * @brief Get the cell in a position
@@ -978,19 +1224,6 @@ public:
     friend class BaseCellInTissueProxy;
     friend class TissueSimulation;
 };
-
-/**
- * @brief Test whether two iterators differs
- *
- * @param a is the first iterator to compare
- * @param b is the second iterator to compare
- * @return `true` if and only if the two iterators
- *      do not refer to the same object
- */
-inline bool operator!=(const Tissue::SpeciesView::const_iterator& a, const Tissue::SpeciesView::const_iterator& b)
-{
-    return !(a==b);
-}
 
 }   // Evolutions
 

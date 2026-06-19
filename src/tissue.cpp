@@ -2,8 +2,8 @@
  * @file tissue.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Define tissue class
- * @version 1.5
- * @date 2026-06-11
+ * @version 1.6
+ * @date 2026-06-19
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -43,59 +43,6 @@ namespace Mutants
 
 namespace Evolutions
 {
-
-Tissue::SpeciesView::SpeciesView(const std::vector<Species>& species, const std::vector<size_t>& species_pos):
-    species(species), species_pos(species_pos)
-{}
-
-Tissue::SpeciesView::const_iterator::const_iterator(const std::vector<Species>& species, const std::vector<size_t>::const_iterator it):
-    species(&species), it(std::make_shared<std::vector<size_t>::const_iterator>(it))
-{}
-
-Tissue::SpeciesView::const_iterator Tissue::SpeciesView::const_iterator::operator++(int)
-{
-    Tissue::SpeciesView::const_iterator copy(*this);
-
-    this->operator++();
-
-    return copy;
-}
-
-Tissue::SpeciesView::const_iterator Tissue::SpeciesView::const_iterator::operator--(int)
-{
-    Tissue::SpeciesView::const_iterator copy(*this);
-
-    this->operator--();
-
-    return copy;
-}
-
-const Species& Tissue::SpeciesView::get_species_by_epistate(const std::string& epistate_name) const
-{
-    for (const Species& species: *this) {
-        if (species.get_epistate_name()==epistate_name) {
-            return species;
-        }
-    }
-
-    if (size()==0) {
-        throw Error<std::out_of_range>("The mutant has no epigenetic states.");
-    }
-
-    throw Error<std::out_of_range>("\"" + (*this)[0].get_mutant_name()
-                                   + "\" does not have the epigenetic state \""
-                                   + epistate_name + "\".");
-}
-
-size_t Tissue::SpeciesView::num_of_cells() const
-{
-    size_t num_of_cells{0};
-    for (auto species_it=begin(); species_it != end(); ++species_it) {
-        num_of_cells += species_it->num_of_cells();
-    }
-
-    return num_of_cells;
-}
 
 Tissue::CellInTissueConstantProxy::CellInTissueConstantProxy(const Tissue &tissue, const PositionInTissue position):
     BaseCellInTissueProxy<const Tissue>(tissue, position)
@@ -206,28 +153,6 @@ Tissue::Tissue(const std::string& name, const AxisSize x_size, const AxisSize y_
 {
 }
 
-Tissue::Tissue(const std::string& name, const std::vector<MutantProperties>& mutants,
-               const AxisSize  x_size, const AxisSize y_size, const AxisSize z_size):
-    Tissue(name, {x_size, y_size, z_size})
-{
-    for (const auto& mutant: mutants) {
-        add_mutant_species(mutant);
-    }
-
-    register_species_cells();
-}
-
-Tissue::Tissue(const std::string& name, const std::vector<MutantProperties>& mutants,
-               const AxisSize x_size, const AxisSize y_size):
-    Tissue(name, {x_size, y_size})
-{
-    for (const auto& mutant: mutants) {
-        add_mutant_species(mutant);
-    }
-
-    register_species_cells();
-}
-
 Tissue::Tissue(const std::vector<AxisSize>& sizes):
     Tissue("", sizes)
 {
@@ -235,18 +160,6 @@ Tissue::Tissue(const std::vector<AxisSize>& sizes):
 
 Tissue::Tissue(const AxisSize x_size, const AxisSize y_size, const AxisSize z_size):
     Tissue("", {x_size, y_size, z_size})
-{
-}
-
-Tissue::Tissue(const std::vector<MutantProperties>& mutants,
-               const AxisSize x_size, const AxisSize y_size, const AxisSize z_size):
-    Tissue("", mutants, x_size, y_size, z_size)
-{
-}
-
-Tissue::Tissue(const std::vector<MutantProperties>& mutants,
-               const AxisSize  x_size, const AxisSize  y_size):
-    Tissue("", mutants, x_size, y_size)
 {
 }
 
@@ -296,7 +209,6 @@ Species& Tissue::get_species(const SpeciesId& species_id)
     return species[pos_it->second];
 }
 
-
 const Species& Tissue::get_species(const std::string& species_name) const
 {
     const auto pos_it = name_pos.find(species_name);
@@ -309,6 +221,28 @@ const Species& Tissue::get_species(const std::string& species_name) const
 }
 
 Species& Tissue::get_species(const std::string& species_name)
+{
+    const auto pos_it = name_pos.find(species_name);
+    if (pos_it == name_pos.end()) {
+        throw Error<std::out_of_range>("Species \"" + species_name
+                                       + "\" is unknown.");
+    }
+
+    return species[pos_it->second];
+}
+
+const Species& Tissue::operator[](const std::string& species_name) const
+{
+    const auto pos_it = name_pos.find(species_name);
+    if (pos_it == name_pos.end()) {
+        throw Error<std::out_of_range>("Species \"" + species_name
+                                       + "\" is unknown.");
+    }
+
+    return species[pos_it->second];
+}
+
+Species& Tissue::operator[](const std::string& species_name)
 {
     const auto pos_it = name_pos.find(species_name);
     if (pos_it == name_pos.end()) {
@@ -365,53 +299,164 @@ void Tissue::register_species_cells()
     }
 }
 
-Tissue& Tissue::add_mutant(const MutantProperties& mutant)
+Tissue& Tissue::add_species(const SpeciesProperties& species_properties)
 {
-    add_mutant_species(mutant);
+    const auto& mutant_properties = species_properties.get_mutant_properties();
 
-    register_species_cells();
+    auto mutant_it = mutant_pos.find(mutant_properties.get_id());
+    if (mutant_it == mutant_pos.end()) {
+        throw Error<std::domain_error>("Unknown mutant \""
+                                       + mutant_properties.get_name()
+                                       + "\".");
+    }
+
+    auto& species_pos = mutant_it->second;
+
+    species_pos.push_back(species.size());
+
+    Species new_species{species_properties};
+    id_pos.emplace(new_species.get_id(), species_pos.back());
+    name_pos.emplace(new_species.get_name(), species_pos.back());
+    new_species.disable_death();
+
+    species.push_back(std::move(new_species));
 
     return *this;
 }
 
-Tissue& Tissue::add_mutant_species(const MutantProperties& mutant)
+Tissue& Tissue::add_mutant(const MutantProperties& mutant)
 {
-    // check whether the mutant is already in the tissue
-    if (mutant_pos.count(mutant.get_id())>0) {
-        throw Error<std::runtime_error>("The mutant " + mutant.get_name()
-                                        + " is already in the tissue.");
+    SpeciesName::validate_name(mutant.get_name());
+
+    if (mutant_pos.find(mutant.get_id()) != mutant_pos.end()) {
+        throw Error<std::domain_error>("The mutant \"" + mutant.get_name()
+                                       + "\" has been already added.");
     }
 
-    // check whether any of the species is already in the tissue
-    for (const auto& [epistate_name, species]: mutant.get_species()) {
-        if (id_pos.count(species.get_id())>0) {
-            throw Error<std::runtime_error>("Species id "
-                                            + std::to_string(static_cast<int>(species.get_id()))
-                                            + "(i.e., " + species.get_name()
-                                            + ") already in the tissue.");
+    mutant_pos.emplace(mutant.get_id(), std::vector<size_t>{});
+
+    if (epistate_names.size()==0) {
+        SpeciesProperties properties{mutant};
+
+        add_species(properties);
+    } else {
+        for (const auto& epistate_name: epistate_names) {
+
+            SpeciesProperties properties{mutant, epistate_name};
+
+            add_species(properties);
         }
-        if (name_pos.count(species.get_name())>0) {
-            throw Error<std::runtime_error>("Species \"" + species.get_name()
-                                            + "\" already in the tissue");
-        }
-    }
-
-    // insert the mutants in the tissue
-    auto& pos = mutant_pos[mutant.get_id()];
-    for (const auto& [epistate_name, in_species]: mutant.get_species()) {
-        // place the new species at the end of the species vector
-        pos.push_back(species.size());
-
-        id_pos[in_species.get_id()] = species.size();
-
-        name_pos[in_species.get_name()] = species.size();
-        species.push_back(Species(in_species));
-
-        // initially disable the death
-        species.back().disable_death();
     }
 
     return *this;
+}
+
+bool Tissue::knowns(const std::string& species_name) const
+{
+    SpeciesName name{species_name};
+
+    MutantProperties mutant_prop{name.get_mutant_name()};
+
+    if (mutant_pos.find(mutant_prop.get_id()) == mutant_pos.end()) {
+        return false;
+    }
+
+    if (name.get_epistate_name()=="") {
+        return true;
+    }
+
+    return (name_pos.find(species_name) == name_pos.end());
+}
+
+Tissue& Tissue::add_epigenetic_state(const std::string& epistate_name)
+{
+    SpeciesName::validate_name(epistate_name);
+
+    if (epistate_names.count(epistate_name)>0) {
+        throw Error<std::runtime_error>("\"" + epistate_name +
+                                        "\" has been already added.");
+    }
+
+    std::list<MutantProperties> mutant_list;
+
+    for (auto& [mutant_id, species_pos] : mutant_pos) {
+        auto& base_species = species[species_pos.front()];
+
+        mutant_list.push_back(base_species.get_mutant_properties());
+    }
+
+    if (epistate_names.size()==0) {
+        // delete all species
+        for (const auto& [mutant_id, species_pos] : mutant_pos) {
+            if (species_pos.size()!=1) {
+                throw Error<std::runtime_error>("The species position should contains 1 position.");
+            }
+        }
+
+        species.clear();
+        id_pos.clear();
+        name_pos.clear();
+
+        for (auto& [mutant_id, species_pos] : mutant_pos) {
+            species_pos = std::vector<size_t>();
+        }
+    }
+
+    for (const auto& mutant_properties: mutant_list) {
+        SpeciesProperties properties{mutant_properties, epistate_name};
+
+        add_species(properties);
+    }
+
+    epistate_names.insert(epistate_name);
+
+    return *this;
+}
+
+Tissue::const_mutant_view Tissue::get_mutant_view(const std::string& mutant_name) const
+{
+    MutantProperties properties(mutant_name);
+    try {
+        return get_mutant_view(properties.get_id());
+    } catch (Error<std::domain_error>& ex) {
+        throw Error<std::domain_error>("Unknown mutant name \""
+                                       + mutant_name + "\".");
+    }
+}
+
+Tissue::const_mutant_view Tissue::get_mutant_view(const MutantId mutant_id) const
+{
+    auto mutant_it = mutant_pos.find(mutant_id);
+
+    if (mutant_it == mutant_pos.end()) {
+        throw Error<std::domain_error>("Unknown mutant id "
+                                       + std::to_string(mutant_id) + ".");
+    }
+
+    return const_mutant_view(&species, mutant_it->second);
+}
+
+Tissue::mutant_view Tissue::get_mutant_view(const std::string& mutant_name)
+{
+    MutantProperties properties(mutant_name);
+    try {
+        return get_mutant_view(properties.get_id());
+    } catch (Error<std::domain_error>& ex) {
+        throw Error<std::domain_error>("Unknown mutant name \""
+                                       + mutant_name + "\".");
+    }
+}
+
+Tissue::mutant_view Tissue::get_mutant_view(const MutantId mutant_id)
+{
+    auto mutant_it = mutant_pos.find(mutant_id);
+
+    if (mutant_it == mutant_pos.end()) {
+        throw Error<std::domain_error>("Unknown mutant id "
+                                       + std::to_string(mutant_id) + ".");
+    }
+
+    return mutant_view(&species, mutant_it->second);
 }
 
 Tissue::CellInTissueProxy Tissue::operator()(const PositionInTissue& position)

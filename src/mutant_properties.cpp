@@ -2,8 +2,8 @@
  * @file mutant_properties.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements the mutant properties
- * @version 1.5
- * @date 2026-06-16
+ * @version 1.6
+ * @date 2026-06-19
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -42,18 +42,72 @@ namespace CLONES
 namespace Mutants
 {
 
-unsigned int SpeciesProperties::counter = 0;
-unsigned int MutantProperties::counter = 0;
+std::map<std::string, MutantId> MutantProperties::mutant_ids{};
+std::map<std::string, SpeciesId> SpeciesProperties::species_ids{};
 
-SpeciesProperties::SpeciesProperties():
-    id(0), mutant_id(0)
+
+MutantProperties::MutantProperties()
 {}
+
+MutantProperties::MutantProperties(const std::string& name):
+    name(name)
+{
+    SpeciesName::validate_name(name);
+
+    auto ids_id = mutant_ids.find(name);
+    if (ids_id != mutant_ids.end()) {
+        id = ids_id->second;
+    } else {
+        id = mutant_ids.size();
+
+        mutant_ids.emplace(name, id);
+    }
+}
+
+void SpeciesProperties::record_name(const std::string& name)
+{
+    auto ids_id = species_ids.find(name);
+    if (ids_id != species_ids.end()) {
+        id = ids_id->second;
+    } else {
+        id = species_ids.size();
+
+        species_ids.emplace(name, id);
+    }
+}
+
+SpeciesProperties::SpeciesProperties()
+{}
+
+SpeciesProperties::SpeciesProperties(const MutantProperties& mutant):
+    mutant_properties{mutant}, epigenetic_name{""}
+{
+    const std::string name = SpeciesName(mutant.get_name());
+
+    record_name(name);
+}
 
 SpeciesProperties::SpeciesProperties(const MutantProperties& mutant,
                                      const std::string& epistate_name):
-    id(counter++), mutant_id(mutant.get_id()),
-    species_name{mutant.get_name(), epistate_name}
-{}
+    mutant_properties{mutant}, epigenetic_name{epistate_name}
+{
+    SpeciesName::validate_name(epistate_name);
+
+    const std::string name = SpeciesName(mutant.get_name(), epistate_name);
+
+    record_name(name);
+}
+
+std::string SpeciesProperties::get_name() const
+{
+    if (epigenetic_name=="") {
+        return SpeciesName(mutant_properties.get_name());
+    }
+
+    return SpeciesName(mutant_properties.get_name(),
+                        epigenetic_name);
+}
+
 double SpeciesProperties::get_rate(const CellEventType& event,
                                    const SpeciesId& dst_species) const
 {
@@ -109,69 +163,10 @@ SpeciesProperties& SpeciesProperties::set_rate(const CellEventType& event,
     }
 }
 
-MutantProperties::MutantProperties(const std::string& name, std::list<std::string>&& epi_states):
-    MutantProperties(name, epi_states)
-{}
-
-
-MutantProperties::MutantProperties(const std::string& name, const std::list<std::string>& epi_states):
-    id(counter++), name(name)
-{
-    for (const auto& epi_state : epi_states) {
-        species.emplace(epi_state, SpeciesProperties{*this, epi_state});
-    }
-}
-
-MutantProperties::MutantProperties(const std::string& name):
-    MutantProperties(name, {""})
-{}
-
-const SpeciesProperties& MutantProperties::operator[](const std::string& epistate_name) const
-{
-    auto src_species_it = species.find(epistate_name);
-    if (src_species_it == species.end()) {
-        throw Error<std::out_of_range>("Unknown epistate \"" + epistate_name + "\"");
-    }
-
-    return src_species_it->second;
-}
-
-SpeciesProperties& MutantProperties::operator[](const std::string& epistate_name)
-{
-    auto src_species_it = species.find(epistate_name);
-    if (src_species_it == species.end()) {
-        throw Error<std::out_of_range>("Unknown epistate \"" + epistate_name + "\"");
-    }
-
-    return src_species_it->second;
-}
-
-bool MutantProperties::have_the_same_epistates(const MutantProperties& mutant_a,
-                                               const MutantProperties& mutant_b)
-{
-    if (mutant_a.species.size() != mutant_b.species.size()) {
-        return false;
-    }
-
-    auto species_a_it = mutant_a.species.begin();
-    for (const auto& [epistate_b, species_b]: mutant_b.species) {
-        if (species_a_it->first != epistate_b) {
-            return false;
-        }
-
-        ++species_a_it;
-    }
-
-    return true;
-}
-
-
 bool operator==(const SpeciesProperties& a, const SpeciesProperties& b)
 {
     return (a.get_id()==b.get_id()
             && a.get_mutant_id()==b.get_mutant_id()
-            && a.get_mutant_name()==b.get_mutant_name()
-            && a.get_epistate_name()==b.get_epistate_name()
             && a.get_rates()==b.get_rates());
 }
 
@@ -206,19 +201,8 @@ std::ostream& operator<<(std::ostream& out, const CLONES::Mutants::SpeciesProper
 std::ostream& operator<<(std::ostream& out, const CLONES::Mutants::MutantProperties& mutant)
 {
     out << "{name: \"" << mutant.get_name() << "\", id: "
-        << mutant.get_id() << ", species=[";
+        << mutant.get_id() << "}";
 
-    std::string sep = "";
-    if (mutant.get_species().size()>1) {
-        sep = "\n";
-    }
-
-    for (const auto& [epistate_name, species]: mutant.get_species()) {
-        out << sep << species;
-        sep = ",\n";
-    }
-
-    out << "]}";
     return out;
 }
 

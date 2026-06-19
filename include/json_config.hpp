@@ -2,8 +2,8 @@
  * @file json_config.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines classes and function for reading JSON configurations
- * @version 1.2
- * @date 2026-02-06
+ * @version 1.3
+ * @date 2026-06-19
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -207,13 +207,11 @@ public:
      * @brief Extract a timed event from a JSON object
      *
      * @param simulation is a simulation
-     * @param name2mutant is the map from name to mutant
      * @param timed_event_json is the JSON of the timed event
      * @return the time event described in `timed_event_json`
      */
     static CLONES::Mutants::Evolutions::TimedEvent
     get_timed_event(const CLONES::Mutants::Evolutions::TissueSimulation& simulation,
-                    const std::map<std::string, CLONES::Mutants::MutantProperties> name2mutant,
                     const nlohmann::json& timed_event_json);
 
     /**

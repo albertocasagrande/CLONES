@@ -2,8 +2,8 @@
  * @file json_config.cpp
  * @author Alberto Casagrande (alberto.casagrande@units.it)
  * @brief Implements classes and function for reading JSON configurations
- * @version 1.2
- * @date 2026-06-11
+ * @version 1.3
+ * @date 2026-06-19
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -427,8 +427,25 @@ ConfigReader::get_mutational_properties(const nlohmann::json& configuration_json
     return mutational_properties;
 }
 
+Mutants::MutantProperties
+get_mutant_properties(const CLONES::Mutants::Evolutions::TissueSimulation& simulation,
+                      const std::string& mutant_name)
+{
+    if (!simulation.knowns(mutant_name)) {
+        throw Error<std::runtime_error>("\"" + mutant_name + "\" has not been specified.");
+    }
+
+    Mutants::SpeciesName orig_name{mutant_name};
+    if (orig_name.get_epistate_name() == "") {
+        throw Error<std::runtime_error>("Mutations can exclusively occur between mutant. \""
+                                        + mutant_name + "\" is a species name.");
+    }
+
+    return Mutants::MutantProperties{mutant_name};
+}
+
 CLONES::Mutants::Evolutions::TimedEvent
-get_timed_mutation(const std::map<std::string, CLONES::Mutants::MutantProperties> mutants,
+get_timed_mutation(const CLONES::Mutants::Evolutions::TissueSimulation& simulation,
                    const nlohmann::json& timed_mutation_json)
 {
     using namespace CLONES::Mutants::Evolutions;
@@ -439,13 +456,15 @@ get_timed_mutation(const std::map<std::string, CLONES::Mutants::MutantProperties
 
     ConfigReader::expecting("original mutant", timed_mutation_json, "Every timed mutation description");
 
-    const auto& orig_mutant = mutants.at(timed_mutation_json["original mutant"].template get<std::string>());
+    const auto orig_name = timed_mutation_json["original mutant"].template get<std::string>();
+    const auto orig_prop = get_mutant_properties(simulation, orig_name);
 
     ConfigReader::expecting("mutated mutant", timed_mutation_json, "Every timed mutation description");
 
-    const auto& mutated_mutant = mutants.at(timed_mutation_json["mutated mutant"].template get<std::string>());
+    const auto mut_name = timed_mutation_json["mutated mutant"].template get<std::string>();
+    const auto mut_prop = get_mutant_properties(simulation, mut_name);
 
-    TissueSimulationEventWrapper mutation({orig_mutant, mutated_mutant});
+    TissueSimulationEventWrapper mutation({orig_prop, mut_prop});
 
     return {time, mutation};
 }
@@ -549,7 +568,6 @@ get_timed_sampling(const nlohmann::json& timed_sampling_json)
 
 CLONES::Mutants::Evolutions::TimedEvent
 ConfigReader::get_timed_event(const CLONES::Mutants::Evolutions::TissueSimulation& simulation,
-                              const std::map<std::string, CLONES::Mutants::MutantProperties> mutants,
                               const nlohmann::json& timed_event_json)
 {
     expecting("type", timed_event_json, "The timed event description");
@@ -557,7 +575,7 @@ ConfigReader::get_timed_event(const CLONES::Mutants::Evolutions::TissueSimulatio
     std::string type_name =  timed_event_json["type"].template get<std::string>();
 
     if (type_name == "driver mutation") {
-        return get_timed_mutation(mutants, timed_event_json);
+        return get_timed_mutation(simulation, timed_event_json);
     }
 
     if (type_name == "liveness rate update") {

@@ -2,8 +2,8 @@
  * @file mutation_engine.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a class to place mutations on a descendant forest
- * @version 1.37
- * @date 2026-06-11
+ * @version 1.38
+ * @date 2026-06-19
  *
  * @copyright Copyright (c) 2023-2026
  *

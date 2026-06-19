@@ -2,8 +2,8 @@
  * @file mutants_sim.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Main file for the mutants simulator
- * @version 1.2
- * @date 2026-06-11
+ * @version 1.3
+ * @date 2026-06-19
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -42,6 +42,7 @@
 #include "tissue_simulation.hpp"
 #include "ending_conditions.hpp"
 #include "progress_bar.hpp"
+#include "error.hpp"
 
 #ifdef WITH_SDL2
 #include "SDL_plot.hpp"
@@ -169,21 +170,22 @@ class DriverSimulator : public BasicExecutable
         return epistates;
     }
 
-    static void set_switch_rate(CLONES::Mutants::MutantProperties& mutant, const nlohmann::json& switch_json)
+    static void set_switch_rate(CLONES::Mutants::Evolutions::Species& species,
+                                const nlohmann::json& switch_json)
     {
         using namespace CLONES;
         using namespace CLONES::Mutants;
 
         if (!switch_json.is_object()) {
             throw Error<std::runtime_error>(("Any epigenetic switch specification must be an object. "
-                                            "This is not always the case for mutant \"")
-                                           + mutant.get_name() + "\".");
+                                             "This is not always the case for species \"")
+                                            + species.get_name() + "\".");
         }
 
         if (!switch_json.contains("source")) {
             throw Error<std::runtime_error>(("Any epigenetic switch specification must contain a "
                                             "\"source\" field. This is not always the case "
-                                            "for mutant \"") + mutant.get_name() + "\".");
+                                            "for species \"") + species.get_name() + "\".");
         }
 
         const std::string src_epistate_name = switch_json["source"].template get<std::string>();
@@ -191,7 +193,7 @@ class DriverSimulator : public BasicExecutable
         if (!switch_json.contains("destination")) {
             throw Error<std::runtime_error>(("Any epigenetic switch specification must contain a "
                                             "\"destination\" field. This is not always the case "
-                                            "for mutant \"") + mutant.get_name() + "\".");
+                                            "for species \"") + species.get_name() + "\".");
         }
 
         const std::string dst_epistate_name = switch_json["destination"].template get<std::string>();
@@ -199,16 +201,69 @@ class DriverSimulator : public BasicExecutable
         if (!switch_json.contains("rate")) {
             throw Error<std::runtime_error>(("Any epigenetic switch specification must contain a "
                                             "\"rate\" field. This is not always the case for "
-                                            "mutant \"") + mutant.get_name() + "\".");
+                                            "species \"") + species.get_name() + "\".");
         }
 
         const double rate = switch_json["rate"].template get<double>();
 
-        mutant[src_epistate_name].set_rate(CellEventType::DUP_AND_EPI_SWITCH,
-                                           mutant[dst_epistate_name], rate);
+        SpeciesName dst_name{species.get_mutant_name(), dst_epistate_name};
+
+        auto& dst_species = simulation.tissue().get_species(dst_name);
+
+        species.set_rate(CellEventType::DUP_AND_EPI_SWITCH, dst_species, rate);
     }
 
-    static CLONES::Mutants::MutantProperties create_mutant(const nlohmann::json& mutant_json)
+    static void set_species_rates(const std::string& mutant_name, const nlohmann::json& species_json)
+    {
+        using namespace CLONES;
+
+        if (!species_json.contains("epigenetic states")) {
+            throw Error<std::runtime_error>(("Any mutant specification must contain a "
+                                            "\"epigenetic states\" field. This is not the case "
+                                            "for mutant \"") + mutant_name +"\".");
+        }
+
+        std::list<Epistate> epistates = get_epistate_names(species_json["epigenetic states"]);
+        std::set<std::string> epistate_names;
+
+        auto& tissue = simulation.tissue();
+
+        for (const Epistate& epistate : epistates) {
+            if (epistate_names.count(epistate.name)>0) {
+                throw Error<std::runtime_error>("The epistate \"" + epistate.name + "\" has "
+                                               + "multiple definitions in mutant \""
+                                               + mutant_name + "\".");
+            }
+            epistate_names.insert(epistate.name);
+
+            if (tissue.get_epigenetic_state_names().count(epistate.name)==0) {
+                tissue.add_epigenetic_state(epistate.name);
+            }
+
+            const CLONES::Mutants::SpeciesName species_name(mutant_name, epistate.name);
+
+            auto& species = tissue.get_species(species_name);
+
+            using namespace CLONES::Mutants;
+            species.set_rate(CellEventType::DEATH, epistate.death_rate)
+                   .set_rate(CellEventType::DUPLICATION, epistate.duplication_rate);
+
+            if (species_json.contains("epigenetic switches")) {
+                if (!species_json["epigenetic switches"].is_array()) {
+                    throw Error<std::runtime_error>(("Any \"epigenetic switches\" field must be an "
+                                                     "array of epigenetic switches. This is not the "
+                                                     "case for mutant \"") + mutant_name + "\".");
+                }
+
+                for (const auto& switch_json : species_json["epigenetic switches"]) {
+                    set_switch_rate(species, switch_json);
+                }
+            }
+
+        }
+    }
+
+    static void add_mutant(const nlohmann::json& mutant_json)
     {
         using namespace CLONES;
         using namespace CLONES::Mutants;
@@ -223,51 +278,25 @@ class DriverSimulator : public BasicExecutable
 
         const std::string mutant_name = mutant_json["name"].template get<std::string>();
 
-        if (!mutant_json.contains("epigenetic states")) {
-            throw Error<std::runtime_error>(("Any mutant specification must contain a "
-                                            "\"epigenetic states\" field. This is not the case "
-                                            "for mutant \"") + mutant_name +"\".");
-        }
+        simulation.add_mutant(mutant_name);
 
-        std::list<Epistate> epistates = get_epistate_names(mutant_json["epigenetic states"]);
-        std::set<std::string> epistate_names;
+        if (mutant_json.contains("epigenetic states")) {
+            set_species_rates(mutant_name, mutant_json["epigenetic states"]);
+        } else {
+            auto& species = simulation.tissue().get_species(mutant_name);
 
-        for (const Epistate& epistate : epistates) {
-            if (epistate_names.count(epistate.name)>0) {
-                throw Error<std::runtime_error>("The epistate \"" + epistate.name + "\" has "
-                                               + "multiple definitions in mutant \""
-                                               + mutant_name + "\".");
+            if (mutant_json.contains("death rate")) {
+                const double rate = mutant_json["death rate"].template get<double>();
+
+                species.set_rate(CellEventType::DEATH, rate);
             }
-            epistate_names.insert(epistate.name);
+
+            if (mutant_json.contains("duplication rate")) {
+                const double rate = mutant_json["duplication rate"].template get<double>();
+
+                species.set_rate(CellEventType::DUPLICATION, rate);
+            }
         }
-
-        MutantProperties mutant(mutant_name,
-                                std::list<std::string>(epistate_names.begin(), epistate_names.end()));
-
-        for (const Epistate& epistate : epistates) {
-            SpeciesProperties& species = mutant.get_species().at(epistate.name);
-
-            species.set_rate(CellEventType::DEATH, epistate.death_rate)
-                   .set_rate(CellEventType::DUPLICATION, epistate.duplication_rate);
-        }
-
-        if (!mutant_json.contains("epigenetic switches")) {
-            throw Error<std::runtime_error>(("Any mutant specification must contain a "
-                                            "\"epigenetic switches\" field. This is not the case for "
-                                            "mutant \"") + mutant_name + "\".");
-        }
-
-        if (!mutant_json["epigenetic switches"].is_array()) {
-            throw Error<std::runtime_error>(("Any \"epigenetic switches\" field must be an array of "
-                                            "epigenetic switches. This is not the case for mutant "
-                                            "\"") + mutant_name + "\".");
-        }
-
-        for (const auto& switch_json : mutant_json["epigenetic switches"]) {
-            set_switch_rate(mutant, switch_json);
-        }
-
-        return mutant;
     }
 
     static void configure_tissue(const nlohmann::json& tissue_json)
@@ -335,8 +364,7 @@ class DriverSimulator : public BasicExecutable
                                        + " dimension specification.");
     }
 
-    static void configure_initial_cells(const nlohmann::json& initial_cells_json,
-                                        const std::map<std::string, CLONES::Mutants::MutantProperties>& mutants)
+    static void configure_initial_cells(const nlohmann::json& initial_cells_json)
     {
         using namespace CLONES;
 
@@ -350,29 +378,15 @@ class DriverSimulator : public BasicExecutable
                                                "field must be an object.");
             }
 
-            if (!initial_cell_json.contains("mutant")) {
-                throw Error<std::runtime_error>("Every initial cell must contain a "
-                                               "\"mutant\" field.");
-            }
-            auto& mutant_json = initial_cell_json["mutant"];
-
-            if (!mutant_json.contains("name")) {
-                throw Error<std::runtime_error>("Every initial cell \"genotype\" "
-                                               "field must contain a \"name\" field.");
+            if (!initial_cell_json.contains("species")) {
+                throw Error<std::runtime_error>("Every initial cell must contain a \"species\" field.");
             }
 
-            std::string mutant_name = mutant_json["name"].template get<std::string>();
+            const std::string species_name = initial_cell_json["species"].template get<std::string>();
 
-            if (!mutant_json.contains("epistate")) {
-                throw Error<std::runtime_error>("Every initial cell must contain an "
-                                               "\"epigenetic status\" field.");
-            }
+            auto& species = simulation.tissue().get_species(species_name);
 
-            std::string epigenetic_status = mutant_json["epistate"].template get<std::string>();
-
-            auto& species = mutants.at(mutant_name)[epigenetic_status];
-
-            if (!initial_cell_json.contains("mutant")) {
+            if (!initial_cell_json.contains("position")) {
                 throw Error<std::runtime_error>("Every initial cell must contain "
                                                "a \"position\" field.");
             }
@@ -380,8 +394,7 @@ class DriverSimulator : public BasicExecutable
         }
     }
 
-    static void configure_timed_events(const nlohmann::json& timed_events_json,
-                                       const std::map<std::string, CLONES::Mutants::MutantProperties>& mutants)
+    static void configure_timed_events(const nlohmann::json& timed_events_json)
     {
         using namespace CLONES;
         using namespace CLONES::Mutants;
@@ -396,11 +409,39 @@ class DriverSimulator : public BasicExecutable
                                                "must be an object.");
             }
 
-            Evolutions::TimedEvent timed_event = ConfigReader::get_timed_event(simulation, mutants,
+            Evolutions::TimedEvent timed_event = ConfigReader::get_timed_event(simulation,
                                                                                timed_event_json);
 
             simulation.schedule_timed_event(timed_event);
         }
+    }
+
+    static std::set<std::string> collect_epistate_names(const nlohmann::json& simulation_cfg)
+    {
+        std::set<std::string> epistate_names;
+        if (!simulation_cfg.contains("epigenetic states")) {
+            return epistate_names;
+        }
+
+        if (!simulation_cfg["epigenetic states"].is_array()) {
+            using namespace CLONES;
+
+            throw Error<std::runtime_error>("The \"epigenetic states\" field must be an "
+                                            "array of epigenetic state names.");
+        }
+
+        for (const auto& epi_json: simulation_cfg["epigenetic states"]) {
+            std::string name = epi_json.template get<std::string>();
+
+            if (epistate_names.count(name)>0) {
+                std::cerr << "The epigenetic state \"" << name
+                          << "\" has been added multiple times." << std::endl;
+            } else {
+                epistate_names.insert(name);
+            }
+        }
+
+        return epistate_names;
     }
 
     static void configure_simulation(const std::string& simulation_filename)
@@ -427,22 +468,19 @@ class DriverSimulator : public BasicExecutable
             throw Error<std::runtime_error>("The \"mutants\" field must be an "
                                            "array of mutant specifications.");
         }
-        for (const auto& mutant_json: simulation_cfg["mutants"]) {
-            auto mutant = create_mutant(mutant_json);
-            simulation.add_mutant(mutant);
 
-            std::string mutant_name = mutant.get_name();
-            mutants.emplace(mutant_name, std::move(mutant));
+        for (const auto& mutant_json: simulation_cfg["mutants"]) {
+            add_mutant(mutant_json);
         }
 
         if (!simulation_cfg.contains("initial cells")) {
             throw Error<std::runtime_error>("The simulation configuration file must "
                                            "contain a \"initial cells\" field.");
         }
-        configure_initial_cells(simulation_cfg["initial cells"], mutants);
+        configure_initial_cells(simulation_cfg["initial cells"]);
 
         if (simulation_cfg.contains("timed events")) {
-            configure_timed_events(simulation_cfg["timed events"], mutants);
+            configure_timed_events(simulation_cfg["timed events"]);
         }
 
         if (simulation_cfg.contains("death activation level")) {

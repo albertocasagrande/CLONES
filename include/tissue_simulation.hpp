@@ -2,8 +2,8 @@
  * @file tissue_simulation.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a tumour evolution simulation
- * @version 1.6
- * @date 2026-06-17
+ * @version 1.7
+ * @date 2026-06-19
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -219,7 +219,7 @@ protected:
 
     /**
      * @brief Set the species of a tumour cell
-     * 
+     *
      * @param position is the position of a tumour cell
      * @param species_id is the new species identifier
      * @return `true` if and only if the cell in `position` is a tumour cell
@@ -410,8 +410,23 @@ public:
      * @param time is the mutation timing
      * @return a reference to the updated simulation
      */
+    inline TissueSimulation& schedule_mutation(const Tissue::const_mutant_view& src,
+                                               const Tissue::const_mutant_view& dst,
+                                               const Time time)
+    {
+        return schedule_mutation(src.get_mutant(), dst.get_mutant(), time);
+    }
+
+    /**
+     * @brief Schedule a timed mutation
+     *
+     * @param src is the source mutant
+     * @param dst is the destination mutant
+     * @param time is the mutation timing
+     * @return a reference to the updated simulation
+     */
     TissueSimulation& schedule_mutation(const MutantProperties& src,
-                                  const MutantProperties& dst, const Time time);
+                                        const MutantProperties& dst, const Time time);
 
     /**
      * @brief Schedule a timed mutation
@@ -883,6 +898,60 @@ public:
      * @return a reference to the updated object
      */
     TissueSimulation& add_mutant(const MutantProperties& mutant_properties);
+
+    /**
+     * @brief Add a mutant to the tissue
+     *
+     * @param mutant_name is the name of the mutant to add
+     * @return a reference to the updated object
+     */
+    TissueSimulation& add_mutant(const std::string& mutant_name);
+
+    /**
+     * @brief Add a list of mutants to the tissue
+     *
+     * @param mutant_names is the list of the names of the mutants to add
+     * @return a reference to the updated object
+     */
+    TissueSimulation& add_mutants(const std::list<std::string>& mutant_names);
+
+    /**
+     * @brief Add an epigenetic state to the tissue
+     *
+     * @param epistate_name is the name of the epigenetic state
+     * @return a reference to the updated object
+     */
+    TissueSimulation& add_epigenetic_state(const std::string& epistate_name);
+
+    /**
+     * @brief Add a list of epigenetic states to the tissue
+     *
+     * @param epistate_names is the list of the epigenetic states to add
+     * @return a reference to the updated object
+     */
+    TissueSimulation& add_epigenetic_states(const std::list<std::string>& epistate_names);
+
+    /**
+     * @brief Test whether the tissue knowns a species
+     *
+     * @param species_name is the species name
+     * @return `true` if and only if the species has been added to the
+     *      tissue
+     */
+    inline bool knowns(const std::string& species_name) const
+    {
+        return tissue().knowns(species_name);
+    }
+
+    /**
+     * @brief Place a cell in the simulated tissue
+     *
+     * @param species_name is the species name of the new cell
+     * @param position is the cell position in the tissue
+     * @return a reference to the updated object
+     */
+    TissueSimulation& place_cell(const std::string& species_name,
+                                 const PositionInTissue& position);
 
     /**
      * @brief Place a cell in the simulated tissue

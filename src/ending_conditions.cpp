@@ -2,8 +2,8 @@
  * @file ending_conditions.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements simulation ending conditions
- * @version 1.3
- * @date 2026-06-11
+ * @version 1.4
+ * @date 2026-06-19
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -69,16 +69,16 @@ CloneCountTest::CloneCountTest(const MutantId& mutant_id, const size_t& threshol
 
 bool CloneCountTest::operator()(const TissueSimulation& simulation)
 {
-    const auto& mutant_species = simulation.tissue().get_mutant_species(mutant_id);
+    const auto& view = simulation.tissue().get_mutant_view(mutant_id);
 
-    return threshold <= mutant_species.num_of_cells();
+    return threshold <= view.num_of_cells();
 }
 
 uint8_t CloneCountTest::percentage(const TissueSimulation& simulation)
 {
-    const auto mutant_species = simulation.tissue().get_mutant_species(mutant_id);
+    const auto view = simulation.tissue().get_mutant_view(mutant_id);
 
-    return static_cast<uint8_t>((100*mutant_species.num_of_cells()/threshold));
+    return static_cast<uint8_t>((100*view.num_of_cells()/threshold));
 }
 
 EventCountTest::EventCountTest(const CellEventType& event_type,

@@ -2,8 +2,8 @@
  * @file mutant_properties.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines mutant properties
- * @version 1.4
- * @date 2026-06-16
+ * @version 1.5
+ * @date 2026-06-19
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -116,6 +116,87 @@ public:
 };
 
 /**
+ * @brief A class representing mutant properties
+ */
+class MutantProperties
+{
+    static std::map<std::string, MutantId> mutant_ids;  //!< The map associating each name to its mutant id
+
+    MutantId id;        //!< The mutant identifier
+    std::string name;   //!< The mutant name
+
+    /**
+     * @brief The empty constructor
+     */
+    MutantProperties();
+public:
+
+    /**
+     * @brief A constructor
+     *
+     * This constructor builds a mutant consisting in one species.
+     *
+     * @param name is the name of the mutant
+     */
+    MutantProperties(const std::string& name);
+
+    /**
+     * @brief Get the species identifier
+     *
+     * @return a constant reference to the identifier
+     */
+    inline const MutantId& get_id() const
+    {
+        return id;
+    }
+
+    /**
+     * @brief Get the mutant name
+     *
+     * @return a constant reference to the mutant name
+     */
+    inline const std::string& get_name() const
+    {
+        return name;
+    }
+
+    /**
+     * @brief Save the mutant properties in an archive
+     *
+     * @tparam ARCHIVE is the output archive type
+     * @param archive is the output archive
+     */
+    template<typename ARCHIVE, std::enable_if_t<std::is_base_of_v<Archive::Basic::Out, ARCHIVE>, bool> = true>
+    void save(ARCHIVE& archive) const
+    {
+        archive & id
+                & name;
+    }
+
+    /**
+     * @brief Load a mutant properties from an archive
+     *
+     * @tparam ARCHIVE is the input archive type
+     * @param archive is the input archive
+     * @return the loaded species
+     */
+    template<typename ARCHIVE, std::enable_if_t<std::is_base_of_v<Archive::Basic::In, ARCHIVE>, bool> = true>
+    static MutantProperties load(ARCHIVE& archive)
+    {
+        MutantProperties properties;
+
+        archive & properties.id
+                & properties.name;
+
+        properties.mutant_ids[properties.get_name()] = properties.id;
+
+        return properties;
+    }
+
+    friend class SpeciesProperties;
+};
+
+/**
  * @brief A class to represent species properties
  *
  * A mutant is characterized by a (potentially unknown) genotype.
@@ -132,13 +213,12 @@ public:
     using EventRate = std::map<CellEventType, SpeciesIdRate>;   //!< The event rate map
 
 private:
+    static std::map<std::string, SpeciesId> species_ids; //!< The map associating each name to its species id
 
-    static unsigned int counter;    //!< The total number of species along the computation
+    SpeciesId id;                           //!< The species identifier
+    MutantProperties    mutant_properties;  //!< The mutant properties
 
-    SpeciesId id;               //!< The species identifier
-    MutantId mutant_id;         //!< The mutant identifier
-
-    SpeciesName species_name;   //!< The species name
+    std::string epigenetic_name;            //!< The epigenetic name
 
     EventRate event_rates;  //!< Event rates
 
@@ -147,15 +227,32 @@ private:
      */
     SpeciesProperties();
 
+
     /**
-     * @brief A constructor
+     * @brief Record the species name among those used
+     *
+     * @param name is the name of a new species
+     */
+    void record_name(const std::string& name);
+
+public:
+
+    /**
+     * @brief Build a species properties without epigenetic state
      *
      * @param mutant is the mutant of the new object
-     * @param mutant is the name of the epigenetic state of the new object
+     */
+    SpeciesProperties(const MutantProperties& mutant);
+
+    /**
+     * @brief Build a species properties with epigenetic state
+     *
+     * @param mutant is the mutant of the new object
+     * @param epistate_name is the name of the epigenetic state of the new object
      */
     SpeciesProperties(const MutantProperties& mutant,
                       const std::string& epistate_name);
-public:
+
     /**
      * @brief Get the species identifier
      *
@@ -173,7 +270,34 @@ public:
      */
     inline const std::string& get_epistate_name() const
     {
-        return species_name.get_epistate_name();
+        return epigenetic_name;
+    }
+
+    /**
+     * @brief Get the mutant properties
+     *
+     * @return a constant reference to the mutant properties
+     */
+    inline const MutantProperties& get_mutant_properties() const
+    {
+        return mutant_properties;
+    }
+
+    /**
+     * @brief Get the species name
+     *
+     * @return the species name
+     */
+    std::string get_name() const;
+
+    /**
+     * @brief Get the mutant identifier
+     *
+     * @return a constant reference to the mutant identifier
+     */
+    inline const MutantId& get_mutant_id() const
+    {
+        return mutant_properties.get_id();
     }
 
     /**
@@ -183,27 +307,7 @@ public:
      */
     inline const std::string& get_mutant_name() const
     {
-        return species_name.get_mutant_name();
-    }
-
-    /**
-     * @brief Get the species name
-     *
-     * @return the species name
-     */
-    inline std::string get_name() const
-    {
-        return static_cast<std::string>(species_name);
-    }
-
-    /**
-     * @brief Get the mutant identifier
-     *
-     * @return a constant reference to the mutant identifier
-     */
-    inline const MutantId& get_mutant_id() const
-    {
-        return mutant_id;
+        return mutant_properties.get_name();
     }
 
     /**
@@ -269,8 +373,8 @@ public:
     void save(ARCHIVE& archive) const
     {
         archive & id
-                & mutant_id
-                & species_name
+                & mutant_properties
+                & epigenetic_name
                 & event_rates;
     }
 
@@ -287,147 +391,16 @@ public:
         SpeciesProperties species_properties;
 
         archive & species_properties.id
-                & species_properties.mutant_id
-                & species_properties.species_name
+                & species_properties.mutant_properties
+                & species_properties.epigenetic_name
                 & species_properties.event_rates;
 
-        if (SpeciesProperties::counter < static_cast<unsigned int>(species_properties.id+1)) {
-            SpeciesProperties::counter = species_properties.id+1;
-        }
+        species_properties.species_ids[species_properties.get_name()] = species_properties.id;
 
         return species_properties;
     }
 
-    friend class MutantProperties;
     friend class Evolutions::Species;
-};
-
-/**
- * @brief A class representing mutant properties
- */
-class MutantProperties
-{
-    static unsigned int counter; //!< The total number of mutant along the computation
-
-    MutantId id;        //!< The mutant identifier
-    std::string name;   //!< The mutant name
-
-    std::map<std::string, SpeciesProperties> species;   //!< The species properties of this mutant
-public:
-
-    /**
-     * @brief A constructor
-     *
-     * This constructor builds a mutant and its species.
-     * The number of species is determined by the size of the
-     * epigenetic state names.
-     *
-     * @param name is the name of the mutant
-     * @param epi_states is a list of the epigenetic state names of this mutant
-     */
-    MutantProperties(const std::string& name, std::list<std::string>&& epi_states);
-
-    /**
-     * @brief A constructor
-     *
-     * This constructor builds a mutant and its species.
-     * The number of species is determined by the size of the
-     * epigenetic state names.
-     *
-     * @param name is the name of the mutant
-     * @param epi_states is a list of the epigenetic state names of this mutant
-     */
-    MutantProperties(const std::string& name, const std::list<std::string>& epi_states);
-
-    /**
-     * @brief A constructor
-     *
-     * This constructor builds a mutant consisting in one species.
-     *
-     * @param name is the name of the mutant
-     */
-    explicit MutantProperties(const std::string& name);
-
-    /**
-     * @brief Get the species identifier
-     *
-     * @return a constant reference to the identifier
-     */
-    inline const MutantId& get_id() const
-    {
-        return id;
-    }
-
-    /**
-     * @brief Get the mutant name
-     *
-     * @return a constant reference to the mutant name
-     */
-    inline const std::string& get_name() const
-    {
-        return name;
-    }
-
-    /**
-     * @brief Get the species associated to this mutant
-     *
-     * @return a constant reference to the species
-     */
-    inline const std::map<std::string, SpeciesProperties>& get_species() const
-    {
-        return species;
-    }
-
-    /**
-     * @brief Get the species associated to this mutant
-     *
-     * @return a non-constant reference to the species
-     */
-    inline std::map<std::string, SpeciesProperties>& get_species()
-    {
-        return species;
-    }
-
-    /**
-     * @brief Get the species by epigenetic state name
-     *
-     * @param epistate_name is the epigenetic state name of the aimed species
-     * @return A constant reference to the species having `epistate_name` as the
-     *      epigenetic state name
-     */
-    const SpeciesProperties& operator[](const std::string& epistate_name) const;
-
-    /**
-     * @brief Get the species by epigenetic state name
-     *
-     * @param epistate_name is the epigenetic state name of the aimed species
-     * @return A non-constant reference to the species having `epistate_name` as
-     *      the epigenetic state name
-     */
-    SpeciesProperties& operator[](const std::string& epistate_name);
-
-    /**
-     * @brief Test whether two mutants have the same set of epigenetic states
-     *
-     * @param mutant is a `MutantProperties` object
-     * @return `true` iff this object and `mutant` have the same set of
-     *      epigenetic states
-     */
-    inline bool has_the_same_epistates(const MutantProperties& mutant) const
-    {
-        return have_the_same_epistates(*this, mutant);
-    }
-
-    /**
-     * @brief Test whether two mutants have the same set of epigenetic states
-     *
-     * @param mutant_a is a `MutantProperties` object
-     * @param mutant_b is a `MutantProperties` object
-     * @return `true` iff `mutant_a` and `mutant_b` have the same set of
-     *      epigenetic states
-     */
-    static bool have_the_same_epistates(const MutantProperties& mutant_a,
-                                        const MutantProperties& mutant_b);
 };
 
 /**

@@ -35,10 +35,10 @@ if(${Boost_unit_test_framework_FOUND})
     link_directories(${Boost_LIBRARY_DIRS})
     set(TEST_LIBRARIES ${Boost_LIBRARIES} ${BUILD_LIB_TARGET} )
 
-    set(RACES_TESTS archive fasta_reader context_index genome_mutations bucket index)
+    set(RACES_TESTS archive fasta_reader context_index genome_mutations bucket index tissue_simulation)
 
     foreach(TEST ${RACES_TESTS})
-        add_executable( test_${TEST} ${TEST}.cpp)
+        add_executable( test_${TEST} ${TEST}.cpp test_common.cpp)
         add_dependencies( test_${TEST} ${BUILD_LIB_TARGET} )
         target_link_libraries(test_${TEST} ${TEST_LIBRARIES})
         ADD_TEST(${TEST} test_${TEST})
