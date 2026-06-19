@@ -2,8 +2,8 @@
  * @file species_name.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Define species name representation and parsing
- * @version 1.0
- * @date 2026-06-16
+ * @version 1.1
+ * @date 2026-06-19
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -46,8 +46,8 @@ namespace Mutants
  */
 class SpeciesName
 {
-    std::string epistate_name;  //!< The epigenetic state name
     std::string mutant_name;    //!< The mutant name
+    std::string epistate_name;  //!< The epigenetic state name
 
 public:
     /**
@@ -57,7 +57,7 @@ public:
 
     /**
      * @brief A constructor
-     * 
+     *
      * @param mutant_name is the mutant name
      * @param epistate_name is the name of the epigenetic state
      */
@@ -65,8 +65,27 @@ public:
                 const std::string epistate_name);
 
     /**
+     * @brief Test whether a string is a valid mutant and epigenetic state name
+     *
+     * @param s is the string to be tested
+     * @return `true` if and only if `s` is not an empty string, does not
+     *      contain the symbols `[` and `]`, and it differs from `Wild-type`
+     */
+    static bool is_valid_name(const std::string& s);
+
+    /**
+     * @brief Validate a string as possible mutant or epigenetic state name
+     *
+     * If the string is not a valid mutant or epigenetic state name, the method
+     * throw a `Error<std::domain_error>` object.
+     *
+     * @param s is the string to be validate
+     */
+    static void validate_name(const std::string& s);
+
+    /**
      * @brief A constructor
-     * 
+     *
      * This constructor parses a string to read the species name.
      *
      * @param species_name is the species name
@@ -75,7 +94,7 @@ public:
 
     /**
      * @brief Cast a species name into a string
-     * 
+     *
      * @return The string corresponding to the species name
      */
     inline operator std::string() const
@@ -85,7 +104,7 @@ public:
 
     /**
      * @brief Get the mutant name
-     * 
+     *
      * @return A constant reference to the mutant name
      */
     inline const std::string& get_mutant_name() const
@@ -95,7 +114,7 @@ public:
 
     /**
      * @brief Get the epistate name
-     * 
+     *
      * @return A constant reference to the epistate name
      */
     inline const std::string& get_epistate_name() const

@@ -2,8 +2,8 @@
  * @file species_name.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implement species name representation and parsing
- * @version 1.0
- * @date 2026-06-16
+ * @version 1.1
+ * @date 2026-06-19
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -46,7 +46,10 @@ SpeciesName::SpeciesName()
 SpeciesName::SpeciesName(const std::string mutant_name,
                          const std::string epistate_name):
     mutant_name{mutant_name},  epistate_name{epistate_name}
-{}
+{
+    validate_name(mutant_name);
+    validate_name(epistate_name);
+}
 
 SpeciesName::SpeciesName(const std::string& species_name)
 {
@@ -56,7 +59,7 @@ SpeciesName::SpeciesName(const std::string& species_name)
 
     const auto open_par_idx = species_name.find_first_of('[');
 
-    if (open_par_idx != std::string::npos) {
+    if (open_par_idx == std::string::npos) {
         mutant_name = species_name;
 
         const auto closed_par_idx = species_name.find_first_of(']');
@@ -80,6 +83,12 @@ SpeciesName::SpeciesName(const std::string& species_name)
 
     const auto closed_par_idx = species_name.find_first_of(']');
 
+    if (open_par_idx+1==closed_par_idx) {
+        throw Error<std::domain_error>("\"" + species_name
+                                       + "\" is not the name of a species. "
+                                       + "The epigenetic state name cannot be empty.");
+    }
+
     if (open_par_idx>closed_par_idx) {
         throw Error<std::domain_error>("\"" + species_name
                                        + "\" is not the name of a species. "
@@ -100,10 +109,53 @@ SpeciesName::SpeciesName(const std::string& species_name)
                                            + species_name.substr(i) + "\".");
         }
     }
-        
+
     const auto epistate_len = species_name.size()+open_par_idx-2;
 
     epistate_name = species_name.substr(open_par_idx+1, epistate_len);
+}
+
+void SpeciesName::validate_name(const std::string& s)
+{
+    if (s == "") {
+         throw Error<std::domain_error>("Mutant and epigenetic state names must "
+                                        "not be empty string.");
+    }
+
+    if (s.find_first_of('[') != std::string::npos) {
+         throw Error<std::domain_error>("Mutant and epigenetic state names must "
+                                        "cannot contain the symbol '['.");
+    }
+
+    if (s.find_first_of(']') != std::string::npos) {
+         throw Error<std::domain_error>("Mutant and epigenetic state names must "
+                                        "cannot contain the symbol ']'.");
+    }
+
+    if (s == "Wild-type") {
+         throw Error<std::domain_error>("\"Wild-type\" is a reserved name.");
+    }
+}
+
+bool SpeciesName::is_valid_name(const std::string& s)
+{
+    if (s == "") {
+        return false;
+    }
+
+    if (s.find_first_of('[') != std::string::npos) {
+        return false;
+    }
+
+    if (s.find_first_of(']') != std::string::npos) {
+        return false;
+    }
+
+    if (s == "Wild-type") {
+        return false;
+    }
+
+    return true;
 }
 
 }   // namespace Mutants
