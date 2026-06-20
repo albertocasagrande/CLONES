@@ -2,8 +2,8 @@
  * @file tissue.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Define tissue class
- * @version 1.6
- * @date 2026-06-19
+ * @version 1.7
+ * @date 2026-06-20
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -351,7 +351,7 @@ Tissue& Tissue::add_mutant(const MutantProperties& mutant)
     return *this;
 }
 
-bool Tissue::knowns(const std::string& species_name) const
+bool Tissue::knowns_species(const std::string& species_name) const
 {
     SpeciesName name{species_name};
 
@@ -366,6 +366,22 @@ bool Tissue::knowns(const std::string& species_name) const
     }
 
     return (name_pos.find(species_name) == name_pos.end());
+}
+
+bool Tissue::knowns_mutant(const std::string& mutant_name) const
+{
+    for (const auto& [mutant_id, species_pos]: mutant_pos) {
+        if (mutant_name == species[species_pos[0]].get_mutant_name()) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool Tissue::knowns_epigenetic_state(const std::string& epigenetic_state) const
+{
+    return (epistate_names.find(epigenetic_state) != epistate_names.end());
 }
 
 Tissue& Tissue::add_epigenetic_state(const std::string& epistate_name)

@@ -2,8 +2,8 @@
  * @file simulation.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Define a tumour evolution simulation
- * @version 1.10
- * @date 2026-06-19
+ * @version 1.11
+ * @date 2026-06-20
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -991,7 +991,7 @@ TissueSimulation& TissueSimulation::add_epigenetic_states(const std::list<std::s
 TissueSimulation& TissueSimulation::place_cell(const std::string& species_name,
                                                const PositionInTissue& position)
 {
-    if (!tissue().knowns(species_name)) {
+    if (!knowns_species(species_name)) {
         throw Error<std::runtime_error>("\"" + species_name
                                         + "\" has not been added to the simulation.");
     }

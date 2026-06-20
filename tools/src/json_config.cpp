@@ -2,8 +2,8 @@
  * @file json_config.cpp
  * @author Alberto Casagrande (alberto.casagrande@units.it)
  * @brief Implements classes and function for reading JSON configurations
- * @version 1.3
- * @date 2026-06-19
+ * @version 1.4
+ * @date 2026-06-20
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -431,7 +431,7 @@ Mutants::MutantProperties
 get_mutant_properties(const CLONES::Mutants::Evolutions::TissueSimulation& simulation,
                       const std::string& mutant_name)
 {
-    if (!simulation.knowns(mutant_name)) {
+    if (!simulation.knowns_mutant(mutant_name)) {
         throw Error<std::runtime_error>("\"" + mutant_name + "\" has not been specified.");
     }
 

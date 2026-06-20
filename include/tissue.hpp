@@ -2,8 +2,8 @@
  * @file tissue.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines tissue class
- * @version 1.6
- * @date 2026-06-19
+ * @version 1.7
+ * @date 2026-06-20
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -935,7 +935,25 @@ public:
      * @return `true` if and only if the species has been added to the
      *      tissue
      */
-    bool knowns(const std::string& species_name) const;
+    bool knowns_species(const std::string& species_name) const;
+
+    /**
+     * @brief Test whether the tissue knowns a mutant
+     *
+     * @param mutant_name is the mutant name
+     * @return `true` if and only if the mutant has been added to the
+     *      tissue
+     */
+    bool knowns_mutant(const std::string& mutant_name) const;
+
+    /**
+     * @brief Test whether the tissue knowns an epigenetic state
+     *
+     * @param epistate_name is the epigenetic state name
+     * @return `true` if and only if the epigenetic state has been
+     *      added to the tissue
+     */
+    bool knowns_epigenetic_state(const std::string& epistate_name) const;
 
     /**
      * @brief Add an epigenetic state to the tissue mutants

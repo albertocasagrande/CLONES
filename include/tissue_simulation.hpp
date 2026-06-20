@@ -2,8 +2,8 @@
  * @file tissue_simulation.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a tumour evolution simulation
- * @version 1.7
- * @date 2026-06-19
+ * @version 1.8
+ * @date 2026-06-20
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -938,9 +938,33 @@ public:
      * @return `true` if and only if the species has been added to the
      *      tissue
      */
-    inline bool knowns(const std::string& species_name) const
+    inline bool knowns_species(const std::string& species_name) const
     {
-        return tissue().knowns(species_name);
+        return tissue().knowns_species(species_name);
+    }
+
+    /**
+     * @brief Test whether the tissue knowns a mutant
+     *
+     * @param mutant_name is the mutant name
+     * @return `true` if and only if the mutant has been added to the
+     *      tissue
+     */
+    inline bool knowns_mutant(const std::string& mutant_name) const
+    {
+        return (mutant_name2id.find(mutant_name) != mutant_name2id.end());
+    }
+
+    /**
+     * @brief Test whether the tissue knowns an epigenetic state
+     *
+     * @param epistate_name is the epigenetic state name
+     * @return `true` if and only if the epigenetic state has been
+     *      added to the tissue
+     */
+    inline bool knowns_epigenetic(const std::string& species_name) const
+    {
+        return tissue().knowns_species(species_name);
     }
 
     /**
