@@ -2,8 +2,8 @@
  * @file mutant_properties.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements the mutant properties
- * @version 1.6
- * @date 2026-06-19
+ * @version 1.7
+ * @date 2026-06-20
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -106,6 +106,16 @@ std::string SpeciesProperties::get_name() const
 
     return SpeciesName(mutant_properties.get_name(),
                         epigenetic_name);
+}
+
+double SpeciesProperties::get_rate(const CellEventType& event) const
+{
+    if (event != CellEventType::DEATH && event != CellEventType::DUPLICATION) {
+        throw Error<std::domain_error>("SpeciesProperties::get_rate(const CellEventType&) const can "
+                                       "only be called to get death and duplication rates.");
+    }
+
+    return get_rate(event, get_id());
 }
 
 double SpeciesProperties::get_rate(const CellEventType& event,

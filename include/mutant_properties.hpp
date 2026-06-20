@@ -2,8 +2,8 @@
  * @file mutant_properties.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines mutant properties
- * @version 1.5
- * @date 2026-06-19
+ * @version 1.6
+ * @date 2026-06-20
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -309,6 +309,15 @@ public:
     {
         return mutant_properties.get_name();
     }
+
+    /**
+     * @brief Get the rate of either a death or a duplication event
+     *
+     * @param event is the event whose rate is required
+     * @return if the rate of `event` has been set, then
+     *       the rate of `event`. The value 0 otherwise
+     */
+    double get_rate(const CellEventType& event) const;
 
     /**
      * @brief Get the rate of an event
