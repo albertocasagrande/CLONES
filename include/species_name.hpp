@@ -2,8 +2,8 @@
  * @file species_name.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Define species name representation and parsing
- * @version 1.1
- * @date 2026-06-19
+ * @version 1.2
+ * @date 2026-06-21
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -97,10 +97,7 @@ public:
      *
      * @return The string corresponding to the species name
      */
-    inline operator std::string() const
-    {
-        return mutant_name + "[" + epistate_name + "]";
-    }
+    operator std::string() const;
 
     /**
      * @brief Get the mutant name

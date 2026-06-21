@@ -2,8 +2,8 @@
  * @file species_name.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implement species name representation and parsing
- * @version 1.1
- * @date 2026-06-19
+ * @version 1.2
+ * @date 2026-06-21
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -113,6 +113,15 @@ SpeciesName::SpeciesName(const std::string& species_name)
     const auto epistate_len = species_name.size()+open_par_idx-2;
 
     epistate_name = species_name.substr(open_par_idx+1, epistate_len);
+}
+
+SpeciesName::operator std::string() const
+{
+    if (epistate_name=="") {
+        return mutant_name;
+    }
+
+    return mutant_name + "[" + epistate_name + "]";
 }
 
 void SpeciesName::validate_name(const std::string& s)
