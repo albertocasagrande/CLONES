@@ -2,8 +2,8 @@
  * @file error.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines CLONES errors
- * @version 1.1
- * @date 2026-06-19
+ * @version 1.2
+ * @date 2026-06-21
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -47,7 +47,7 @@ namespace CLONES
  */
 template<typename EXCEPTION_TYPE>
   requires std::derived_from<EXCEPTION_TYPE, std::exception>
-class Error : EXCEPTION_TYPE
+class Error : public EXCEPTION_TYPE
 {
     std::source_location location;  //!< The object creation location
 public:
