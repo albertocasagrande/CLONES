@@ -2,7 +2,7 @@
  * @file tissue.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Define tissue class
- * @version 1.8
+ * @version 1.9
  * @date 2026-06-21
  *
  * @copyright Copyright (c) 2023-2026
@@ -365,7 +365,7 @@ bool Tissue::knowns_species(const std::string& species_name) const
         return true;
     }
 
-    return (name_pos.find(species_name) == name_pos.end());
+    return (name_pos.find(species_name) != name_pos.end());
 }
 
 bool Tissue::knowns_mutant(const std::string& mutant_name) const
