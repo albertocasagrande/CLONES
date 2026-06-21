@@ -2,8 +2,8 @@
  * @file signature.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines mutational signatures
- * @version 1.4
- * @date 2026-06-11
+ * @version 1.5
+ * @date 2026-06-21
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -443,7 +443,7 @@ public:
         for (const auto& [name, signature]: name_signature_map) {
             try {
                 result.emplace(std::string(name), Signature<MUTATION_TYPE>(signature));
-            } catch (std::domain_error& ex) {
+            } catch (const std::domain_error& ex) {
                 std::ostringstream oss;
 
                 oss << "Column \"" << name << "\" is not a signature: "

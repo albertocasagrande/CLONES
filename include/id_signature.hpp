@@ -2,8 +2,8 @@
  * @file id_signature.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines indel signature
- * @version 1.2
- * @date 2026-06-11
+ * @version 1.3
+ * @date 2026-06-21
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -181,7 +181,7 @@ private:
             if (num >= 0 && num <= std::numeric_limits<TYPE>::max()) {
                 return static_cast<TYPE>(num);
             }
-        } catch (std::exception& e) {
+        } catch (const std::exception& e) {
         }
 
         std::ostringstream oss;

@@ -2,8 +2,8 @@
  * @file mutations_sim.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Main file for the CLONES mutations simulator
- * @version 1.8
- * @date 2026-06-12
+ * @version 1.9
+ * @date 2026-06-21
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -804,7 +804,7 @@ public:
 
             bytes_per_abs_position = ContextIndex<>::read_bytes_per_absolute_position(archive);
 
-        } catch (std::exception& except) {
+        } catch (const std::exception& except) {
             print_help_and_exit(except.what(), 1);
         }
 
@@ -831,7 +831,7 @@ public:
                               << " Supported values are 2, 4, or 8." << std::endl;
                     exit(1);
             }
-        } catch (std::exception& except) {
+        } catch (const std::exception& except) {
             print_help_and_exit(except.what(), 1);
         }
     }

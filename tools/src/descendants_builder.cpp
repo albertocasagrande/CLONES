@@ -2,8 +2,8 @@
  * @file descendants_builder.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Main file for the CLONES descendant forest builder
- * @version 1.2
- * @date 2026-02-06
+ * @version 1.3
+ * @date 2026-06-21
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -102,7 +102,7 @@ public:
             CLONES::Mutants::IO::phyloXMLStream os;
 
             os << forest;
-        } catch (std::runtime_error& ex) {
+        } catch (const std::runtime_error& ex) {
             print_help_and_exit(ex.what(), 1);
         }
     }

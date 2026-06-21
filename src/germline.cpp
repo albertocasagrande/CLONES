@@ -2,8 +2,8 @@
  * @file germline.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements the functions to generate and load germline mutations
- * @version 1.8
- * @date 2026-06-11
+ * @version 1.9
+ * @date 2026-06-21
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -551,7 +551,7 @@ void add_VCF_mutations(GenomeMutations& mutations, const std::filesystem::path& 
 
     try {
         subject_column = get_subject_column(header, subject);
-    } catch(std::runtime_error& ex) {
+    } catch(const std::runtime_error& ex) {
         throw Error<std::runtime_error>("\"" + to_string(VCF_file)
                                         + "\" does not contains \""
                                         + subject + "\"'s mutations.");

@@ -2,8 +2,8 @@
  * @file simulation.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Define a tumour evolution simulation
- * @version 1.11
- * @date 2026-06-20
+ * @version 1.12
+ * @date 2026-06-21
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -432,7 +432,7 @@ bool TissueSimulation::handle_timed_mutation(const TimedEvent& timed_mutation, C
         candidate_event = create_mutation_event(tissue(), cell, mutation.final_id, delay);
 
         return true;
-    } catch (std::runtime_error&) {
+    } catch (const std::runtime_error&) {
         return false;
     }
 }

@@ -2,8 +2,8 @@
  * @file tissue_sampler.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Main file for the CLONES tool that sample tissues
- * @version 1.2
- * @date 2026-06-11
+ * @version 1.3
+ * @date 2026-06-21
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -133,7 +133,7 @@ public:
             nlohmann::json simulation_cfg = nlohmann::json::parse(config_stream);
 
             perform_sampling(simulation_cfg,quiet);
-        } catch (std::runtime_error& ex) {
+        } catch (const std::runtime_error& ex) {
             print_help_and_exit(ex.what(), 1);
         }
     }

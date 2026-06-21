@@ -2,8 +2,8 @@
  * @file common.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements auxiliary classes and functions for executables
- * @version 1.1
- * @date 2026-02-06
+ * @version 1.2
+ * @date 2026-06-21
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -84,7 +84,7 @@ BasicExecutable::get_last_snapshot_path(const std::string& simulation_dir,
 
     try {
         return CLONES::Mutants::Evolutions::BinaryLogger::find_last_snapshot_in(simulation_dir);
-    } catch (std::exception &except) {
+    } catch (const std::exception &except) {
         print_help_and_exit(except.what(), 1);
 
         exit(1);

@@ -2,8 +2,8 @@
  * @file tissue.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Define tissue class
- * @version 1.7
- * @date 2026-06-20
+ * @version 1.8
+ * @date 2026-06-21
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -434,7 +434,7 @@ Tissue::const_mutant_view Tissue::get_mutant_view(const std::string& mutant_name
     MutantProperties properties(mutant_name);
     try {
         return get_mutant_view(properties.get_id());
-    } catch (Error<std::domain_error>& ex) {
+    } catch (const Error<std::domain_error>& ex) {
         throw Error<std::domain_error>("Unknown mutant name \""
                                        + mutant_name + "\".");
     }
@@ -457,7 +457,7 @@ Tissue::mutant_view Tissue::get_mutant_view(const std::string& mutant_name)
     MutantProperties properties(mutant_name);
     try {
         return get_mutant_view(properties.get_id());
-    } catch (Error<std::domain_error>& ex) {
+    } catch (const Error<std::domain_error>& ex) {
         throw Error<std::domain_error>("Unknown mutant name \""
                                        + mutant_name + "\".");
     }

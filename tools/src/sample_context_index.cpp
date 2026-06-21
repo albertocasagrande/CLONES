@@ -2,8 +2,8 @@
  * @file sample_context_index.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief The main source file for context index sampler
- * @version 1.1
- * @date 2026-02-06
+ * @version 1.2
+ * @date 2026-06-21
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -209,7 +209,7 @@ public:
 
             bytes_per_abs_position = ContextIndex<>::read_bytes_per_absolute_position(archive);
 
-        } catch (std::exception& except) {
+        } catch (const std::exception& except) {
             std::cerr << except.what() << std::endl << std::endl;
             print_help(std::cerr);
             exit(1);

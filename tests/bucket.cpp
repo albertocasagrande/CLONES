@@ -2,8 +2,8 @@
  * @file bucket.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Bucket tests
- * @version 1.4
- * @date 2026-06-11
+ * @version 1.5
+ * @date 2026-06-21
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -266,7 +266,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(copy_bucket_T, T, test_types, BucketFixture<T>)
             BOOST_CHECK(value == *it);
             ++it;
         }
-    } catch (std::exception& ex)
+    } catch (...)
     {}
 }
 
