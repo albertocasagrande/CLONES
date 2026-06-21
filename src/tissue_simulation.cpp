@@ -2,7 +2,7 @@
  * @file simulation.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Define a tumour evolution simulation
- * @version 1.12
+ * @version 1.13
  * @date 2026-06-21
  *
  * @copyright Copyright (c) 2023-2026
@@ -986,6 +986,17 @@ TissueSimulation& TissueSimulation::add_epigenetic_states(const std::list<std::s
     }
 
     return *this;
+}
+
+std::list<std::string> TissueSimulation::get_mutant_names() const
+{
+    std::list<std::string> mutant_names;
+
+    for (const auto& [name, id]: mutant_name2id) {
+        mutant_names.push_back(name);
+    }
+
+    return mutant_names;
 }
 
 TissueSimulation& TissueSimulation::place_cell(const std::string& species_name,

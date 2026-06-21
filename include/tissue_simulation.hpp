@@ -2,8 +2,8 @@
  * @file tissue_simulation.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a tumour evolution simulation
- * @version 1.8
- * @date 2026-06-20
+ * @version 1.9
+ * @date 2026-06-21
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -965,6 +965,25 @@ public:
     inline bool knowns_epigenetic(const std::string& species_name) const
     {
         return tissue().knowns_species(species_name);
+    }
+
+    /**
+     * @brief Get the mutant names
+     *
+     * @return A list of the mutant names
+     */
+    std::list<std::string> get_mutant_names() const;
+
+    /**
+     * @brief Get the epigenetic state names
+     *
+     * @return A list of the epigenetic  names
+     */
+    std::list<std::string> get_epigenetic_state_names() const
+    {
+        const auto& epistate_names = tissue().get_epigenetic_state_names();
+
+        return {epistate_names.begin(), epistate_names.end()};
     }
 
     /**
