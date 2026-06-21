@@ -2,8 +2,8 @@
  * @file tissue.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines tissue class
- * @version 1.7
- * @date 2026-06-20
+ * @version 1.8
+ * @date 2026-06-21
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -1203,7 +1203,7 @@ public:
         archive & size()
                 & name
                 & species
-                & mutant_pos;
+                & epistate_names;
     }
 
     /**
@@ -1224,12 +1224,14 @@ public:
 
         archive & tissue.name
                 & tissue.species
-                & tissue.mutant_pos;
+                & tissue.epistate_names;
 
         size_t i=0;
         for (auto& species : tissue.species) {
             tissue.id_pos[species.get_id()] = i;
             tissue.name_pos[species.get_name()] = i;
+            tissue.mutant_pos[species.get_mutant_id()].push_back(i);
+
             ++i;
         }
 
