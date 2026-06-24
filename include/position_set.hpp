@@ -2,8 +2,8 @@
  * @file position_set.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines classes to represent tissue position set
- * @version 1.1
- * @date 2026-02-06
+ * @version 1.2
+ * @date 2026-06-24
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -293,6 +293,19 @@ struct RectangleSet : public BasicPositionSet
     inline size_t depth() const
     {
         return (upper_corner.z<lower_corner.z?0:upper_corner.z-lower_corner.z+1);
+    }
+
+    /**
+     * @brief Test whether an object contains a position
+     *
+     * @param position is the tested position
+     * @return `true` if and only if `position` is contained by the rectangle
+     */
+    inline bool contains(const Evolutions::PositionInTissue& position) const
+    {
+        return (lower_corner.x<=position.x && position.x<=upper_corner.x
+                && lower_corner.y<=position.y && position.y<=upper_corner.y
+                && lower_corner.z<=position.z && position.z<=upper_corner.z);
     }
 
     /**
