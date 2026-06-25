@@ -2,8 +2,8 @@
  * @file tissue.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Define tissue class
- * @version 1.9
- * @date 2026-06-21
+ * @version 1.10
+ * @date 2026-06-25
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -402,6 +402,13 @@ Tissue& Tissue::add_epigenetic_state(const std::string& epistate_name)
     }
 
     if (epistate_names.size()==0) {
+        for (const auto& curr_species : species) {
+            if (curr_species.num_of_cells()>0) {
+                throw Error<std::runtime_error>("Epigenetic states can be added to the simulation "
+                                                "exclusively before placing any cell.");
+            }
+        }
+
         // delete all species
         for (const auto& [mutant_id, species_pos] : mutant_pos) {
             if (species_pos.size()!=1) {
