@@ -2,7 +2,7 @@
  * @file simulation.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Define a tumour evolution simulation
- * @version 1.15
+ * @version 1.16
  * @date 2026-06-26
  *
  * @copyright Copyright (c) 2023-2026
@@ -281,7 +281,7 @@ TissueSimulation::choose_cell_in(const std::string& name,
     return choose_cell_in(species_ids, rectangle, event_type);
 }
 
-bool border_visible_from(PositionInTissue& pos, const Tissue& tissue, const PositionDelta& delta)
+bool border_visible_from(PositionInTissue pos, const Tissue& tissue, const PositionDelta& delta)
 {
     pos -= delta;
     while (tissue.is_valid(pos)) {
@@ -322,38 +322,41 @@ bool choose_border_cell_in(PositionInTissue& pos, const Tissue& tissue, const Di
 {
     PositionDelta delta(dir);
 
-    const auto rect_depth{rectangle.depth()};
-    const auto rect_height{rectangle.height()};
-    const auto rect_width{rectangle.width()};
-
-    uint16_t random_init_z = static_cast<int16_t>(random_gen() % rect_depth);
+    uint16_t random_init_z = static_cast<int16_t>(random_gen() % rectangle.depth());
     if (delta.x != 0) {
-        uint16_t random_init_y = static_cast<int16_t>(random_gen() % rect_height);
-        for (uint16_t y=0; y < rect_height; ++y) {
-            pos.y = static_cast<int16_t>((y+random_init_y)%rect_height)+rectangle.lower_corner.y;
-            for (uint16_t z=0; z < rect_depth; ++z) {
-                pos.z = static_cast<int16_t>((z+random_init_z)%rect_depth)+rectangle.lower_corner.z;
-                pos.x = (delta.x > 0?0:rect_width-1)+rectangle.lower_corner.x;
+        uint16_t random_init_y = static_cast<int16_t>(random_gen() % rectangle.height());
+        for (uint16_t y=0; y < rectangle.height(); ++y) {
+            pos.y = static_cast<int16_t>((y+random_init_y) % rectangle.height())
+                    + rectangle.lower_corner.y;
+            for (uint16_t z=0; z < rectangle.depth(); ++z) {
+                pos.z = static_cast<int16_t>((z+random_init_z) % rectangle.depth())
+                        + rectangle.lower_corner.z;
+                pos.x = (delta.x > 0?rectangle.lower_corner.x:rectangle.upper_corner.x);
 
-                PositionInTissue towards_border(pos);
-                if (search_tumour_cell(pos, rectangle, tissue, delta, species_ids)
-                        && border_visible_from(towards_border, tissue, delta)) {
+                PositionInTissue new_pos{pos};
+                if (search_tumour_cell(new_pos, rectangle, tissue, delta, species_ids)
+                        && border_visible_from(pos, tissue, delta)) {
+                    pos = new_pos;
                     return true;
                 }
             }
         }
     }
     if (delta.y != 0) {
-        uint16_t random_init_x = static_cast<int16_t>(random_gen() % rect_width);
-        for (uint16_t x=0; x < rect_width; ++x) {
-            pos.x = static_cast<int16_t>((x+random_init_x)%rect_width)+rectangle.lower_corner.z;
-            for (uint16_t z=0; z < rect_depth; ++z) {
-                pos.z = static_cast<int16_t>((z+random_init_z)%rect_depth)+rectangle.lower_corner.z;
-                pos.y = (delta.y > 0?0:rect_height-1)+rectangle.lower_corner.y;
+        uint16_t random_init_x = static_cast<int16_t>(random_gen() % rectangle.width());
+        for (uint16_t x=0; x < rectangle.width(); ++x) {
+            pos.x = static_cast<int16_t>((x+random_init_x) % rectangle.width())
+                    + rectangle.lower_corner.x;
 
-                PositionInTissue towards_border(pos);
-                if (search_tumour_cell(pos, rectangle, tissue, delta, species_ids)
-                        && border_visible_from(towards_border, tissue, delta)) {
+            for (uint16_t z=0; z < rectangle.depth(); ++z) {
+                pos.z = static_cast<int16_t>((z+random_init_z) % rectangle.depth())
+                        + rectangle.lower_corner.z;
+                pos.y = (delta.y > 0?rectangle.lower_corner.y:rectangle.upper_corner.y);
+
+                PositionInTissue new_pos{pos};
+                if (search_tumour_cell(new_pos, rectangle, tissue, delta, species_ids)
+                        && border_visible_from(pos, tissue, delta)) {
+                    pos = new_pos;
                     return true;
                 }
             }
@@ -392,12 +395,12 @@ const CellInTissue& TissueSimulation::choose_border_cell_in(const std::list<Spec
 
     auto sizes = tissue().size();
     rectangle.lower_corner.x = 0;
-    rectangle.upper_corner.x = sizes[0];
+    rectangle.upper_corner.x = sizes[0]-1;
     rectangle.lower_corner.y = 0;
-    rectangle.upper_corner.y = sizes[1];
+    rectangle.upper_corner.y = sizes[1]-1;
     rectangle.lower_corner.z = 0;
     if (sizes.size()==3) {
-        rectangle.upper_corner.y = sizes[2];
+        rectangle.upper_corner.y = sizes[2]-1;
     } else {
         rectangle.lower_corner.z = 0;
     }
