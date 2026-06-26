@@ -2,8 +2,8 @@
  * @file simulation.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Define a tumour evolution simulation
- * @version 1.14
- * @date 2026-06-24
+ * @version 1.15
+ * @date 2026-06-26
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -168,45 +168,78 @@ void select_next_event_in_species(CellEvent& event, Tissue& tissue,
     }
 }
 
-const CellInTissue&
-TissueSimulation::choose_cell_in(const MutantId& mutant_id, const CellEventType& event_type)
+std::list<SpeciesId> TissueSimulation::get_species_ids_from_name(const std::string& name) const
 {
-    size_t total = 0;
+    auto mutant_it = mutant_name2id.find(name);
+    if (mutant_it != mutant_name2id.end()) {
+        std::list<SpeciesId> species_ids;
 
+        for (const auto& species : tissue().get_mutant_view(mutant_it->second)) {
+            species_ids.push_back(species.get_id());
+        }
+
+        return species_ids;
+    }
+
+    if (tissue().knowns_species(name)) {
+        const Species& species = tissue().get_species(name);
+        return {species.get_id()};
+    }
+
+    return {};
+}
+
+const CellInTissue&
+TissueSimulation::choose_cell_in(const std::list<SpeciesId>& species_ids, const CellEventType& event_type)
+{
+    if (species_ids.size()==0) {
+        throw Error<std::domain_error>("The parameter \"species_ids\" must be non-empty.");
+    }
+
+    size_t total = 0;
     std::vector<size_t> num_of_cells;
-    auto m_view = tissue().get_mutant_view(mutant_id);
-    for (const auto& species : m_view) {
+    std::vector<SpeciesId> species_vec{species_ids.begin(), species_ids.end()};
+
+    for (const SpeciesId& species_id : species_ids) {
+        const Species& species = tissue().get_species(species_id);
+
         num_of_cells.push_back(species.num_of_cells_available_for(event_type));
         total += num_of_cells.back();
     }
 
     if (total == 0) {
-        throw Error<std::runtime_error>("No cell available for the mutant " +
-                                        std::to_string(mutant_id));
+        throw Error<std::runtime_error>("No cell satisfies the request.");
     }
 
     std::discrete_distribution<size_t> distribution(num_of_cells.begin(),
                                                     num_of_cells.end());
-    const size_t species_idx = distribution(random_gen);
+    const SpeciesId& species_id = species_vec[distribution(random_gen)];
 
-    return m_view[species_idx].choose_a_cell(random_gen, event_type);
+    return tissue().get_species(species_id).choose_a_cell(random_gen, event_type);
 }
 
-const CellInTissue& TissueSimulation::choose_cell_in(const std::string& mutant_name, const CellEventType& event_type)
+const CellInTissue&
+TissueSimulation::choose_cell_in(const std::string& name, const CellEventType& event_type)
 {
-    auto mutant_id = find_mutant_id(mutant_name);
+    const auto species_ids = get_species_ids_from_name(name);
 
-    return choose_cell_in(mutant_id, event_type);
-}
-
-const CellInTissue& TissueSimulation::choose_cell_in(const MutantId& mutant_id,
-                                                     const RectangleSet& rectangle,
-                                                     const CellEventType& event_type)
-{
-    std::set<SpeciesId> species_ids;
-    for (const auto& species : tissue().get_mutant_view(mutant_id)) {
-        species_ids.insert(species.get_id());
+    if (species_ids.size()==0) {
+        throw Error<std::runtime_error>("\"" + name +"\" is neither a mutant nor a species name.");
     }
+
+    return choose_cell_in(species_ids, event_type);
+}
+
+const CellInTissue&
+TissueSimulation::choose_cell_in(const std::list<SpeciesId>& species_ids,
+                                 const RectangleSet& rectangle,
+                                 const CellEventType& event_type)
+{
+    if (species_ids.size()==0) {
+        throw Error<std::domain_error>("The parameter \"species_ids\" must be non-empty.");
+    }
+
+    std::set<SpeciesId> species_set{species_ids.begin(), species_ids.end()};
 
     std::list<PositionInTissue> position_vector;
     for (const auto& position : rectangle) {
@@ -214,7 +247,7 @@ const CellInTissue& TissueSimulation::choose_cell_in(const MutantId& mutant_id,
             const auto cell_proxy = tissue()(position);
             const auto species_id = static_cast<const CellInTissue&>(cell_proxy).get_species_id();
 
-            if (species_ids.count(species_id)>0) {
+            if (species_set.count(species_id)>0) {
                 position_vector.push_back(position);
             }
         }
@@ -231,18 +264,21 @@ const CellInTissue& TissueSimulation::choose_cell_in(const MutantId& mutant_id,
         }
     }
 
-    std::ostringstream oss;
-
-    oss <<"No cell in the specified mutant is available in " << rectangle << ".";
-    throw Error<std::runtime_error>(oss.str());
+    throw Error<std::runtime_error>("No cell satisfies the request.");
 }
 
-const CellInTissue& TissueSimulation::choose_cell_in(const std::string& mutant_name,
-                                               const RectangleSet& rectangle, const CellEventType& event_type)
+const CellInTissue&
+TissueSimulation::choose_cell_in(const std::string& name,
+                                 const RectangleSet& rectangle,
+                                 const CellEventType& event_type)
 {
-    auto mutant_id = find_mutant_id(mutant_name);
+    const auto species_ids = get_species_ids_from_name(name);
 
-    return choose_cell_in(mutant_id, rectangle, event_type);
+    if (species_ids.size()==0) {
+        throw Error<std::runtime_error>("\"" + name +"\" is neither a mutant nor a species name.");
+    }
+
+    return choose_cell_in(species_ids, rectangle, event_type);
 }
 
 bool border_visible_from(PositionInTissue& pos, const Tissue& tissue, const PositionDelta& delta)
@@ -327,36 +363,30 @@ bool choose_border_cell_in(PositionInTissue& pos, const Tissue& tissue, const Di
     return false;
 }
 
-const CellInTissue& TissueSimulation::choose_border_cell_in(const MutantId& mutant_id,
-                                                            const RectangleSet& rectangle)
+const CellInTissue&
+TissueSimulation::choose_border_cell_in(const std::list<SpeciesId>& species_ids,
+                                        const RectangleSet& rectangle)
 {
-    std::set<SpeciesId> species_ids;
-
-    for (const auto& species : tissue().get_mutant_view(mutant_id)) {
-        species_ids.insert(species.get_id());
+    if (species_ids.size()==0) {
+        throw Error<std::domain_error>("The parameter \"species_ids\" must be non-empty.");
     }
+
+    std::set<SpeciesId> species_set{species_ids.begin(), species_ids.end()};
 
     PositionInTissue pos;
     size_t dir_offset = random_gen()%(valid_directions.size());
     for (size_t dir_idx=0; dir_idx < valid_directions.size(); ++dir_idx) {
         const auto& dir = valid_directions[(dir_offset+dir_idx)%valid_directions.size()];
 
-        if (Evolutions::choose_border_cell_in(pos, tissue(), dir, species_ids, rectangle, random_gen)) {
+        if (Evolutions::choose_border_cell_in(pos, tissue(), dir, species_set, rectangle, random_gen)) {
             return tissue()(pos);
         }
     }
 
-    for (const auto& [m_name, m_id]: mutant_name2id) {
-        if (m_id == mutant_id) {
-            throw Error<std::runtime_error>("No border cells available for \"" + m_name + "\".");
-        }
-    }
-
-    throw Error<std::runtime_error>("No border cells available for unknown mutant (id: "
-                                    + std::to_string(mutant_id) + ").");
+    throw Error<std::runtime_error>("No border cells satisfies the request.");
 }
 
-const CellInTissue& TissueSimulation::choose_border_cell_in(const MutantId& mutant_id)
+const CellInTissue& TissueSimulation::choose_border_cell_in(const std::list<SpeciesId>& species_ids)
 {
     RectangleSet rectangle;
 
@@ -372,22 +402,30 @@ const CellInTissue& TissueSimulation::choose_border_cell_in(const MutantId& muta
         rectangle.lower_corner.z = 0;
     }
 
-    return choose_border_cell_in(mutant_id, rectangle);
+    return choose_border_cell_in(species_ids, rectangle);
 }
 
-const CellInTissue& TissueSimulation::choose_border_cell_in(const std::string& mutant_name,
-                                                      const RectangleSet& rectangle)
+const CellInTissue& TissueSimulation::choose_border_cell_in(const std::string& name,
+                                                            const RectangleSet& rectangle)
 {
-    const auto mutant_id = find_mutant_id(mutant_name);
+    const auto species_ids = get_species_ids_from_name(name);
 
-    return choose_border_cell_in(mutant_id, rectangle);
+    if (species_ids.size()==0) {
+        throw Error<std::runtime_error>("\"" + name +"\" is neither a mutant nor a species name.");
+    }
+
+    return choose_border_cell_in(species_ids, rectangle);
 }
 
-const CellInTissue& TissueSimulation::choose_border_cell_in(const std::string& mutant_name)
+const CellInTissue& TissueSimulation::choose_border_cell_in(const std::string& name)
 {
-    const auto mutant_id = find_mutant_id(mutant_name);
+    const auto species_ids = get_species_ids_from_name(name);
 
-    return choose_border_cell_in(mutant_id);
+    if (species_ids.size()==0) {
+        throw Error<std::runtime_error>("\"" + name +"\" is neither a mutant nor a species name.");
+    }
+
+    return choose_border_cell_in(species_ids);
 }
 
 /**
@@ -424,7 +462,12 @@ bool TissueSimulation::handle_timed_mutation(const TimedEvent& timed_mutation, C
     const auto& mutation = timed_mutation.get_event<Mutation>();
 
     try {
-        const auto& cell = choose_cell_in(mutation.initial_id);
+        std::list<SpeciesId> species_ids;
+        for (const auto& species : tissue().get_mutant_view(mutation.initial_id)) {
+            species_ids.push_back(species.get_id());
+        }
+
+        const auto& cell = choose_cell_in(species_ids);
 
         auto delay = (timed_mutation.time >= time ?
                         timed_mutation.time-time : 0);

@@ -2,8 +2,8 @@
  * @file tissue_simulation.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a tumour evolution simulation
- * @version 1.9
- * @date 2026-06-21
+ * @version 1.10
+ * @date 2026-06-26
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -707,58 +707,109 @@ public:
     }
 
     /**
-     * @brief Randomly select a cell among those having a specified mutant
+     * @brief Get the species identifiers from a name
      *
-     * This method randomly select a cell available for an event among those
-     * having a specified mutant.
+     * This method returns all the species identifiers corresponding to a
+     * mutant or a species name.
      *
-     * @param mutant_id is the identifier of the mutant that must contain
-     *          the selected cell
-     * @param event_type is the event type for which the choosen cell must be
-     *          available
-     * @return whenever the set of cells having `mutant_id` as mutant
-     *         identifier is not empty, a randomly selected cell in it.
-     *         Otherwise, if the set is empty, a domain error is thrown.
+     * @param name is a mutant or a species name
+     * @return a list of species identifiers corresponding to species whose name
+     *      or mutant name is `name`
      */
-    const CellInTissue& choose_cell_in(const MutantId& mutant_id,
-                                       const CellEventType& event_type=CellEventType::ANY);
+    std::list<SpeciesId> get_species_ids_from_name(const std::string& name) const;
 
     /**
-     * @brief Randomly select a cell among those having a specified mutant
+     * @brief Randomly select a cell
      *
      * This method randomly select a cell available for an event among those
-     * having a specified mutant name.
+     * belonging to specified species, and being available for an event.
      *
-     * @param mutant_name is the name of the mutant that must contain
-     *          the selected cell
+     * @param species_ids is the list of the species identifiers among those
+     *      the cell must be chosen
      * @param event_type is the event type for which the choosen cell must be
      *          available
-     * @return whenever the set of cells having `mutant_id` as mutant
-     *         identifier is not empty, a randomly selected cell in it.
-     *         Otherwise, if the set is empty, a domain error is thrown.
+     * @return whenever the set of cells whose species identifier belongs
+     *      to `species_ids` and available for `event_type` is not empty, a
+     *      randomly selected cell in it. Otherwise, if the set is empty, a
+     *      domain error is thrown.
      */
-    const CellInTissue& choose_cell_in(const std::string& mutant_name,
-                                       const CellEventType& event_type=CellEventType::ANY);
+    const CellInTissue&
+    choose_cell_in(const std::list<SpeciesId>& species_ids,
+                   const CellEventType& event_type=CellEventType::ANY);
 
     /**
      * @brief Randomly select a cell in a tissue rectangle
      *
      * This method randomly select a cell available for an event among those
-     * having a specified mutant and laying in a tissue rectangle.
+     * belonging to specified species, laying in a tissue rectangle, and being
+     * available for an event.
      *
-     * @param mutant_id is the identifier of the mutant that must contain
-     *          the selected cell
+     * @param species_ids is the list of the species identifiers among those
+     *      the cell must be chosen
      * @param rectangle is the tissue rectangle in which the cell must be selected
      * @param event_type is the event type for which the choosen cell must be
      *          available
-     * @return whenever the set of tissue cells that have `mutant_id` as mutant
-     *         id and lay in one the positions specified by `rectangle` is not empty,
-     *         a randomly selected cell in it. Otherwise, if the set is empty, a
-     *         domain error is thrown.
+     * @return whenever the set of cells whose species identifier belongs
+     *      to `species_ids`, laying in `rectangle`, and available for
+     *      `event_type` is not empty, a randomly selected cell in it.
+     *      Otherwise, if the set is empty, a domain error is thrown.
      */
-    const CellInTissue& choose_cell_in(const MutantId& mutant_id,
-                                       const RectangleSet& rectangle,
-                                       const CellEventType& event_type=CellEventType::ANY);
+    const CellInTissue&
+    choose_cell_in(const std::list<SpeciesId>& species_ids,
+                   const RectangleSet& rectangle,
+                   const CellEventType& event_type=CellEventType::ANY);
+
+    /**
+     * @brief Randomly select a cell on the border of the non-wild-type mass
+     *
+     * This method randomly select a cell on the external border of the
+     * non-wild-type mass among those belonging to some species.
+     *
+     * @param species_ids is the list of the species identifiers among those
+     *      the cell must be chosen
+     * @return whenever the set of cells whose species identifier belongs
+     *      to `species_ids` is not empty, a randomly selected cell in it.
+     *      Otherwise, if the set is empty, a runtime error is thrown.
+     */
+    const CellInTissue&
+    choose_border_cell_in(const std::list<SpeciesId>& species_ids);
+
+    /**
+     * @brief Randomly select a cell on the border of the non-wild-type mass
+     *
+     * This method randomly select a cell on the external border of the
+     * non-wild-type mass among those belonging the some species.
+     *
+     * @param species_ids is the list of the species identifiers among those
+     *      the cell must be chosen
+     * @param rectangle is the tissue rectangle in which the cell must be
+     *      selected
+     * @return whenever the set of cells whose species identifier belongs
+     *      to `species_ids` and laying in `rectangle` is not empty, a
+     *      randomly selected cell in it.
+     *      Otherwise, if the set is empty, a runtime error is thrown.
+     */
+    const CellInTissue&
+    choose_border_cell_in(const std::list<SpeciesId>& species_ids,
+                          const RectangleSet& rectangle);
+
+    /**
+     * @brief Randomly select a cell
+     *
+     * This method randomly select a cell available for an event among those
+     * having a specified mutant or species name.
+     *
+     * @param name is the name of the mutant or species that must contain
+     *      the selected cell
+     * @param event_type is the event type for which the choosen cell must be
+     *      available
+     * @return whenever the set of cells having `name` as mutant or species
+     *      name is not empty, a randomly selected cell in it.
+     *      Otherwise, if the set is empty, a domain error is thrown.
+     */
+    const CellInTissue&
+    choose_cell_in(const std::string& name,
+                   const CellEventType& event_type=CellEventType::ANY);
 
     /**
      * @brief Randomly select a cell in a tissue rectangle
@@ -766,79 +817,55 @@ public:
      * This method randomly select a cell available for an event among those
      * having a specified mutant and laying in a tissue rectangle.
      *
-     * @param mutant_name is the name of the mutant that must contain
+     * @param name is the name of the mutant or species that must contain
      *      the selected cell
      * @param rectangle is the tissue rectangle in which the cell must be selected
      * @param event_type is the type of the event that should be applied to the
      *      selected cell
-     * @return whenever the set of tissue cells that have `mutant_name` as mutant
+     * @return whenever the set of cells having `name` as mutant or species
      *      name and lay in one the positions specified by `rectangle` is not empty,
      *      a randomly selected cell in it. Otherwise, if the set is empty, a
      *      domain error is thrown.
      */
-    const CellInTissue& choose_cell_in(const std::string& mutant_name,
-                                       const RectangleSet& rectangle,
-                                       const CellEventType& event_type=CellEventType::ANY);
+    const CellInTissue&
+    choose_cell_in(const std::string& name,
+                   const RectangleSet& rectangle,
+                   const CellEventType& event_type=CellEventType::ANY);
 
     /**
      * @brief Randomly select a cell on the border of the non-wild-type mass
      *
      * This method randomly select a cell on the external border of the
-     * non-wild-type mass among those belonging to a specified mutant.
+     * non-wild-type mass among those belonging to a specified mutant or
+     * species.
      *
-     * @param mutant_id is the identifier of the mutant of the selected cell
-     * @return whenever the set of cells having `mutant_id` as mutant
-     *         identifier is not empty, a randomly selected cell in it.
-     *         Otherwise, if the set is empty, a runtime error is thrown.
+     * @param name is the name of the mutant or species that must contain
+     *      the selected cell
+     * @return whenever the set of cells having `name` as mutant or species
+     *      name is not empty, a randomly selected cell in it.
+     *      Otherwise, if the set is empty, a runtime error is thrown.
      */
-    const CellInTissue& choose_border_cell_in(const MutantId& mutant_id);
+    const CellInTissue&
+    choose_border_cell_in(const std::string& name);
 
     /**
      * @brief Randomly select a cell on the border of the non-wild-type mass
      *
      * This method randomly select a cell on the external border of the
-     * non-wild-type mass among those belonging to a specified mutant.
+     * non-wild-type mass among those belonging to a specified mutant or
+     * species in a specified rectangle.
      *
-     * @param mutant_name is the name of the mutant of the selected cell
-     * @return whenever the set of cells having `mutant_name` as mutant
-     *         identifier is not empty, a randomly selected cell in it.
-     *         Otherwise, if the set is empty, a runtime error is thrown.
-     */
-    const CellInTissue& choose_border_cell_in(const std::string& mutant_name);
-
-    /**
-     * @brief Randomly select a cell on the border of the non-wild-type mass
-     *
-     * This method randomly select a cell on the external border of the
-     * non-wild-type mass among those belonging to a specified mutant in
-     * a specified rectangle.
-     *
-     * @param mutant_id is the identifier of the mutant of the selected cell
+     * @param name is the name of the mutant or species that must contain
+     *      the selected cell
      * @param rectangle is the tissue rectangle in which the cell must be
      *          selected
-     * @return whenever the set of cells having `mutant_id` as mutant
-     *         identifier is not empty, a randomly selected cell in it.
-     *         Otherwise, if the set is empty, a runtime error is thrown.
+     * @return whenever the set of cells having `name` as mutant or species
+     *      name is not empty, a randomly selected cell in it.
+     *      Otherwise, if the set is empty, a runtime error is thrown.
      */
-    const CellInTissue& choose_border_cell_in(const MutantId& mutant_id,
-                                              const RectangleSet& rectangle);
-
-    /**
-     * @brief Randomly select a cell on the border of the non-wild-type mass
-     *
-     * This method randomly select a cell on the external border of the
-     * non-wild-type mass among those belonging to a specified mutant in
-     * a specified rectangle.
-     *
-     * @param mutant_name is the name of the mutant of the selected cell
-     * @param rectangle is the tissue rectangle in which the cell must be
-     *          selected
-     * @return whenever the set of cells having `mutant_name` as mutant
-     *         identifier is not empty, a randomly selected cell in it.
-     *         Otherwise, if the set is empty, a runtime error is thrown.
-     */
-    const CellInTissue& choose_border_cell_in(const std::string& mutant_name,
-                                              const RectangleSet& rectangle);
+    const CellInTissue&
+    choose_border_cell_in(const std::string& name,
+                          const RectangleSet& rectangle);
 
     /**
      * @brief Get the current simulation time
