@@ -2,8 +2,8 @@
  * @file tissue.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Define tissue class
- * @version 1.10
- * @date 2026-06-25
+ * @version 1.11
+ * @date 2026-06-26
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -290,7 +290,7 @@ const CellInTissue& Tissue::place_cell(const CellId& id, const SpeciesId& specie
     return *cell_ptr;
 }
 
-void Tissue::register_species_cells()
+void Tissue::update_pointers_in_tissue()
 {
     for (const auto& single_species : species) {
         for (auto& cell : single_species) {
@@ -347,6 +347,13 @@ Tissue& Tissue::add_mutant(const MutantProperties& mutant)
             add_species(properties);
         }
     }
+
+    // The following line is needed because `Tissue::species` has been
+    // increased. Thus, this vector may also have be moved in a different
+    // memory address and, as a consequence, the addresses of older
+    // species cells may be changed. Since these addresses are stored
+    // in `Tissue::space`, we need to updates them in it.
+    update_pointers_in_tissue();
 
     return *this;
 }
@@ -432,6 +439,13 @@ Tissue& Tissue::add_epigenetic_state(const std::string& epistate_name)
     }
 
     epistate_names.insert(epistate_name);
+
+    // The following line is needed because `Tissue::species` has been
+    // increased. Thus, this vector may also have be moved in a different
+    // memory address and, as a consequence, the addresses of older
+    // species cells may be changed. Since these addresses are stored
+    // in `Tissue::space`, we need to updates them in it.
+    update_pointers_in_tissue();
 
     return *this;
 }

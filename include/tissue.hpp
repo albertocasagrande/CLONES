@@ -2,8 +2,8 @@
  * @file tissue.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines tissue class
- * @version 1.8
- * @date 2026-06-21
+ * @version 1.9
+ * @date 2026-06-26
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -125,16 +125,16 @@ class Tissue {
     size_t count_neighbors_in(const PositionInTissue position, const SpeciesId& species_id) const;
 
     /**
-     * @brief Register the species cells in the tissue space
+     * @brief Update the species cell pointers in the tissue space
      *
-     * This method records the species cells in the tissue space by
-     * copying each cell pointer in the cell position in the space.
+     * This method updates the species cell pointers in the tissue space
+     * by copying each cell pointer in the cell position in the space.
      * This method must be called when either:
      * 1. we want to add the cells of newly added species to the tissue
      * 2. the species vector has been resized and we want to
      *    re-register the cell memory locations
      */
-    void register_species_cells();
+    void update_pointers_in_tissue();
 
     /**
      * @brief Add a species
@@ -1235,7 +1235,7 @@ public:
             ++i;
         }
 
-        tissue.register_species_cells();
+        tissue.update_pointers_in_tissue();
 
         return tissue;
     }
