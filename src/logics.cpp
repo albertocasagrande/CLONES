@@ -2,8 +2,8 @@
  * @file logics.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implement a logic about the simulation
- * @version 1.3
- * @date 2026-06-11
+ * @version 1.4
+ * @date 2026-06-26
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -60,7 +60,6 @@ Variable::Variable(const CellEventType& event_type, const SpeciesId& species_id,
     switch(event_type) {
         case CellEventType::DEATH:
         case CellEventType::DUPLICATION:
-        case CellEventType::EPIGENETIC_SWITCH:
         case CellEventType::DUP_AND_EPI_SWITCH:
             break;
         default:

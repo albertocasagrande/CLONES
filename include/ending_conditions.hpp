@@ -2,8 +2,8 @@
  * @file ending_conditions.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines simulation ending conditions
- * @version 1.1
- * @date 2026-02-06
+ * @version 1.2
+ * @date 2026-06-26
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -190,7 +190,7 @@ public:
     /**
      * @brief A constructor
      *
-     * Whenever `event_type` is `CellEventType::EPIGENETIC_SWITCH`
+     * Whenever `event_type` is `CellEventType::DUP_AND_EPI_SWITCH`
      * the built object compare the threshold and the sum of all
      * the epigenetic events.
      *

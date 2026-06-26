@@ -2,8 +2,8 @@
  * @file cell_event.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines cell events
- * @version 1.2
- * @date 2026-06-10
+ * @version 1.3
+ * @date 2026-06-26
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -52,7 +52,6 @@ enum class CellEventType {
     DEATH,                  //!< death of a cell
     DUPLICATION,            //!< duplication of a cell
     MUTATION,               //!< duplication and mutation of a cell
-    EPIGENETIC_SWITCH,      //!< epigenetic switch for a cell
     DUP_AND_EPI_SWITCH,     //!< duplication and epigenetic switch for a cell
     ANY                     //!< unspecified
 };

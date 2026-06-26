@@ -2,8 +2,8 @@
  * @file species.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements species representation methods
- * @version 1.5
- * @date 2026-06-11
+ * @version 1.6
+ * @date 2026-06-26
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -117,8 +117,6 @@ size_t Species::num_of_cells_available_for(const CellEventType& event_type) cons
                 return 0;
             }
         }
-        case CellEventType::EPIGENETIC_SWITCH:
-            return cells.size();
         case CellEventType::DUPLICATION:
         case CellEventType::DUP_AND_EPI_SWITCH:
         case CellEventType::MUTATION:

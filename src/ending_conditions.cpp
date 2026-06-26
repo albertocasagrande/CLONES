@@ -2,8 +2,8 @@
  * @file ending_conditions.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements simulation ending conditions
- * @version 1.4
- * @date 2026-06-19
+ * @version 1.5
+ * @date 2026-06-26
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -128,7 +128,6 @@ size_t EventCountTest::get_event_number(const TissueSimulation& simulation) cons
             return s_stats.killed_cells;
         case CellEventType::DUPLICATION:
             return s_stats.num_duplications;
-        case CellEventType::EPIGENETIC_SWITCH:
         case CellEventType::DUP_AND_EPI_SWITCH:
             return get_epigenetic_events_to(s_stats, dst_id);
         default:

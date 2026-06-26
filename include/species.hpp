@@ -2,8 +2,8 @@
  * @file species.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines species representation
- * @version 1.6
- * @date 2026-06-11
+ * @version 1.7
+ * @date 2026-06-26
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -349,7 +349,6 @@ public:
     {
         switch (event_type) {
             case CellEventType::DEATH:
-            case CellEventType::EPIGENETIC_SWITCH:
                 return choose_a_cell(generator, cells);
             case CellEventType::DUPLICATION:
             case CellEventType::MUTATION:
