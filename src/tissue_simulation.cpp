@@ -2,8 +2,8 @@
  * @file simulation.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Define a tumour evolution simulation
- * @version 1.16
- * @date 2026-06-26
+ * @version 1.17
+ * @date 2026-06-30
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -168,7 +168,7 @@ void select_next_event_in_species(CellEvent& event, Tissue& tissue,
     }
 }
 
-std::list<SpeciesId> TissueSimulation::get_species_ids_from_name(const std::string& name) const
+std::list<SpeciesId> TissueSimulation::get_species_ids_from(const std::string& name) const
 {
     auto mutant_it = mutant_name2id.find(name);
     if (mutant_it != mutant_name2id.end()) {
@@ -186,7 +186,18 @@ std::list<SpeciesId> TissueSimulation::get_species_ids_from_name(const std::stri
         return {species.get_id()};
     }
 
-    return {};
+    throw Error<std::runtime_error>("\"" + name +"\" is neither a mutant nor a species name.");
+}
+
+std::list<SpeciesId> TissueSimulation::get_species_ids_from(const std::list<std::string>& names) const
+{
+    std::list<SpeciesId> species_ids;
+
+    for (const auto& name : names) {
+        species_ids.splice(species_ids.end(), get_species_ids_from(name));
+    }
+
+    return species_ids;
 }
 
 const CellInTissue&
@@ -216,18 +227,6 @@ TissueSimulation::choose_cell_in(const std::list<SpeciesId>& species_ids, const 
     const SpeciesId& species_id = species_vec[distribution(random_gen)];
 
     return tissue().get_species(species_id).choose_a_cell(random_gen, event_type);
-}
-
-const CellInTissue&
-TissueSimulation::choose_cell_in(const std::string& name, const CellEventType& event_type)
-{
-    const auto species_ids = get_species_ids_from_name(name);
-
-    if (species_ids.size()==0) {
-        throw Error<std::runtime_error>("\"" + name +"\" is neither a mutant nor a species name.");
-    }
-
-    return choose_cell_in(species_ids, event_type);
 }
 
 const CellInTissue&
@@ -265,20 +264,6 @@ TissueSimulation::choose_cell_in(const std::list<SpeciesId>& species_ids,
     }
 
     throw Error<std::runtime_error>("No cell satisfies the request.");
-}
-
-const CellInTissue&
-TissueSimulation::choose_cell_in(const std::string& name,
-                                 const RectangleSet& rectangle,
-                                 const CellEventType& event_type)
-{
-    const auto species_ids = get_species_ids_from_name(name);
-
-    if (species_ids.size()==0) {
-        throw Error<std::runtime_error>("\"" + name +"\" is neither a mutant nor a species name.");
-    }
-
-    return choose_cell_in(species_ids, rectangle, event_type);
 }
 
 bool border_visible_from(PositionInTissue pos, const Tissue& tissue, const PositionDelta& delta)
@@ -406,29 +391,6 @@ const CellInTissue& TissueSimulation::choose_border_cell_in(const std::list<Spec
     }
 
     return choose_border_cell_in(species_ids, rectangle);
-}
-
-const CellInTissue& TissueSimulation::choose_border_cell_in(const std::string& name,
-                                                            const RectangleSet& rectangle)
-{
-    const auto species_ids = get_species_ids_from_name(name);
-
-    if (species_ids.size()==0) {
-        throw Error<std::runtime_error>("\"" + name +"\" is neither a mutant nor a species name.");
-    }
-
-    return choose_border_cell_in(species_ids, rectangle);
-}
-
-const CellInTissue& TissueSimulation::choose_border_cell_in(const std::string& name)
-{
-    const auto species_ids = get_species_ids_from_name(name);
-
-    if (species_ids.size()==0) {
-        throw Error<std::runtime_error>("\"" + name +"\" is neither a mutant nor a species name.");
-    }
-
-    return choose_border_cell_in(species_ids);
 }
 
 /**
