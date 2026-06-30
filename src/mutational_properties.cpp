@@ -2,8 +2,8 @@
  * @file mutational_properties.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements a class to represent the mutational properties
- * @version 1.8
- * @date 2026-06-16
+ * @version 1.9
+ * @date 2026-06-30
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -53,45 +53,6 @@ MutationalProperties::MutationalProperties()
 {}
 
 MutationalProperties&
-MutationalProperties::add_mutant(const std::string& mutant_name,
-                                 const std::map<std::string, PassengerRates>& epistate_passenger_rates,
-                                 const std::list<MutationSpec<SID>>& driver_SIDs,
-                                 const std::list<CNA>& driver_CNAs,
-                                 const bool& wg_doubling)
-{
-    auto application_order = DriverMutations::get_default_order(driver_SIDs, driver_CNAs, wg_doubling);
-
-    return add_mutant(mutant_name, epistate_passenger_rates, driver_SIDs,
-                      driver_CNAs, application_order);
-}
-
-MutationalProperties&
-MutationalProperties::add_mutant(const std::string& mutant_name,
-                                 const std::map<std::string, PassengerRates>& epistate_passenger_rates,
-                                 const std::list<MutationSpec<SID>>& driver_SIDs,
-                                 const std::list<CNA>& driver_CNAs,
-                                 const std::list<DriverMutations::MutationType>& application_order)
-{
-    if (driver_mutations.count(mutant_name)>0) {
-        throw Error<std::domain_error>("The mutational properties of mutant \"" + mutant_name +
-                                       "\" has been already added.");
-    }
-
-    driver_mutations.insert({mutant_name, {mutant_name, driver_SIDs,
-                                           driver_CNAs, application_order}});
-
-    for (const auto& [epistate, passenger_rate] : epistate_passenger_rates) {
-        using namespace CLONES::Mutants;
-
-        const SpeciesName species_name{mutant_name, epistate};
-
-        passenger_rates[species_name].change_value_at(0) = passenger_rate;
-    }
-
-    return *this;
-}
-
-MutationalProperties&
 MutationalProperties::change_rates_from(const Time& time, const std::string& mutant_name,
                                         const std::map<std::string, PassengerRates>& epistate_passenger_rates)
 {
@@ -100,6 +61,19 @@ MutationalProperties::change_rates_from(const Time& time, const std::string& mut
 
         t_p_rates.from(time) = p_rates;
     }
+
+    return *this;
+}
+
+MutationalProperties&
+MutationalProperties::change_rates_from(const Time& time, const std::string& mutant_name,
+                                        const PassengerRates& passenger_rates)
+{
+    const CLONES::Mutants::SpeciesName species_name{mutant_name};
+
+    auto& t_p_rates = get_passenger_rates(species_name);
+
+    t_p_rates.from(time) = passenger_rates;
 
     return *this;
 }

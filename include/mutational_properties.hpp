@@ -2,8 +2,8 @@
  * @file mutational_properties.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a class to represent the mutational properties
- * @version 1.10
- * @date 2026-06-16
+ * @version 1.11
+ * @date 2026-06-30
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -398,6 +398,40 @@ class MutationalProperties
 
         return get_passenger_rates(passenger_rates, species_name);
     }
+
+    /**
+     * @brief Initialize the passenger rates
+     * 
+     * @param mutant_name is the name of the mutant
+     * @param epistate_passenger_rates is a map from epigenetic state to
+     *          passenger rates
+     */
+    void init_passenger_rates(const std::string& mutant_name,
+                              const std::map<std::string, PassengerRates>& epistate_passenger_rates)
+    {
+        for (const auto& [epistate, passenger_rate] : epistate_passenger_rates) {
+            using namespace CLONES::Mutants;
+
+            const SpeciesName species_name{mutant_name, epistate};
+
+            passenger_rates[species_name].change_value_at(0) = passenger_rate;
+        }
+    }
+
+    /**
+     * @brief Initialize the passenger rates
+     * 
+     * @param mutant_name is the name of the mutant
+     * @param passenger_rates are the passenger rates
+     */
+    void init_passenger_rates(const std::string& mutant_name,
+                              const PassengerRates& passenger_rates)
+    {
+        const CLONES::Mutants::SpeciesName species_name{mutant_name};
+
+        this->passenger_rates[species_name].change_value_at(0) = passenger_rates;
+    }
+
 public:
 
     /**
@@ -408,36 +442,78 @@ public:
     /**
      * @brief Add the properties of a mutant
      *
+     * @tparam PASSENGER_RATES is the type of the parameter rates
      * @param mutant_name is the name of the mutant
-     * @param epistate_passenger_rates is a map from epigenetic state to
-     *          passenger rates
+     * @param passenger_rates are the passenger rates
      * @param driver_SIDs is a list of driver SIDs
      * @param driver_CNAs is a list of driver CNAs
      * @param wg_doubling is a Boolean flag to enable whole genome doubling
      * @return a reference to the updated object
      */
+    template<typename PASSENGER_RATES>
+      requires (std::is_same_v<PASSENGER_RATES, PassengerRates>
+                || std::is_same_v<PASSENGER_RATES, std::map<std::string, PassengerRates>>)
     MutationalProperties& add_mutant(const std::string& mutant_name,
-                                     const std::map<std::string, PassengerRates>& epistate_passenger_rates,
+                                     const PASSENGER_RATES& passenger_rates,
                                      const std::list<MutationSpec<SID>>& driver_SIDs={},
                                      const std::list<CNA>& driver_CNAs={},
-                                     const bool& wg_doubling=false);
+                                     const bool& wg_doubling=false)
+    {
+        auto application_order = DriverMutations::get_default_order(driver_SIDs, 
+                                                                    driver_CNAs,
+                                                                    wg_doubling);
+
+        return add_mutant(mutant_name, passenger_rates, driver_SIDs,
+                          driver_CNAs, application_order);
+    }
 
     /**
      * @brief Add the properties of a mutant
      *
+     * @tparam PASSENGER_RATES is the type of the parameter rates
      * @param mutant_name is the name of the mutant
-     * @param epistate_passenger_rates is a map from epigenetic state to
-     *          passenger rates
+     * @param passenger_rates are the passenger rates
      * @param driver_SIDs is a list of driver SIDs
      * @param driver_CNAs is a list of driver CNAs
      * @param application_order is the list of mutation application order
      * @return a reference to the updated object
      */
+    template<typename PASSENGER_RATES>
+      requires (std::is_same_v<PASSENGER_RATES, PassengerRates>
+                || std::is_same_v<PASSENGER_RATES, std::map<std::string, PassengerRates>>)
     MutationalProperties& add_mutant(const std::string& mutant_name,
-                                     const std::map<std::string, PassengerRates>& epistate_passenger_rates,
+                                     const PASSENGER_RATES& passenger_rates,
                                      const std::list<MutationSpec<SID>>& driver_SIDs,
                                      const std::list<CNA>& driver_CNAs,
-                                     const std::list<DriverMutations::MutationType>& application_order);
+                                     const std::list<DriverMutations::MutationType>& application_order)
+    {
+        if (driver_mutations.count(mutant_name)>0) {
+            throw Error<std::domain_error>("The mutational properties of mutant \"" + mutant_name +
+                                        "\" has been already added.");
+        }
+
+        driver_mutations.insert({mutant_name, {mutant_name, driver_SIDs,
+                                               driver_CNAs, application_order}});
+        
+        init_passenger_rates(mutant_name, passenger_rates);
+
+        return *this;
+    }
+
+    /**
+     * @brief Change the passenger rates from a given time stamp
+     *
+     * This method changes the passenger rates from a given timestamp of the
+     * simulated time up to the time horizon. The previously recorder rates
+     * after the provided timestamp are deleted.
+     *
+     * @param time is a time stamp
+     * @param mutant_name is a mutant name
+     * @param passenger_rates are the new 
+     * @return a reference to the updated object
+     */
+    MutationalProperties& change_rates_from(const Time& time, const std::string& mutant_name,
+                                            const PassengerRates& passenger_rates);
 
     /**
      * @brief Change the passenger rates from a given time stamp

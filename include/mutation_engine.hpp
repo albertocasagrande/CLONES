@@ -2,8 +2,8 @@
  * @file mutation_engine.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a class to place mutations on a descendant forest
- * @version 1.38
- * @date 2026-06-19
+ * @version 1.39
+ * @date 2026-06-30
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -1536,15 +1536,17 @@ public:
      * its driver mutations) and all its species to the mutations engine.
      *
      * @param[in] name is the name of the mutant
-     * @param[in] epistate_passenger_rates is a map from epigenetic status to
-     *          passenger rate
+     * @param[in] passenger_rates are the passenger rates
      * @param[in] driver_SIDs is a list of driver SIDs
      * @param[in] driver_CNAs is a list of driver CNAs
      * @param[in] wg_doubling is a Boolean flag to enable whole genome doubling
      * @return a reference to the updated object
      */
+    template<typename PASSENGER_RATES>
+      requires (std::is_same_v<PASSENGER_RATES, PassengerRates>
+                || std::is_same_v<PASSENGER_RATES, std::map<std::string, PassengerRates>>)
     MutationEngine& add_mutant(const std::string& name,
-                               const std::map<std::string, PassengerRates>& epistate_passenger_rates,
+                               const PASSENGER_RATES& passenger_rates,
                                const std::list<MutationSpec<SID>>& driver_SIDs={},
                                const std::list<CNA>& driver_CNAs={},
                                const bool& wg_doubling=false)
@@ -1552,7 +1554,7 @@ public:
         auto application_order = DriverMutations::get_default_order(driver_SIDs, driver_CNAs,
                                                                     wg_doubling);
 
-        return add_mutant(name, epistate_passenger_rates, driver_SIDs,
+        return add_mutant(name, passenger_rates, driver_SIDs,
                           driver_CNAs, application_order);
     }
 
@@ -1563,20 +1565,22 @@ public:
      * its driver mutations) and all its species to the mutations engine.
      *
      * @param[in] name is the name of the mutant
-     * @param[in] epistate_passenger_rates is a map from epigenetic status to
-     *          passenger rate
+     * @param[in] passenger_rates are the passenger rates
      * @param[in] driver_SIDs is a list of driver SIDs
      * @param[in] driver_CNAs is a list of driver CNAs
      * @param[in] application_order is the list of application order
      * @return a reference to the updated object
      */
+    template<typename PASSENGER_RATES>
+      requires (std::is_same_v<PASSENGER_RATES, PassengerRates>
+                || std::is_same_v<PASSENGER_RATES, std::map<std::string, PassengerRates>>)
     MutationEngine& add_mutant(const std::string& name,
-                               const std::map<std::string, PassengerRates>& epistate_passenger_rates,
+                               const PASSENGER_RATES& passenger_rates,
                                const std::list<MutationSpec<SID>>& driver_SIDs,
                                const std::list<CNA>& driver_CNAs,
                                const std::list<DriverMutations::MutationType>& application_order)
     {
-        mutational_properties.add_mutant(name, epistate_passenger_rates, driver_SIDs,
+        mutational_properties.add_mutant(name, passenger_rates, driver_SIDs,
                                          driver_CNAs, application_order);
 
         filter_passenger_CNAs(get_region_list(driver_SIDs, driver_CNA_min_distance));
