@@ -2,8 +2,8 @@
  * @file signature.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines mutational signatures
- * @version 1.5
- * @date 2026-06-21
+ * @version 1.6
+ * @date 2026-07-02
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -269,8 +269,10 @@ class Signature
         std::string cell;
 
         while (getline(iss, cell, delimiter)) {
-            if (cell.back()=='\r') {
-                cell.pop_back();
+            if (cell.size() > 0) {
+                if (cell.back() == '\r') {
+                    cell.pop_back();
+                }
             }
             row.push_back(cell);
         }
@@ -313,7 +315,7 @@ class Signature
             }
 
             ++row_number;
-            row = read_row(in,delimiter);
+            row = read_row(in, delimiter);
         }
 
         return result;
