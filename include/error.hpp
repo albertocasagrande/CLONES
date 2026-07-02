@@ -2,8 +2,8 @@
  * @file error.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines CLONES errors
- * @version 1.2
- * @date 2026-06-21
+ * @version 1.3
+ * @date 2026-07-02
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -30,6 +30,8 @@
 
 #ifndef __CLONES_ERROR__
 #define __CLONES_ERROR__
+
+#include <cstdint>
 
 #include <string>
 #include <sstream>
@@ -135,7 +137,8 @@ public:
      *
      * @return The line number in which the error was created
      */
-    inline uint32_t line() const noexcept {
+    inline constexpr std::uint_least32_t line() const noexcept
+    {
         return location.line();
     }
 };
