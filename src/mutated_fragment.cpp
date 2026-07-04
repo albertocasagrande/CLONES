@@ -1,9 +1,9 @@
 /**
- * @file read.cpp
+ * @file mutated_fragment.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
- * @brief Implements sequencing reads
- * @version 1.8
- * @date 2026-06-12
+ * @brief Implements mutated DNA fragments
+ * @version 1.0
+ * @date 2026-07-04
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -30,7 +30,7 @@
 
 #include <map>
 
-#include "read.hpp"
+#include "mutated_fragment.hpp"
 
 #include "error.hpp"
 
@@ -40,13 +40,7 @@ namespace CLONES
 namespace Mutations
 {
 
-/**
- * @brief The sequencing simulation namespace
- */
-namespace SequencingSimulations
-{
-
-void Read::MutationIterator::set_current_mutation()
+void MutatedFragment::MutationIterator::set_current_mutation()
 {
     if (direction == Direction::FORWARD) {
         if (p_end) {
@@ -63,10 +57,10 @@ void Read::MutationIterator::set_current_mutation()
     }
 }
 
-Read::MutationIterator::MutationIterator(const std::map<GenomicPosition, std::shared_ptr<SID>>& germline,
-                            const std::map<GenomicPosition, std::shared_ptr<SID>>& somatic,
-                            const std::map<GenomicPosition, std::shared_ptr<SID>>::const_iterator& germline_it,
-                            const std::map<GenomicPosition, std::shared_ptr<SID>>::const_iterator& somatic_it):
+MutatedFragment::MutationIterator::MutationIterator(const std::map<GenomicPosition, std::shared_ptr<SID>>& germline,
+                                                    const std::map<GenomicPosition, std::shared_ptr<SID>>& somatic,
+                                                    const std::map<GenomicPosition, std::shared_ptr<SID>>::const_iterator& germline_it,
+                                                    const std::map<GenomicPosition, std::shared_ptr<SID>>::const_iterator& somatic_it):
     somatic{&somatic}, germline{&germline},
     s_it{somatic_it}, g_it{germline_it},
     direction{Direction::FORWARD},
@@ -78,16 +72,16 @@ Read::MutationIterator::MutationIterator(const std::map<GenomicPosition, std::sh
     set_current_mutation();
 }
 
-Read::MutationIterator::MutationIterator():
+MutatedFragment::MutationIterator::MutationIterator():
     somatic{nullptr}, germline{nullptr}, s_it{}, g_it{},
-    direction{Read::Direction::FORWARD},
+    direction{MutatedFragment::Direction::FORWARD},
     p_begin{true}, p_end{true}, g_begin{true}, g_end{true}
 {}
 
-Read::MutationIterator
-Read::MutationIterator::lower_bound(const std::map<GenomicPosition, std::shared_ptr<SID>>& germline,
-                                    const std::map<GenomicPosition, std::shared_ptr<SID>>& somatic,
-                                    const GenomicPosition& genomic_position)
+MutatedFragment::MutationIterator
+MutatedFragment::MutationIterator::lower_bound(const std::map<GenomicPosition, std::shared_ptr<SID>>& germline,
+                                               const std::map<GenomicPosition, std::shared_ptr<SID>>& somatic,
+                                               const GenomicPosition& genomic_position)
 {
     auto g_it = germline.lower_bound(genomic_position);
     auto s_it = somatic.lower_bound(genomic_position);
@@ -95,8 +89,8 @@ Read::MutationIterator::lower_bound(const std::map<GenomicPosition, std::shared_
     return {germline, somatic, g_it, s_it};
 }
 
-Read::MutationIterator&
-Read::MutationIterator::operator++()
+MutatedFragment::MutationIterator&
+MutatedFragment::MutationIterator::operator++()
 {
     if (direction == Direction::BACKWARD) {
         if (!p_end) {
@@ -159,7 +153,7 @@ Read::MutationIterator::operator++()
     return *this;
 }
 
-Read::MutationIterator Read::MutationIterator::operator++(int)
+MutatedFragment::MutationIterator MutatedFragment::MutationIterator::operator++(int)
 {
     auto curr = *this;
 
@@ -168,8 +162,8 @@ Read::MutationIterator Read::MutationIterator::operator++(int)
     return curr;
 }
 
-Read::MutationIterator&
-Read::MutationIterator::operator--()
+MutatedFragment::MutationIterator&
+MutatedFragment::MutationIterator::operator--()
 {
     if (direction == Direction::FORWARD) {
         if (!p_begin) {
@@ -232,7 +226,7 @@ Read::MutationIterator::operator--()
     return *this;
 }
 
-Read::MutationIterator Read::MutationIterator::operator--(int)
+MutatedFragment::MutationIterator MutatedFragment::MutationIterator::operator--(int)
 {
     auto curr = *this;
 
@@ -241,10 +235,10 @@ Read::MutationIterator Read::MutationIterator::operator--(int)
     return curr;
 }
 
-Read::Read()
+MutatedFragment::MutatedFragment()
 {}
 
-size_t Read::Hamming_distance() const
+size_t MutatedFragment::Hamming_distance() const
 {
     size_t total_mismatches{0};
     for (const auto& mismatch: alignment) {
@@ -256,7 +250,7 @@ size_t Read::Hamming_distance() const
     return total_mismatches;
 }
 
-GenomicRegion Read::get_covered_reference_region() const
+GenomicRegion MutatedFragment::get_covered_reference_region() const
 {
     if (alignment.size()==0) {
         return {this->genomic_position, 0};
@@ -274,7 +268,7 @@ GenomicRegion Read::get_covered_reference_region() const
             static_cast<GenomicRegion::Length>(seq_size)};
 }
 
-std::list<GenomicRegion> Read::get_reference_regions_in_read() const
+std::list<GenomicRegion> MutatedFragment::get_contained_reference_regions() const
 {
     std::list<GenomicRegion> covered_list;
 
@@ -308,7 +302,7 @@ std::list<GenomicRegion> Read::get_reference_regions_in_read() const
     return covered_list;
 }
 
-std::string Read::get_CIGAR() const
+std::string MutatedFragment::get_CIGAR() const
 {
     std::ostringstream oss;
 
@@ -357,14 +351,15 @@ void validate_mutation(const std::string& reference, const SID& mutation)
     }
 }
 
-void Read::copy_reference(const std::string& reference, const size_t up_to_index,
-                          size_t& read_end, size_t& ref_end)
+void MutatedFragment::copy_reference(const std::string& reference,
+                                     const size_t up_to_index,
+                                     size_t& mutated_pos, size_t& reference_pos)
 {
-    for (; ref_end <= up_to_index && read_end < nucleotides.size();
-            ++ref_end,++read_end) {
-        nucleotides[read_end] = reference[ref_end-1];
+    for (; reference_pos <= up_to_index && mutated_pos < nucleotides.size();
+            ++reference_pos,++mutated_pos) {
+        nucleotides[mutated_pos] = reference[reference_pos-1];
         alignment_index.push_back(alignment.size());
-        if (nucleotides[read_end]=='N') {
+        if (nucleotides[mutated_pos]=='N') {
             alignment.push_back(MatchingType::MISMATCH);
         } else {
             alignment.push_back(MatchingType::MATCH);
@@ -423,17 +418,16 @@ void update_alignment(std::vector<MatchingType>& alignment,
     }
 }
 
-Read::Read(const std::string& reference,
-           const std::map<GenomicPosition, std::shared_ptr<SID>>& germline,
-           const std::map<GenomicPosition, std::shared_ptr<SID>>& somatic,
-           const GenomicPosition& genomic_position,
-           const size_t& read_size):
-    genomic_position{genomic_position}
+MutatedFragment::MutatedFragment(const std::string& reference,
+                                 const std::map<GenomicPosition, std::shared_ptr<SID>>& germline,
+                                 const std::map<GenomicPosition, std::shared_ptr<SID>>& somatic,
+                                 const GenomicPosition& begin_pos,
+                                 const size_t& size):
+    genomic_position{begin_pos}
 {
-    auto it = MutationIterator::lower_bound(germline, somatic,
-                                            genomic_position);
+    auto it = MutationIterator::lower_bound(germline, somatic, begin_pos);
 
-    // remove initial deletions from the read
+    // remove initial deletions from the mutated fragment
     if (!it.is_begin()) {
         auto prev = it;
 
@@ -448,43 +442,43 @@ Read::Read(const std::string& reference,
     }
 
     mutations = std::vector<SID>();
-    nucleotides = std::string(read_size,'N');
-    alignment.reserve(2*read_size);
-    alignment_index.reserve(read_size);
-    mutation_index = std::vector<MutationBaseIndex>(read_size);
+    nucleotides = std::string(size,'N');
+    alignment.reserve(2*size);
+    alignment_index.reserve(size);
+    mutation_index = std::vector<MutationBaseIndex>(size);
 
-    size_t read_end=0, ref_end=this->genomic_position.position;
-    size_t last_base = std::min(this->genomic_position.position+read_size,
+    size_t frag_end=0, ref_end=this->genomic_position.position;
+    size_t last_base = std::min(this->genomic_position.position+size,
                                 reference.size())-1;
 
-    while (!it.is_end() && read_end < read_size
+    while (!it.is_end() && frag_end < size
             && ref_end <= reference.size()) {
 
         // copy from the reference up to the mutation begin
         const auto ref_up_to = std::min(static_cast<size_t>(it->first.position-1),
                                         last_base);
-        copy_reference(reference, ref_up_to, read_end, ref_end);
+        copy_reference(reference, ref_up_to, frag_end, ref_end);
 
-        if (read_end < read_size) {
+        if (frag_end < size) {
             const SID& mutation = *(it->second);
 
 #ifdef __DEBUG__
             validate_mutation(reference, mutation);
 #endif // __DEBUG__
 
-            // remove the reference from the read
+            // remove the reference from the mutated fragment
             ref_end += mutation.ref.size();
 
-            // add the altered sequence to the read
+            // add the altered sequence to the mutated fragment
             auto to_be_copied = std::min(mutation.alt.size(),
-                                         read_size-read_end);
-            nucleotides.replace(read_end, to_be_copied, mutation.alt);
+                                         size-frag_end);
+            nucleotides.replace(frag_end, to_be_copied, mutation.alt);
             for (size_t i=0; i<to_be_copied; ++i) {
-                mutation_index[read_end] = {mutations.size(), i};
-                ++read_end;
+                mutation_index[frag_end] = {mutations.size(), i};
+                ++frag_end;
             }
             update_alignment(alignment, alignment_index, mutation,
-                             to_be_copied, last_base, read_size<=read_end);
+                             to_be_copied, last_base, size<=frag_end);
 
             mutations.push_back(mutation);
         }
@@ -493,14 +487,14 @@ Read::Read(const std::string& reference,
     }
 
     // copy from the reference until the last base
-    last_base = read_size - read_end - 1 + ref_end;
-    copy_reference(reference, last_base, read_end, ref_end);
+    last_base = size - frag_end - 1 + ref_end;
+    copy_reference(reference, last_base, frag_end, ref_end);
 
-    nucleotides.resize(read_end);
-    mutation_index.resize(read_end);
+    nucleotides.resize(frag_end);
+    mutation_index.resize(frag_end);
 }
 
-void Read::remove_mutation(const size_t& pos)
+void MutatedFragment::remove_mutation(const size_t& pos)
 {
     MutationBaseIndex& mb_index = mutation_index[pos];
 
@@ -518,7 +512,7 @@ void Read::remove_mutation(const size_t& pos)
     mutations.resize(mutations.size()-1);
 }
 
-void Read::alter_base(const size_t pos, const char base)
+void MutatedFragment::alter_base(const size_t pos, const char base)
 {
     if (nucleotides[pos] != base) {
         nucleotides[pos] = base;
@@ -547,8 +541,6 @@ void Read::alter_base(const size_t pos, const char base)
         }
     }
 }
-
-}   // SequencingSimulations
 
 }   // Mutations
 

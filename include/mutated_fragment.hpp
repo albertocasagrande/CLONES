@@ -1,9 +1,9 @@
 /**
- * @file read.hpp
+ * @file mutated_fragment.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
- * @brief Defines sequencing reads
- * @version 1.7
- * @date 2026-06-12
+ * @brief Defines mutated DNA fragments
+ * @version 1.0
+ * @date 2026-07-04
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __CLONES_READ__
-#define __CLONES_READ__
+#ifndef __CLONES_MUTATED_FRAGMENTS__
+#define __CLONES_MUTATED_FRAGMENTS__
 
 #include <string>
 #include <vector>
@@ -41,12 +41,6 @@ namespace CLONES
 {
 
 namespace Mutations
-{
-
-/**
- * @brief The sequencing simulation namespace
- */
-namespace SequencingSimulations
 {
 
 /**
@@ -64,12 +58,12 @@ enum class MatchingType
 };
 
 /**
- * @brief A class for representing the simulated reads
+ * @brief A class for representing mutated DNA fragments
  */
-class Read
+class MutatedFragment
 {
     /**
-     * @brief Read build direction
+     * @brief Fragment direction
      */
     enum class Direction
     {
@@ -80,14 +74,14 @@ class Read
     /**
      * @brief A class for indices of bases in mutations
      *
-     * Any valid object of this class refers to a base in
-     * the altered sequence of a mutation laying a read.
-     * The objects of this class may also be not valid if
-     * it does not refer to any base.
+     * Any valid object of this class refers to a base in the
+     * altered sequence of a mutation laying of a mutated
+     * fragment. The objects of this class may also be not
+     * valid if it does not refer to any base.
      */
     struct MutationBaseIndex
     {
-        size_t index;       //!< The read mutation index
+        size_t index;       //!< The mutation index
         size_t base_pos;    //!< The base position
 
         /**
@@ -100,7 +94,7 @@ class Read
         /**
          * @brief A constructor
          *
-         * @param index is the index of the mutation in the read
+         * @param index is the index of the mutation
          * @param base_pos
          */
         inline MutationBaseIndex(const size_t& index,
@@ -113,7 +107,7 @@ class Read
          *
          * @return `true` if and only if this object is referring
          *      to a base in the altered sequence of the
-         *      `index`-th mutation laying in the read
+         *      `index`-th mutation
          */
         inline bool is_valid() const
         {
@@ -121,9 +115,9 @@ class Read
         }
     };
 
-    GenomicPosition genomic_position;   //!< The read position
+    GenomicPosition genomic_position;   //!< The mutated fragment position
 
-    std::vector<SID> mutations;         //!< The read mutations
+    std::vector<SID> mutations;         //!< The mutations in the fragment
 
     std::string nucleotides;            //!< The nucleotide sequence
     std::vector<MatchingType> alignment;    //!< The alignment to the reference
@@ -167,9 +161,9 @@ class Read
          * @param somatic_it is an somatic SID map iterator
          */
         MutationIterator(const std::map<GenomicPosition, std::shared_ptr<SID>>& germline,
-                            const std::map<GenomicPosition, std::shared_ptr<SID>>& somatic,
-                            const std::map<GenomicPosition, std::shared_ptr<SID>>::const_iterator& germline_it,
-                            const std::map<GenomicPosition, std::shared_ptr<SID>>::const_iterator& somatic_it);
+                         const std::map<GenomicPosition, std::shared_ptr<SID>>& somatic,
+                         const std::map<GenomicPosition, std::shared_ptr<SID>>::const_iterator& germline_it,
+                         const std::map<GenomicPosition, std::shared_ptr<SID>>::const_iterator& somatic_it);
 
     public:
         using difference_type   =   std::ptrdiff_t;
@@ -295,63 +289,67 @@ class Read
     };
 
     /**
-     * @brief Copy a fragment of the reference in the read
+     * @brief Copy a fragment of the reference
      *
-     * This method copies a reference fragment in the read.
-     * It also update the indices of both the read and the
-     * reference.
+     * This method copies a reference fragment in the mutated fragment.
+     * It also update the positions of both the mutated fragment and
+     * the reference to the end so they correspond to the end of the
+     * mutated fragment and the corresponding position in the reference,
+     * respectively.
      *
      * @param reference is the reference
-     * @param up_to_index is reference index up to which
-     *      the reference must be copied
-     * @param read_idx is the first position of the read to
-     *      be filled by the read
-     * @param reference_idx is the first position of the
-     *      reference to be copied
+     * @param up_to_pos is reference position up to which the reference
+     *   must be copied
+     * @param mutated_pos is the first position of the mutated fragment
+     *   to be filled
+     * @param reference_pos is the first position of the reference to be
+     *   copied
      */
-    void copy_reference(const std::string& reference,
-                        const size_t length,
-                        size_t& read_idx, size_t& reference_idx);
+    void copy_reference(const std::string& reference, const size_t length,
+                        size_t& mutated_pos, size_t& reference_pos);
 
     /**
-     * @brief Remove the mutation in a read position
+     * @brief Remove the mutation in a mutated fragment position
      *
-     * @param pos is the read position in which the to-be-removed
-     *    mutation lays
+     * @param pos is the mutated fragment position in which the
+     *    to-be-removed mutation lays
      */
     void remove_mutation(const size_t& pos);
 public:
     /**
      * @brief The empty constructor
      */
-    Read();
+    MutatedFragment();
 
     /**
-     * @brief A read constructor
+     * @brief A mutated fragment constructor
      *
      * @param reference is the reference sequence
      * @param germline is the position-mutation map for germline mutations
      * @param somatic is the position-mutation map for somatic mutations
-     * @param genomic_position is the aimed position of the first base in the read
-     * @param read_size is the aimed read size
+     * @param begin_pos is the aimed position of the first reference base
+     *   of the mutated fragment
+     * @param size is the aimed mutated fragment size
      */
-    Read(const std::string& reference,
-         const std::map<GenomicPosition, std::shared_ptr<SID>>& germline,
-         const std::map<GenomicPosition, std::shared_ptr<SID>>& somatic,
-         const GenomicPosition& genomic_position,
-         const size_t& read_size);
+    MutatedFragment(const std::string& reference,
+                    const std::map<GenomicPosition, std::shared_ptr<SID>>& germline,
+                    const std::map<GenomicPosition, std::shared_ptr<SID>>& somatic,
+                    const GenomicPosition& begin_pos,
+                    const size_t& size);
 
     /**
      * @brief Count the number of mismatched
      *
-     * @return the number of mismatches in the read
+     * @return the number of mismatches in the mutated
+     *   fragment
      */
     size_t Hamming_distance() const;
 
     /**
-     * @brief Get the read sequence
+     * @brief Get the mutated fragment sequence
      *
-     * @return a constant reference to the read sequence
+     * @return a constant reference to the mutated
+     *   fragment sequence
      */
     inline const std::string& get_sequence() const
     {
@@ -359,7 +357,7 @@ public:
     }
 
     /**
-     * @brief Get the n-th nucleotide in the read
+     * @brief Get the n-th nucleotide in the mutated fragment
      *
      * @param pos is the position of the aimed nucleotide
      * @return a constant reference to the aimed nucleotide
@@ -372,41 +370,43 @@ public:
     /**
      * @brief Get the covered reference region
      *
-     * This method returns the region in the reference genome that the read
-     * would cover if the latter contained no deletions.
+     * This method returns the region in the reference genome that the
+     * mutated fragment would cover if the latter contained no deletions.
      *
      * @see get_covered_reference_region()
-     * @return The reference region covered by this read
+     * @return The reference region covered by this mutated fragment
      */
     GenomicRegion get_covered_reference_region() const;
 
     /**
-     * @brief Get the reference regions in the read
+     * @brief Get the reference regions in the mutated fragment
      *
      * This method returns the list of regions in the reference genome with
-     * bases in the current read. The returned regions are contained in the
-     * region returned by the method `get_covered_reference_region()`.
-     * However, there may be bases that belong to the latter, but not to the
-     * output of this method, because they are missing from the read due to
-     * deletion.
+     * bases in the current mutated fragment. The returned regions are
+     * contained in the region returned by the method
+     * `get_covered_reference_region()`. However, there may be bases that
+     * belong to the latter, but not to the output of this method, because
+     * they are missing from the mutated fragment due to deletions.
      *
-     * @see get_reference_regions_in_read()
+     * @see get_covered_reference_region()
      * @return The list of the reference regions that are present
-     *    in this this read
+     *    in this this mutated fragment
      */
-    std::list<GenomicRegion> get_reference_regions_in_read() const;
+    std::list<GenomicRegion> get_contained_reference_regions() const;
 
     /**
-     * @brief Compute the CIGAR string of a genomic region potentially affected by SIDs
+     * @brief Compute the CIGAR string
      *
-     * The CIGAR string a code that represents the alignment of a sequence over a reference
-     * in SAM files (see [1]). This method considers a set of SIDs, a genomic position,
-     * and a size, and it produces the CIGAR code corresponding to a simulated read whose
-     * sequence correspond to that of the reference genome from the specified position with
-     * the exception of positions in which the given SIDs were applied.
+     * The CIGAR string a code that represents the alignment of a sequence
+     * over a reference in SAM files (see [1]). This method considers a set
+     * of SIDs, a genomic position, and a size, and it produces the CIGAR
+     * code corresponding to a mutated fragment whose sequence correspond
+     * to that of the reference genome from the specified position with the
+     * exception of positions in which the given SIDs were applied.
      *
-     * [1] "Sequence Alignment/Map Format Specification", The SAM/BAM Format Specification
-     *     Working Group, 22 August 2022, http://samtools.github.io/hts-specs/SAMv1.pdf
+     * [1] "Sequence Alignment/Map Format Specification", The SAM/BAM Format
+     *     Specification Working Group, 22 August 2022,
+     *     http://samtools.github.io/hts-specs/SAMv1.pdf
      *
      * @return the CIGAR code corresponding to the mismatch vector
      */
@@ -421,10 +421,10 @@ public:
     void alter_base(const size_t pos, const char base);
 
     /**
-     * @brief Get the mutation on this read
+     * @brief Get the mutation on this mutated fragment
      *
-     * @return a constant reference to the mutation laying on
-     *      this read
+     * @return a constant reference to the mutation laying on this mutated
+     *   fragment
      */
     inline const std::vector<SID>& get_mutations() const
     {
@@ -432,10 +432,10 @@ public:
     }
 
     /**
-     * @brief Get the genomic position of this read
+     * @brief Get the genomic position of this mutated fragment
      *
-     * @return a constant reference to the genomic position
-     *      of the first base of this read
+     * @return a constant reference to the genomic position of the first
+     *   base of this mutated fragment
      */
     inline const GenomicPosition& get_genomic_position() const
     {
@@ -443,20 +443,18 @@ public:
     }
 
     /**
-     * @brief Get the read size
+     * @brief Get the mutated fragment size
      *
-     * @return the read size
+     * @return the mutated fragment size
      */
     inline size_t size() const {
         return nucleotides.size();
     }
 };
 
-}   // SequencingSimulations
-
 }   // Mutations
 
 }   // CLONES
 
 
-#endif // __CLONES_READ__
+#endif // __CLONES_MUTATED_FRAGMENTS__

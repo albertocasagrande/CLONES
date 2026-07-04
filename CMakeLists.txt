@@ -44,6 +44,7 @@ set(CLONES_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/allele.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/logics.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/mutant_mutation.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/mutant_properties.cpp
+                ${CMAKE_CURRENT_SOURCE_DIR}/src/mutated_fragment.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/mutation_engine.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/mutation_list.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/mutation.cpp
@@ -56,7 +57,6 @@ set(CLONES_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/allele.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/position_set.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/progress_bar.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/rate_update.cpp
-                ${CMAKE_CURRENT_SOURCE_DIR}/src/read.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/read_simulator.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/rs_index.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/sample_specification.cpp
@@ -112,6 +112,7 @@ set(CLONES_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/include/allele.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/mutant_id.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/mutant_mutation.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/mutant_properties.hpp
+                ${CMAKE_CURRENT_SOURCE_DIR}/include/mutated_fragment.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/mutation_engine.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/mutation_list.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/mutation_spec.hpp
@@ -126,7 +127,6 @@ set(CLONES_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/include/allele.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/position_set.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/progress_bar.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/rate_update.hpp
-                ${CMAKE_CURRENT_SOURCE_DIR}/include/read.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/read_simulator.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/rs_index.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/sample_specification.hpp

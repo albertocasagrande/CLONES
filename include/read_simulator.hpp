@@ -2,8 +2,8 @@
  * @file read_simulator.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines classes to simulate sequencing
- * @version 1.32
- * @date 2026-06-12
+ * @version 1.33
+ * @date 2026-07-04
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -48,7 +48,6 @@
 #include "genome_mutations.hpp"
 #include "phylogenetic_forest.hpp"
 #include "tissue_sample.hpp"
-#include "read.hpp"
 
 #include "fasta_chr_reader.hpp"
 
@@ -617,7 +616,7 @@ public:
      *
      * @param[in] read is a read
      */
-    void add(const Read& read);
+    void add(const MutatedFragment& read);
 
     /**
      * @brief Get the collected SID data
@@ -1399,7 +1398,7 @@ private:
 
         const size_t template_id = num_of_reads/template_read_data.size();
         const std::string template_name = get_template_name(chr_data.chr_id, template_id);
-        Read read[2];
+        MutatedFragment read[2];
         std::string qual[2];
         size_t hamming_dist[2];
         size_t over_threshold{0};
@@ -1408,8 +1407,8 @@ private:
 
             const GenomicPosition genomic_position{chr_data.chr_id, read_first_position};
 
-            read[i] = Read{chr_data.nucleotides, germline_mutations, somatic_mutations,
-                           genomic_position, read_size};
+            read[i] = MutatedFragment{chr_data.nucleotides, germline_mutations,
+                                      somatic_mutations, genomic_position, read_size};
 
             qual[i] = sequencer.simulate_seq(read[i], genomic_position, i==1);
             hamming_dist[i] = read[i].Hamming_distance();

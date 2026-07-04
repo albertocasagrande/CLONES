@@ -2,8 +2,8 @@
  * @file sequencer.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines sequencer models
- * @version 1.11
- * @date 2026-06-12
+ * @version 1.12
+ * @date 2026-07-04
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -38,7 +38,7 @@
 
 #include "genomic_position.hpp"
 #include "genomic_sequence.hpp"
-#include "read.hpp"
+#include "mutated_fragment.hpp"
 
 #include "error.hpp"
 
@@ -111,7 +111,7 @@ public:
      * @param[in] reverse is a Boolean flag for simulating reverse read
      * @return the quality scores of the read in Sanger FASTQ format
      */
-    virtual std::string simulate_seq(Mutations::SequencingSimulations::Read& read,
+    virtual std::string simulate_seq(Mutations::MutatedFragment& read,
                                      const Mutations::GenomicPosition& position,
                                      const bool& reverse=false) = 0;
 
@@ -491,7 +491,7 @@ public:
      * @param[in] reverse is a Boolean flag for simulating reverse read
      * @return the quality scores of the read in Sanger FASTQ format
      */
-    std::string simulate_seq(Mutations::SequencingSimulations::Read& read,
+    std::string simulate_seq(Mutations::MutatedFragment& read,
                              const Mutations::GenomicPosition& position,
                              const bool& reverse=false) override
     {
@@ -660,7 +660,7 @@ public:
      *      read
      * @return the quality scores of the read in Sanger FASTQ format
      */
-    std::string simulate_seq(Mutations::SequencingSimulations::Read& read,
+    std::string simulate_seq(Mutations::MutatedFragment& read,
                              const Mutations::GenomicPosition& position,
                              const bool& reverse=false) override
     {
