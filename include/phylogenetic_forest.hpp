@@ -2,8 +2,8 @@
  * @file phylogenetic_forest.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines classes and function for phylogenetic forests
- * @version 1.18
- * @date 2026-05-22
+ * @version 1.19
+ * @date 2026-07-06
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -625,6 +625,42 @@ template<typename MUTATION_TYPE>
 using MutationTour = LabelTour<PhylogeneticForest, MutationLabellingFunctor<MUTATION_TYPE>>;
 
 /**
+ * @brief Get a tour over the genome mutations of the forest nodes
+ *
+ * @param[in] forest is a constant reference to the forest whose labels
+ *          will be visited
+ * @param[in] with_pre_neoplastic is a Boolean flag to add/avoid pre-neoplastic
+ *      mutations
+ * @param[in] with_germinal is a Boolean flag to add/avoid germinal mutations
+ * @param[in] leaves_only is a Boolean flag to visit exclusively the leaves
+ * @return a tour over the genome mutations of the forest nodes
+ */
+MutationTour<GenomeMutations>
+get_mutation_tour(const PhylogeneticForest& forest,
+                  const bool with_pre_neoplastic=true,
+                  const bool with_germinal=false,
+                  const bool leaves_only = false);
+
+/**
+ * @brief Get a tour over the chromosome mutations of the forest nodes
+ *
+ * @param[in] forest is a constant reference to the forest whose labels
+ *          will be visited
+ * @param[in] chromosome_id is the identifier of the chromosome of interest
+ * @param[in] with_pre_neoplastic is a Boolean flag to add/avoid pre-neoplastic
+ *      mutations
+ * @param[in] with_germinal is a Boolean flag to add/avoid germinal mutations
+ * @param[in] leaves_only is a Boolean flag to visit exclusively the leaves
+ * @return a tour over the genome mutations of the forest nodes
+ */
+MutationTour<ChromosomeMutations>
+get_mutation_tour(const PhylogeneticForest& forest,
+                  const ChromosomeId& chromosome_id,
+                  const bool with_pre_neoplastic=true,
+                  const bool with_germinal=false,
+                  const bool leaves_only = false);
+
+/**
  * @brief Get a tour over the genome mutations of the forest leaves
  *
  * @param[in] forest is a constant reference to the forest whose labels
@@ -634,10 +670,13 @@ using MutationTour = LabelTour<PhylogeneticForest, MutationLabellingFunctor<MUTA
  * @param[in] with_germinal is a Boolean flag to add/avoid germinal mutations
  * @return a tour over the genome mutations of the forest leaves
  */
-MutationTour<GenomeMutations>
+inline MutationTour<GenomeMutations>
 get_leaf_mutation_tour(const PhylogeneticForest& forest,
                        const bool with_pre_neoplastic=true,
-                       const bool with_germinal=false);
+                       const bool with_germinal=false)
+{
+    return get_mutation_tour(forest, with_pre_neoplastic, with_germinal, true);
+}
 
 /**
  * @brief Get a tour over the chromosome mutations of the forest leaves
@@ -650,11 +689,15 @@ get_leaf_mutation_tour(const PhylogeneticForest& forest,
  * @param[in] with_germinal is a Boolean flag to add/avoid germinal mutations
  * @return a tour over the genome mutations of the forest leaves
  */
-MutationTour<ChromosomeMutations>
+inline MutationTour<ChromosomeMutations>
 get_leaf_mutation_tour(const PhylogeneticForest& forest,
                        const ChromosomeId& chromosome_id,
                        const bool with_pre_neoplastic=true,
-                       const bool with_germinal=false);
+                       const bool with_germinal=false)
+{
+    return get_mutation_tour(forest, chromosome_id, with_pre_neoplastic,
+                             with_germinal, true);
+}
 
 }   // Mutations
 
