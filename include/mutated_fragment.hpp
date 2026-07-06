@@ -2,8 +2,8 @@
  * @file mutated_fragment.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines mutated DNA fragments
- * @version 1.0
- * @date 2026-07-04
+ * @version 1.1
+ * @date 2026-07-06
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -332,6 +332,25 @@ public:
      * @param size is the aimed mutated fragment size
      */
     MutatedFragment(const std::string& reference,
+                    const std::map<GenomicPosition, std::shared_ptr<SID>>& germline,
+                    const std::map<GenomicPosition, std::shared_ptr<SID>>& somatic,
+                    const GenomicPosition& begin_pos,
+                    const size_t& size);
+
+    /**
+     * @brief A mutated fragment constructor
+     *
+     * @param reference_fragment is a fragment of the reference sequence
+     * @param fragment_offset is the offset of the reference fragment with
+     *   respect to the whole reference sequence
+     * @param germline is the position-mutation map for germline mutations
+     * @param somatic is the position-mutation map for somatic mutations
+     * @param begin_pos is the aimed position of the first reference base
+     *   of the mutated fragment
+     * @param size is the aimed mutated fragment size
+     */
+    MutatedFragment(const std::string& reference_fragment,
+                    const size_t& fragment_offset,
                     const std::map<GenomicPosition, std::shared_ptr<SID>>& germline,
                     const std::map<GenomicPosition, std::shared_ptr<SID>>& somatic,
                     const GenomicPosition& begin_pos,

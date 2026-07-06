@@ -2,8 +2,8 @@
  * @file mutated_fragment.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements mutated DNA fragments
- * @version 1.0
- * @date 2026-07-04
+ * @version 1.1
+ * @date 2026-07-06
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -423,6 +423,15 @@ MutatedFragment::MutatedFragment(const std::string& reference,
                                  const std::map<GenomicPosition, std::shared_ptr<SID>>& somatic,
                                  const GenomicPosition& begin_pos,
                                  const size_t& size):
+    MutatedFragment{reference, 0, germline, somatic, begin_pos, size}
+{}
+
+MutatedFragment::MutatedFragment(const std::string& reference_fragment,
+                                 const size_t& fragment_offset,
+                                 const std::map<GenomicPosition, std::shared_ptr<SID>>& germline,
+                                 const std::map<GenomicPosition, std::shared_ptr<SID>>& somatic,
+                                 const GenomicPosition& begin_pos,
+                                 const size_t& size):
     genomic_position{begin_pos}
 {
     auto it = MutationIterator::lower_bound(germline, somatic, begin_pos);
@@ -447,17 +456,17 @@ MutatedFragment::MutatedFragment(const std::string& reference,
     alignment_index.reserve(size);
     mutation_index = std::vector<MutationBaseIndex>(size);
 
-    size_t frag_end=0, ref_end=this->genomic_position.position;
+    size_t frag_end=0, ref_end=this->genomic_position.position-fragment_offset;
     size_t last_base = std::min(this->genomic_position.position+size,
-                                reference.size())-1;
+                                reference_fragment.size()+fragment_offset)-1;
 
     while (!it.is_end() && frag_end < size
-            && ref_end <= reference.size()) {
+            && ref_end <= reference_fragment.size()) {
 
         // copy from the reference up to the mutation begin
         const auto ref_up_to = std::min(static_cast<size_t>(it->first.position-1),
                                         last_base);
-        copy_reference(reference, ref_up_to, frag_end, ref_end);
+        copy_reference(reference_fragment, ref_up_to, frag_end, ref_end);
 
         if (frag_end < size) {
             const SID& mutation = *(it->second);
@@ -487,8 +496,8 @@ MutatedFragment::MutatedFragment(const std::string& reference,
     }
 
     // copy from the reference until the last base
-    last_base = size - frag_end - 1 + ref_end;
-    copy_reference(reference, last_base, frag_end, ref_end);
+    last_base = size - frag_end - 1 + ref_end + fragment_offset;
+    copy_reference(reference_fragment, last_base, frag_end, ref_end);
 
     nucleotides.resize(frag_end);
     mutation_index.resize(frag_end);
