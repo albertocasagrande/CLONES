@@ -33,6 +33,7 @@ set(CLONES_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/allele.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/event_wrapper.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/fasta_chr_reader.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/fasta_utils.cpp
+                ${CMAKE_CURRENT_SOURCE_DIR}/src/genome_fragment.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/genome_mutations.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/genomic_position.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/genomic_region.cpp
@@ -44,7 +45,6 @@ set(CLONES_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/allele.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/logics.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/mutant_mutation.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/mutant_properties.cpp
-                ${CMAKE_CURRENT_SOURCE_DIR}/src/mutated_fragment.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/mutation_engine.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/mutation_list.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/mutation.cpp
@@ -96,6 +96,7 @@ set(CLONES_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/include/allele.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/fasta_reader.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/fasta_chr_reader.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/fasta_utils.hpp
+                ${CMAKE_CURRENT_SOURCE_DIR}/include/genome_fragment.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/genome_mutations.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/genomic_position.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/genomic_region.hpp
@@ -112,7 +113,6 @@ set(CLONES_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/include/allele.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/mutant_id.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/mutant_mutation.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/mutant_properties.hpp
-                ${CMAKE_CURRENT_SOURCE_DIR}/include/mutated_fragment.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/mutation_engine.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/mutation_list.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/mutation_spec.hpp

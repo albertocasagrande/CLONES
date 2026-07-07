@@ -1,7 +1,7 @@
 /**
- * @file mutated_fragment.cpp
+ * @file genome_fragment.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
- * @brief Implements mutated DNA fragments
+ * @brief Implements genome DNA fragments
  * @version 1.2
  * @date 2026-07-07
  *
@@ -30,7 +30,7 @@
 
 #include <map>
 
-#include "mutated_fragment.hpp"
+#include "genome_fragment.hpp"
 
 #include "error.hpp"
 
@@ -40,7 +40,7 @@ namespace CLONES
 namespace Mutations
 {
 
-void MutatedFragment::MutationIterator::set_current_mutation()
+void GenomeFragment::MutationIterator::set_current_mutation()
 {
     if (direction == Direction::FORWARD) {
         if (p_end) {
@@ -57,7 +57,7 @@ void MutatedFragment::MutationIterator::set_current_mutation()
     }
 }
 
-MutatedFragment::MutationIterator::MutationIterator(const std::map<GenomicPosition, std::shared_ptr<SID>>& germline,
+GenomeFragment::MutationIterator::MutationIterator(const std::map<GenomicPosition, std::shared_ptr<SID>>& germline,
                                                     const std::map<GenomicPosition, std::shared_ptr<SID>>& somatic,
                                                     const std::map<GenomicPosition, std::shared_ptr<SID>>::const_iterator& germline_it,
                                                     const std::map<GenomicPosition, std::shared_ptr<SID>>::const_iterator& somatic_it):
@@ -72,14 +72,14 @@ MutatedFragment::MutationIterator::MutationIterator(const std::map<GenomicPositi
     set_current_mutation();
 }
 
-MutatedFragment::MutationIterator::MutationIterator():
+GenomeFragment::MutationIterator::MutationIterator():
     somatic{nullptr}, germline{nullptr}, s_it{}, g_it{},
-    direction{MutatedFragment::Direction::FORWARD},
+    direction{GenomeFragment::Direction::FORWARD},
     p_begin{true}, p_end{true}, g_begin{true}, g_end{true}
 {}
 
-MutatedFragment::MutationIterator
-MutatedFragment::MutationIterator::lower_bound(const std::map<GenomicPosition, std::shared_ptr<SID>>& germline,
+GenomeFragment::MutationIterator
+GenomeFragment::MutationIterator::lower_bound(const std::map<GenomicPosition, std::shared_ptr<SID>>& germline,
                                                const std::map<GenomicPosition, std::shared_ptr<SID>>& somatic,
                                                const GenomicPosition& genomic_position)
 {
@@ -89,8 +89,8 @@ MutatedFragment::MutationIterator::lower_bound(const std::map<GenomicPosition, s
     return {germline, somatic, g_it, s_it};
 }
 
-MutatedFragment::MutationIterator&
-MutatedFragment::MutationIterator::operator++()
+GenomeFragment::MutationIterator&
+GenomeFragment::MutationIterator::operator++()
 {
     if (direction == Direction::BACKWARD) {
         if (!p_end) {
@@ -153,7 +153,7 @@ MutatedFragment::MutationIterator::operator++()
     return *this;
 }
 
-MutatedFragment::MutationIterator MutatedFragment::MutationIterator::operator++(int)
+GenomeFragment::MutationIterator GenomeFragment::MutationIterator::operator++(int)
 {
     auto curr = *this;
 
@@ -162,8 +162,8 @@ MutatedFragment::MutationIterator MutatedFragment::MutationIterator::operator++(
     return curr;
 }
 
-MutatedFragment::MutationIterator&
-MutatedFragment::MutationIterator::operator--()
+GenomeFragment::MutationIterator&
+GenomeFragment::MutationIterator::operator--()
 {
     if (direction == Direction::FORWARD) {
         if (!p_begin) {
@@ -226,7 +226,7 @@ MutatedFragment::MutationIterator::operator--()
     return *this;
 }
 
-MutatedFragment::MutationIterator MutatedFragment::MutationIterator::operator--(int)
+GenomeFragment::MutationIterator GenomeFragment::MutationIterator::operator--(int)
 {
     auto curr = *this;
 
@@ -235,10 +235,10 @@ MutatedFragment::MutationIterator MutatedFragment::MutationIterator::operator--(
     return curr;
 }
 
-MutatedFragment::MutatedFragment()
+GenomeFragment::GenomeFragment()
 {}
 
-size_t MutatedFragment::Hamming_distance() const
+size_t GenomeFragment::Hamming_distance() const
 {
     size_t total_mismatches{0};
     for (const auto& mismatch: alignment) {
@@ -250,7 +250,7 @@ size_t MutatedFragment::Hamming_distance() const
     return total_mismatches;
 }
 
-GenomicRegion MutatedFragment::get_covered_reference_region() const
+GenomicRegion GenomeFragment::get_covered_reference_region() const
 {
     if (alignment.size()==0) {
         return {this->genomic_position, 0};
@@ -268,7 +268,7 @@ GenomicRegion MutatedFragment::get_covered_reference_region() const
             static_cast<GenomicRegion::Length>(seq_size)};
 }
 
-std::list<GenomicRegion> MutatedFragment::get_contained_reference_regions() const
+std::list<GenomicRegion> GenomeFragment::get_contained_reference_regions() const
 {
     std::list<GenomicRegion> covered_list;
 
@@ -302,7 +302,7 @@ std::list<GenomicRegion> MutatedFragment::get_contained_reference_regions() cons
     return covered_list;
 }
 
-std::string MutatedFragment::get_CIGAR() const
+std::string GenomeFragment::get_CIGAR() const
 {
     std::ostringstream oss;
 
@@ -351,7 +351,7 @@ void validate_mutation(const std::string& reference, const SID& mutation)
     }
 }
 
-void MutatedFragment::copy_reference(const std::string& reference,
+void GenomeFragment::copy_reference(const std::string& reference,
                                      const size_t up_to_index,
                                      size_t& mutated_pos, size_t& reference_pos)
 {
@@ -418,15 +418,15 @@ void update_alignment(std::vector<MatchingType>& alignment,
     }
 }
 
-MutatedFragment::MutatedFragment(const std::string& reference,
+GenomeFragment::GenomeFragment(const std::string& reference,
                                  const std::map<GenomicPosition, std::shared_ptr<SID>>& germline,
                                  const std::map<GenomicPosition, std::shared_ptr<SID>>& somatic,
                                  const GenomicPosition& begin_pos,
                                  const size_t& size):
-    MutatedFragment{reference, 0, germline, somatic, begin_pos, size}
+    GenomeFragment{reference, 0, germline, somatic, begin_pos, size}
 {}
 
-MutatedFragment::MutatedFragment(const std::string& reference_fragment,
+GenomeFragment::GenomeFragment(const std::string& reference_fragment,
                                  const size_t& fragment_offset,
                                  const std::map<GenomicPosition, std::shared_ptr<SID>>& germline,
                                  const std::map<GenomicPosition, std::shared_ptr<SID>>& somatic,
@@ -503,7 +503,7 @@ MutatedFragment::MutatedFragment(const std::string& reference_fragment,
     mutation_index.resize(frag_end);
 }
 
-void MutatedFragment::remove_mutation(const size_t& pos)
+void GenomeFragment::remove_mutation(const size_t& pos)
 {
     MutationBaseIndex& mb_index = mutation_index[pos];
 
@@ -521,7 +521,7 @@ void MutatedFragment::remove_mutation(const size_t& pos)
     mutations.resize(mutations.size()-1);
 }
 
-void MutatedFragment::alter_base(const size_t pos, const char base)
+void GenomeFragment::alter_base(const size_t pos, const char base)
 {
     if (nucleotides[pos] != base) {
         nucleotides[pos] = base;

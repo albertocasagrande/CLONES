@@ -1,9 +1,9 @@
 /**
- * @file mutated_fragment.cpp
+ * @file genome_fragment.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
- * @brief Defines mutated DNA fragments
- * @version 1.1
- * @date 2026-07-06
+ * @brief Defines genome DNA fragments
+ * @version 1.2
+ * @date 2026-07-07
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __CLONES_MUTATED_FRAGMENTS__
-#define __CLONES_MUTATED_FRAGMENTS__
+#ifndef __CLONES_GENOME_FRAGMENTS__
+#define __CLONES_GENOME_FRAGMENTS__
 
 #include <string>
 #include <vector>
@@ -58,9 +58,9 @@ enum class MatchingType
 };
 
 /**
- * @brief A class for representing mutated DNA fragments
+ * @brief A class for representing genome DNA fragments
  */
-class MutatedFragment
+class GenomeFragment
 {
     /**
      * @brief Fragment direction
@@ -75,7 +75,7 @@ class MutatedFragment
      * @brief A class for indices of bases in mutations
      *
      * Any valid object of this class refers to a base in the
-     * altered sequence of a mutation laying of a mutated
+     * altered sequence of a mutation laying of a genome
      * fragment. The objects of this class may also be not
      * valid if it does not refer to any base.
      */
@@ -115,7 +115,7 @@ class MutatedFragment
         }
     };
 
-    GenomicPosition genomic_position;   //!< The mutated fragment position
+    GenomicPosition genomic_position;   //!< The genome fragment position
 
     std::vector<SID> mutations;         //!< The mutations in the fragment
 
@@ -291,27 +291,27 @@ class MutatedFragment
     /**
      * @brief Copy a fragment of the reference
      *
-     * This method copies a reference fragment in the mutated fragment.
-     * It also update the positions of both the mutated fragment and
+     * This method copies a reference fragment in the genome fragment.
+     * It also update the positions of both the genome fragment and
      * the reference to the end so they correspond to the end of the
-     * mutated fragment and the corresponding position in the reference,
+     * genome fragment and the corresponding position in the reference,
      * respectively.
      *
      * @param reference is the reference
      * @param up_to_pos is reference position up to which the reference
      *   must be copied
-     * @param mutated_pos is the first position of the mutated fragment
+     * @param genome_pos is the first position of the genome fragment
      *   to be filled
      * @param reference_pos is the first position of the reference to be
      *   copied
      */
     void copy_reference(const std::string& reference, const size_t length,
-                        size_t& mutated_pos, size_t& reference_pos);
+                        size_t& genome_pos, size_t& reference_pos);
 
     /**
-     * @brief Remove the mutation in a mutated fragment position
+     * @brief Remove the mutation in a genome fragment position
      *
-     * @param pos is the mutated fragment position in which the
+     * @param pos is the genome fragment position in which the
      *    to-be-removed mutation lays
      */
     void remove_mutation(const size_t& pos);
@@ -319,26 +319,26 @@ public:
     /**
      * @brief The empty constructor
      */
-    MutatedFragment();
+    GenomeFragment();
 
     /**
-     * @brief A mutated fragment constructor
+     * @brief A genome fragment constructor
      *
      * @param reference is the reference sequence
      * @param germline is the position-mutation map for germline mutations
      * @param somatic is the position-mutation map for somatic mutations
      * @param begin_pos is the aimed position of the first reference base
-     *   of the mutated fragment
-     * @param size is the aimed mutated fragment size
+     *   of the genome fragment
+     * @param size is the aimed genome fragment size
      */
-    MutatedFragment(const std::string& reference,
+    GenomeFragment(const std::string& reference,
                     const std::map<GenomicPosition, std::shared_ptr<SID>>& germline,
                     const std::map<GenomicPosition, std::shared_ptr<SID>>& somatic,
                     const GenomicPosition& begin_pos,
                     const size_t& size);
 
     /**
-     * @brief A mutated fragment constructor
+     * @brief A genome fragment constructor
      *
      * @param reference_fragment is a fragment of the reference sequence
      * @param fragment_offset is the offset of the reference fragment with
@@ -346,10 +346,10 @@ public:
      * @param germline is the position-mutation map for germline mutations
      * @param somatic is the position-mutation map for somatic mutations
      * @param begin_pos is the aimed position of the first reference base
-     *   of the mutated fragment
-     * @param size is the aimed mutated fragment size
+     *   of the genome fragment
+     * @param size is the aimed genome fragment size
      */
-    MutatedFragment(const std::string& reference_fragment,
+    GenomeFragment(const std::string& reference_fragment,
                     const size_t& fragment_offset,
                     const std::map<GenomicPosition, std::shared_ptr<SID>>& germline,
                     const std::map<GenomicPosition, std::shared_ptr<SID>>& somatic,
@@ -359,15 +359,15 @@ public:
     /**
      * @brief Count the number of mismatched
      *
-     * @return the number of mismatches in the mutated
+     * @return the number of mismatches in the genome
      *   fragment
      */
     size_t Hamming_distance() const;
 
     /**
-     * @brief Get the mutated fragment sequence
+     * @brief Get the genome fragment sequence
      *
-     * @return a constant reference to the mutated
+     * @return a constant reference to the genome
      *   fragment sequence
      */
     inline const std::string& get_sequence() const
@@ -376,7 +376,7 @@ public:
     }
 
     /**
-     * @brief Get the n-th nucleotide in the mutated fragment
+     * @brief Get the n-th nucleotide in the genome fragment
      *
      * @param pos is the position of the aimed nucleotide
      * @return a constant reference to the aimed nucleotide
@@ -390,26 +390,26 @@ public:
      * @brief Get the covered reference region
      *
      * This method returns the region in the reference genome that the
-     * mutated fragment would cover if the latter contained no deletions.
+     * genome fragment would cover if the latter contained no deletions.
      *
      * @see get_covered_reference_region()
-     * @return The reference region covered by this mutated fragment
+     * @return The reference region covered by this genome fragment
      */
     GenomicRegion get_covered_reference_region() const;
 
     /**
-     * @brief Get the reference regions in the mutated fragment
+     * @brief Get the reference regions in the genome fragment
      *
      * This method returns the list of regions in the reference genome with
-     * bases in the current mutated fragment. The returned regions are
+     * bases in the current genome fragment. The returned regions are
      * contained in the region returned by the method
      * `get_covered_reference_region()`. However, there may be bases that
      * belong to the latter, but not to the output of this method, because
-     * they are missing from the mutated fragment due to deletions.
+     * they are missing from the genome fragment due to deletions.
      *
      * @see get_covered_reference_region()
      * @return The list of the reference regions that are present
-     *    in this this mutated fragment
+     *    in this this genome fragment
      */
     std::list<GenomicRegion> get_contained_reference_regions() const;
 
@@ -419,7 +419,7 @@ public:
      * The CIGAR string a code that represents the alignment of a sequence
      * over a reference in SAM files (see [1]). This method considers a set
      * of SIDs, a genomic position, and a size, and it produces the CIGAR
-     * code corresponding to a mutated fragment whose sequence correspond
+     * code corresponding to a genome fragment whose sequence correspond
      * to that of the reference genome from the specified position with the
      * exception of positions in which the given SIDs were applied.
      *
@@ -440,9 +440,9 @@ public:
     void alter_base(const size_t pos, const char base);
 
     /**
-     * @brief Get the mutation on this mutated fragment
+     * @brief Get the mutation on this genome fragment
      *
-     * @return a constant reference to the mutation laying on this mutated
+     * @return a constant reference to the mutation laying on this genome
      *   fragment
      */
     inline const std::vector<SID>& get_mutations() const
@@ -451,10 +451,10 @@ public:
     }
 
     /**
-     * @brief Get the genomic position of this mutated fragment
+     * @brief Get the genomic position of this genome fragment
      *
      * @return a constant reference to the genomic position of the first
-     *   base of this mutated fragment
+     *   base of this genome fragment
      */
     inline const GenomicPosition& get_genomic_position() const
     {
@@ -462,9 +462,9 @@ public:
     }
 
     /**
-     * @brief Get the mutated fragment size
+     * @brief Get the genome fragment size
      *
-     * @return the mutated fragment size
+     * @return the genome fragment size
      */
     inline size_t size() const {
         return nucleotides.size();
@@ -476,4 +476,4 @@ public:
 }   // CLONES
 
 
-#endif // __CLONES_MUTATED_FRAGMENTS__
+#endif // __CLONES_GENOME_FRAGMENTS__

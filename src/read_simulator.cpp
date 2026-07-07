@@ -2,8 +2,8 @@
  * @file read_simulator.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements classes to simulate sequencing
- * @version 1.11
- * @date 2026-07-04
+ * @version 1.12
+ * @date 2026-07-07
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -332,7 +332,7 @@ void ChrSampleStatistics::update(const SID& mutation)
     }
 }
 
-void ChrSampleStatistics::add(const MutatedFragment& read)
+void ChrSampleStatistics::add(const GenomeFragment& read)
 {
     increase_coverage(read.get_covered_reference_region());
 

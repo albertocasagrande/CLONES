@@ -2,8 +2,8 @@
  * @file read_simulator.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines classes to simulate sequencing
- * @version 1.33
- * @date 2026-07-04
+ * @version 1.34
+ * @date 2026-07-07
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -616,7 +616,7 @@ public:
      *
      * @param[in] read is a read
      */
-    void add(const MutatedFragment& read);
+    void add(const GenomeFragment& read);
 
     /**
      * @brief Get the collected SID data
@@ -1398,7 +1398,7 @@ private:
 
         const size_t template_id = num_of_reads/template_read_data.size();
         const std::string template_name = get_template_name(chr_data.chr_id, template_id);
-        MutatedFragment read[2];
+        GenomeFragment read[2];
         std::string qual[2];
         size_t hamming_dist[2];
         size_t over_threshold{0};
@@ -1407,7 +1407,7 @@ private:
 
             const GenomicPosition genomic_position{chr_data.chr_id, read_first_position};
 
-            read[i] = MutatedFragment{chr_data.nucleotides, germline_mutations,
+            read[i] = GenomeFragment{chr_data.nucleotides, germline_mutations,
                                       somatic_mutations, genomic_position, read_size};
 
             qual[i] = sequencer.simulate_seq(read[i], genomic_position, i==1);
