@@ -2,8 +2,8 @@
  * @file phylogenetic_forest.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements classes and function for phylogenetic forests
- * @version 1.20
- * @date 2026-07-06
+ * @version 1.21
+ * @date 2026-07-07
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -350,30 +350,6 @@ void PhylogeneticForest::clear()
     CNA_first_cells.clear();
     sample_statistics.clear();
     DescendantForest::clear();
-}
-
-template<typename MUTATION_TYPE>
-  requires (std::is_same_v<GenomeMutations, MUTATION_TYPE>
-            || std::is_same_v<ChromosomeMutations, MUTATION_TYPE>)
-MutationTour<MUTATION_TYPE>
-get_mutation_tour(const PhylogeneticForest& forest,
-                  const MUTATION_TYPE& mutations,
-                  const bool with_pre_neoplastic,
-                  const bool with_germinal,
-                  const bool leaves_only)
-{
-    using FunctorType = MutationLabellingFunctor<MUTATION_TYPE>;
-    using LabelTourType = MutationTour<MUTATION_TYPE>;
-
-    FunctorType l_functor(with_pre_neoplastic);
-
-    if (with_germinal) {
-        return LabelTourType(forest, l_functor, mutations, leaves_only);
-    }
-
-    auto mutation_structure = mutations.copy_structure();
-
-    return LabelTourType(forest, l_functor, mutation_structure, leaves_only);
 }
 
 MutationTour<GenomeMutations>

@@ -2,8 +2,8 @@
  * @file phylogenetic_forest.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines classes and function for phylogenetic forests
- * @version 1.19
- * @date 2026-07-06
+ * @version 1.20
+ * @date 2026-07-07
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -147,8 +147,8 @@ public:
          * @return a constant reference to the genome mutations of the cell
          *      represented by the node
          */
-        inline CellGenomeMutations cell_mutations(const bool& with_pre_neoplastic=true,
-                                                  const bool& with_germinal=false) const
+        inline CellGenomeMutations cell_mutations(const bool& with_pre_neoplastic = true,
+                                                  const bool& with_germinal = false) const
         {
             return forest->get_cell_mutations(get_id(), with_pre_neoplastic, with_germinal);
         }
@@ -382,8 +382,8 @@ public:
      * @return the genome mutations of the cell with identifier `cell_id`
      */
     CellGenomeMutations get_cell_mutations(const Mutants::CellId& cell_id,
-                                           const bool& with_pre_neoplastic=true,
-                                           const bool& with_germinal=false) const;
+                                           const bool& with_pre_neoplastic = true,
+                                           const bool& with_germinal = false) const;
 
     /**
      * @brief Get map associating each SID to the first cell in which it occurs
@@ -451,8 +451,8 @@ public:
      *      the corresponding wild type genome.
      */
     std::map<Mutants::CellId, CellGenomeMutations>
-    get_wild_type_genomes(const bool with_pre_neoplastic=true,
-                          const bool with_germinal=true) const;
+    get_wild_type_genomes(const bool with_pre_neoplastic = true,
+                          const bool with_germinal = true) const;
 
     /**
      * @brief Get the CNA break points
@@ -565,14 +565,36 @@ public:
 };
 
 /**
+ * @brief Define the concept of mutation container
+ *
+ * @tparam T is the tested type parameter
+ */
+template <typename T>
+concept isMutationContainer =
+    std::copy_constructible<T>
+    && std::default_initializable<T>
+    && requires(T instance, const MutationList& ml) {
+        { instance.apply_contained(ml) } -> std::convertible_to<bool>;
+       };
+
+/**
+ * @brief Define the concept `hasCopyStructure`
+ *
+ * @tparam T is the tested type parameter
+ */
+template <typename T>
+concept hasCopyStructure = requires(const T const_instance) {
+    { const_instance.copy_structure() } -> std::convertible_to<T>;
+};
+
+/**
  * @brief The mutation labelling functor
  *
  * @tparam MUTATION_CONTAINER is the type of container for the mutations. It can
  *      be either `GenomeMutations` or `ChromosomeMutations`
  */
-template<typename MUTATION_CONTAINER,
-            std::enable_if_t<std::is_same_v<MUTATION_CONTAINER, ChromosomeMutations>
-                            || std::is_same_v<MUTATION_CONTAINER, GenomeMutations>, bool> = true>
+template<typename MUTATION_CONTAINER>
+ requires (isMutationContainer<MUTATION_CONTAINER>)
 class MutationLabellingFunctor
 {
     bool with_pre_neoplastic;   //!< A Boolean flag to add/avoid pre-neoplastic mutations
@@ -588,7 +610,7 @@ public:
      *
      * @param with_pre_neoplastic is a Boolean flag to add/avoid pre-neoplastic mutations
      */
-    explicit MutationLabellingFunctor(const bool with_pre_neoplastic=true):
+    explicit MutationLabellingFunctor(const bool with_pre_neoplastic = true):
         with_pre_neoplastic(with_pre_neoplastic)
     {}
 
@@ -597,11 +619,10 @@ public:
      *
      * @param parent_mutations is the mutation of the parent of current node
      * @param node is the current node
-     * @return Either the `GenomeMutations` or `ChromosomeMutations` labelling the
-     *      current node
+     * @return A mutation container labelling the current node
      */
     MUTATION_CONTAINER operator()(const MUTATION_CONTAINER& parent_mutations,
-                                    const PhylogeneticForest::const_node& node) const
+                                  const PhylogeneticForest::const_node& node) const
     {
         MUTATION_CONTAINER mutations{parent_mutations};
 
@@ -618,11 +639,47 @@ public:
 /**
  * @brief The tour of the mutations of a phylogenetic forest
  *
- * @tparam MUTATION_TYPE is the type of container for the mutations. It can
- *      be either `GenomeMutations` or `ChromosomeMutations`
+ * @tparam MUTATION_CONTAINER is the type of container for the mutations.
  */
-template<typename MUTATION_TYPE>
-using MutationTour = LabelTour<PhylogeneticForest, MutationLabellingFunctor<MUTATION_TYPE>>;
+template<typename MUTATION_CONTAINER>
+ requires (isMutationContainer<MUTATION_CONTAINER>)
+using MutationTour = LabelTour<PhylogeneticForest, MutationLabellingFunctor<MUTATION_CONTAINER>>;
+
+/**
+ * @brief Get a tour over mutations of the forest nodes
+ *
+ * @param[in] forest is a constant reference to the forest whose labels
+ *          will be visited
+ * @param[in] inital_mutations is the initial mutation container
+ * @param[in] with_pre_neoplastic is a Boolean flag to add/avoid pre-neoplastic
+ *      mutations
+ * @param[in] with_germinal is a Boolean flag to add/avoid germinal mutations
+ * @param[in] leaves_only is a Boolean flag to visit exclusively the leaves
+ * @return a tour over the genome mutations of the forest nodes
+ */
+template<typename MUTATION_CONTAINER>
+  requires (isMutationContainer<MUTATION_CONTAINER>
+            && hasCopyStructure<MUTATION_CONTAINER>)
+MutationTour<MUTATION_CONTAINER>
+get_mutation_tour(const PhylogeneticForest& forest,
+                  const MUTATION_CONTAINER& inital_mutations,
+                  const bool with_pre_neoplastic,
+                  const bool with_germinal,
+                  const bool leaves_only)
+{
+    using FunctorType = MutationLabellingFunctor<MUTATION_CONTAINER>;
+    using LabelTourType = MutationTour<MUTATION_CONTAINER>;
+
+    FunctorType l_functor(with_pre_neoplastic);
+
+    if (with_germinal) {
+        return LabelTourType(forest, l_functor, inital_mutations, leaves_only);
+    }
+
+    auto mutation_structure = inital_mutations.copy_structure();
+
+    return LabelTourType(forest, l_functor, mutation_structure, leaves_only);
+}
 
 /**
  * @brief Get a tour over the genome mutations of the forest nodes
@@ -637,8 +694,8 @@ using MutationTour = LabelTour<PhylogeneticForest, MutationLabellingFunctor<MUTA
  */
 MutationTour<GenomeMutations>
 get_mutation_tour(const PhylogeneticForest& forest,
-                  const bool with_pre_neoplastic=true,
-                  const bool with_germinal=false,
+                  const bool with_pre_neoplastic = true,
+                  const bool with_germinal = false,
                   const bool leaves_only = false);
 
 /**
@@ -656,8 +713,8 @@ get_mutation_tour(const PhylogeneticForest& forest,
 MutationTour<ChromosomeMutations>
 get_mutation_tour(const PhylogeneticForest& forest,
                   const ChromosomeId& chromosome_id,
-                  const bool with_pre_neoplastic=true,
-                  const bool with_germinal=false,
+                  const bool with_pre_neoplastic = true,
+                  const bool with_germinal = false,
                   const bool leaves_only = false);
 
 /**
@@ -672,8 +729,8 @@ get_mutation_tour(const PhylogeneticForest& forest,
  */
 inline MutationTour<GenomeMutations>
 get_leaf_mutation_tour(const PhylogeneticForest& forest,
-                       const bool with_pre_neoplastic=true,
-                       const bool with_germinal=false)
+                       const bool with_pre_neoplastic = true,
+                       const bool with_germinal = false)
 {
     return get_mutation_tour(forest, with_pre_neoplastic, with_germinal, true);
 }
@@ -692,8 +749,8 @@ get_leaf_mutation_tour(const PhylogeneticForest& forest,
 inline MutationTour<ChromosomeMutations>
 get_leaf_mutation_tour(const PhylogeneticForest& forest,
                        const ChromosomeId& chromosome_id,
-                       const bool with_pre_neoplastic=true,
-                       const bool with_germinal=false)
+                       const bool with_pre_neoplastic = true,
+                       const bool with_germinal = false)
 {
     return get_mutation_tour(forest, chromosome_id, with_pre_neoplastic,
                              with_germinal, true);
