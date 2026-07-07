@@ -2,8 +2,8 @@
  * @file mutated_fragment.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements mutated DNA fragments
- * @version 1.1
- * @date 2026-07-06
+ * @version 1.2
+ * @date 2026-07-07
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -465,7 +465,7 @@ MutatedFragment::MutatedFragment(const std::string& reference_fragment,
 
         // copy from the reference up to the mutation begin
         const auto ref_up_to = std::min(static_cast<size_t>(it->first.position-1),
-                                        last_base);
+                                        last_base)-fragment_offset;
         copy_reference(reference_fragment, ref_up_to, frag_end, ref_end);
 
         if (frag_end < size) {
