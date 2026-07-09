@@ -2,8 +2,8 @@
  * @file phylogenetic_forest.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements classes and function for phylogenetic forests
- * @version 1.21
- * @date 2026-07-07
+ * @version 1.22
+ * @date 2026-07-09
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -52,16 +52,26 @@ PhylogeneticForest::PhylogeneticForest():
     DescendantForest()
 {}
 
+PhylogeneticForest::const_node::const_node():
+    Mutants::DescendantForest::_const_node<PhylogeneticForest>{}
+{}
+
 PhylogeneticForest::const_node::const_node(const PhylogeneticForest* forest, const Mutants::CellId cell_id):
     Mutants::DescendantForest::_const_node<PhylogeneticForest>(forest, cell_id)
+{}
+
+PhylogeneticForest::node::node():
+    Mutants::DescendantForest::_node<PhylogeneticForest>{}
 {}
 
 PhylogeneticForest::node::node(PhylogeneticForest* forest, const Mutants::CellId cell_id):
     Mutants::DescendantForest::_node<PhylogeneticForest>(forest, cell_id)
 {}
 
-MutationList PhylogeneticForest::node::novel_mutations() const
+MutationList PhylogeneticForest::const_node::arising_mutations() const
 {
+    assert_initialized();
+
     auto found = forest->arising_mutations.find(cell_id);
     if (found == forest->arising_mutations.end()) {
         return MutationList();
@@ -72,6 +82,8 @@ MutationList PhylogeneticForest::node::novel_mutations() const
 
 const MutationList& PhylogeneticForest::const_node::pre_neoplastic_mutations() const
 {
+    assert_initialized();
+
     auto found = forest->get_pre_neoplastic_mutations().find(get_id());
 
     if (found != forest->get_pre_neoplastic_mutations().end()) {

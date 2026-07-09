@@ -2,8 +2,8 @@
  * @file phylogenetic_forest.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines classes and function for phylogenetic forests
- * @version 1.20
- * @date 2026-07-07
+ * @version 1.21
+ * @date 2026-07-09
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -131,6 +131,11 @@ public:
     {
     public:
         /**
+         * @brief The empty constructor
+         */
+        const_node();
+
+        /**
          * @brief A constructor for a constant node
          *
          * @param[in] forest is the forest of the node
@@ -150,6 +155,8 @@ public:
         inline CellGenomeMutations cell_mutations(const bool& with_pre_neoplastic = true,
                                                   const bool& with_germinal = false) const
         {
+            assert_initialized();
+
             return forest->get_cell_mutations(get_id(), with_pre_neoplastic, with_germinal);
         }
 
@@ -177,13 +184,9 @@ public:
         /**
          * @brief Get the mutations arising in the cell represented by this node
          *
-         * @return a constant reference to the list of mutations arising in the
-         *      cell represented by this node
+         * @return The list of mutations arising in the cell represented by this node
          */
-        inline const MutationList& arising_mutations() const
-        {
-            return forest->arising_mutations.at(get_id());
-        }
+        MutationList arising_mutations() const;
 
         /**
          * @brief Get the pre-neoplastic mutations of the cell represented by this node
@@ -226,7 +229,12 @@ public:
         }
     public:
         /**
-         * @brief A constructor for a constant node
+         * @brief The empty constructor
+         */
+        node();
+
+        /**
+         * @brief A constructor for a node
          *
          * @param[in,out] forest is the forest of the node
          * @param[in] cell_id is the cell id of a cell in the forest
@@ -234,12 +242,14 @@ public:
         node(PhylogeneticForest* forest, const Mutants::CellId cell_id);
 
         /**
-         * @brief Get the mutation that occurred for the first time in this node
+         * @brief convert a node to a const_node
          *
-         * @return a constant reference to the list of the mutation that occurred
-         *      for the first time in this node
+         * @return the corresponding const_node
          */
-        MutationList novel_mutations() const;
+        inline operator const_node() const
+        {
+            return const_node(forest, cell_id);
+        }
 
         /**
          * @brief Get the parent node
@@ -274,6 +284,8 @@ public:
                                                  || std::is_same_v<MUTATION_TYPE,CNA>, bool> = true>
         void add_new_mutation(const MUTATION_TYPE& mutation)
         {
+            assert_initialized();
+
             if (mutation.nature == Mutation::PRE_NEOPLASTIC) {
                 get_forest().pre_neoplastic_mutations[cell_id].insert(mutation);
             } else {
@@ -293,12 +305,11 @@ public:
         /**
          * @brief Get the mutations arising in the cell represented by this node
          *
-         * @return a constant reference to the list of mutations arising in the
-         *      cell represented by this node
+         * @return The list of mutations arising in the cell represented by this node
          */
-        inline const MutationList& arising_mutations() const
+        inline MutationList arising_mutations() const
         {
-            return forest->arising_mutations.at(get_id());
+            return static_cast<const_node>(*this).arising_mutations();
         }
 
         /**
@@ -309,6 +320,8 @@ public:
          */
         inline MutationList& arising_mutations()
         {
+            assert_initialized();
+
             return forest->arising_mutations[get_id()];
         }
 

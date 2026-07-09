@@ -2,8 +2,8 @@
  * @file mutation_engine.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a class to place mutations on a descendant forest
- * @version 1.39
- * @date 2026-06-30
+ * @version 1.40
+ * @date 2026-07-09
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -981,7 +981,7 @@ class MutationEngine
     static void remove_from_reference_node_SIDs(const PhylogeneticForest::node& node,
                                         GenomeMutations& genome_mutations)
     {
-        auto mutation_list = node.novel_mutations();
+        auto mutation_list = node.arising_mutations();
 
         for (auto it=mutation_list.begin(); it != mutation_list.end(); ++it) {
             if (it.get_type() == MutationList::MutationType::SID_TURN) {

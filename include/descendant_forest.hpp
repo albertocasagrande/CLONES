@@ -2,8 +2,8 @@
  * @file descendant_forest.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines classes and function for descendant forests
- * @version 1.12
- * @date 2026-06-19
+ * @version 1.13
+ * @date 2026-07-09
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -203,14 +203,31 @@ protected:
         CellId cell_id;         //!< The cell id of a cell in the forest
 
         /**
+         * @brief An empty constructor
+         */
+        _const_node():
+            forest{nullptr}
+        {}
+
+        /**
          * @brief A constructor for a constant node
          *
          * @param forest is the forest of the node
          * @param cell_id is the cell id of a cell in the forest
          */
         _const_node(const FOREST_TYPE* forest, const CellId cell_id):
-                forest(const_cast<FOREST_TYPE*>(forest)), cell_id(cell_id)
+            forest{const_cast<FOREST_TYPE*>(forest)}, cell_id{cell_id}
         {}
+
+        /**
+         * @brief Assert that the object has been initialized
+         */
+        void assert_initialized() const
+        {
+            if (forest==nullptr) {
+                throw Error<std::runtime_error>("The forest node has not been initialized.");
+            }
+        }
 
         /**
          * @brief Cast to Cell
@@ -223,6 +240,8 @@ protected:
          */
         inline operator const Cell&() const
         {
+            assert_initialized();
+
             return forest->cells.at(cell_id);
         }
 
@@ -235,9 +254,7 @@ protected:
         template<typename NODE_TYPE = _const_node<FOREST_TYPE>>
         NODE_TYPE parent() const
         {
-            if (forest==nullptr) {
-                throw Error<std::runtime_error>("The forest node has not been initialized.");
-            }
+            assert_initialized();
 
             return NODE_TYPE(forest, forest->cells.at(cell_id).get_parent_id());
         }
@@ -252,9 +269,7 @@ protected:
         template<typename NODE_TYPE = _const_node<FOREST_TYPE>>
         std::vector<NODE_TYPE> children() const
         {
-            if (forest==nullptr) {
-                throw Error<std::runtime_error>("The forest node has not been initialized.");
-            }
+            assert_initialized();
 
             std::vector<NODE_TYPE> nodes;
 
@@ -272,6 +287,8 @@ protected:
          */
         inline bool is_leaf() const
         {
+            assert_initialized();
+
             return forest->branches.at(cell_id).size()==0;
         }
 
@@ -282,6 +299,8 @@ protected:
          */
         inline bool is_root() const
         {
+            assert_initialized();
+
             const auto& cell = forest->cells.at(cell_id);
 
             return cell.get_id() == cell.get_parent_id();
@@ -294,6 +313,8 @@ protected:
          */
         size_t height() const
         {
+            assert_initialized();
+
             size_t curr_height{0};
             for (const auto& child: children()) {
                 curr_height = std::max(curr_height, child.height()+1);
@@ -309,6 +330,8 @@ protected:
          */
         inline const CellId& get_id() const
         {
+            assert_initialized();
+
             return cell_id;
         }
 
@@ -322,9 +345,7 @@ protected:
          */
         const Evolutions::TissueSample& get_sample() const
         {
-            if (forest==nullptr) {
-                throw Error<std::runtime_error>("The forest node has not been initialized.");
-            }
+            assert_initialized();
 
             auto found = forest->coming_from.find(cell_id);
 
@@ -342,6 +363,8 @@ protected:
          */
         inline const SpeciesId& get_species_id() const
         {
+            assert_initialized();
+
             return forest->cells.at(cell_id).get_species_id();
         }
 
@@ -393,6 +416,8 @@ protected:
          */
         inline const SpeciesProperties& get_species_properties() const
         {
+            assert_initialized();
+
             return forest->species_data.at(get_species_id());
         }
 
@@ -403,6 +428,8 @@ protected:
          */
         inline const Time& get_birth_time() const
         {
+            assert_initialized();
+
             return forest->cells.at(cell_id).get_birth_time();
         }
 
@@ -413,6 +440,8 @@ protected:
          */
         const Time& get_death_time() const
         {
+            assert_initialized();
+
             const auto& siblings = forest->branches.at(cell_id);
             if (siblings.empty()) {
                 return get_sample().get_time();
@@ -430,6 +459,8 @@ protected:
          */
         inline const FOREST_TYPE& get_forest() const
         {
+            assert_initialized();
+
             return *forest;
         }
 
@@ -445,6 +476,13 @@ protected:
     class _node : public _const_node<FOREST_TYPE>
     {
     public:
+        /**
+         * @brief An empty constructor
+         */
+        _node():
+            _const_node<FOREST_TYPE>()
+        {}
+
         /**
          * @brief A constructor for a constant node
          *
@@ -474,9 +512,7 @@ protected:
         template<typename NODE_TYPE = _node<FOREST_TYPE>>
         NODE_TYPE parent()
         {
-            if (_const_node<FOREST_TYPE>::forest==nullptr) {
-                throw Error<std::runtime_error>("The forest node has not been initialized.");
-            }
+            _const_node<FOREST_TYPE>::assert_initialized();
 
             return NODE_TYPE(_const_node<FOREST_TYPE>::forest,
                              _const_node<FOREST_TYPE>::forest->cells.at(_const_node<FOREST_TYPE>::cell_id).get_parent_id());
@@ -492,9 +528,7 @@ protected:
         template<typename NODE_TYPE = _node<FOREST_TYPE>>
         std::vector<NODE_TYPE> children()
         {
-            if (_const_node<FOREST_TYPE>::forest==nullptr) {
-                throw Error<std::runtime_error>("The forest node has not been initialized.");
-            }
+            _const_node<FOREST_TYPE>::assert_initialized();
 
             std::vector<NODE_TYPE> nodes;
 
@@ -512,6 +546,8 @@ protected:
          */
         inline FOREST_TYPE& get_forest()
         {
+            _const_node<FOREST_TYPE>::assert_initialized();
+
             return *(_const_node<FOREST_TYPE>::forest);
         }
 
