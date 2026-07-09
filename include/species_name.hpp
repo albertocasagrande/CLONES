@@ -2,8 +2,8 @@
  * @file species_name.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Define species name representation and parsing
- * @version 1.2
- * @date 2026-06-21
+ * @version 1.3
+ * @date 2026-07-09
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -74,14 +74,14 @@ public:
     static bool is_valid_name(const std::string& s);
 
     /**
-     * @brief Validate a string as possible mutant or epigenetic state name
+     * @brief Assert that a string is possible mutant or epigenetic state name
      *
      * If the string is not a valid mutant or epigenetic state name, the method
      * throw a `Error<std::domain_error>` object.
      *
      * @param s is the string to be validate
      */
-    static void validate_name(const std::string& s);
+    static void assert_name(const std::string& s);
 
     /**
      * @brief A constructor

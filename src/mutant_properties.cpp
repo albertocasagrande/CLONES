@@ -2,8 +2,8 @@
  * @file mutant_properties.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements the mutant properties
- * @version 1.7
- * @date 2026-06-20
+ * @version 1.8
+ * @date 2026-07-09
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -52,7 +52,7 @@ MutantProperties::MutantProperties()
 MutantProperties::MutantProperties(const std::string& name):
     name(name)
 {
-    SpeciesName::validate_name(name);
+    SpeciesName::assert_name(name);
 
     auto ids_id = mutant_ids.find(name);
     if (ids_id != mutant_ids.end()) {
@@ -91,7 +91,7 @@ SpeciesProperties::SpeciesProperties(const MutantProperties& mutant,
                                      const std::string& epistate_name):
     mutant_properties{mutant}, epigenetic_name{epistate_name}
 {
-    SpeciesName::validate_name(epistate_name);
+    SpeciesName::assert_name(epistate_name);
 
     const std::string name = SpeciesName(mutant.get_name(), epistate_name);
 

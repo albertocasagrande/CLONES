@@ -2,8 +2,8 @@
  * @file species_name.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implement species name representation and parsing
- * @version 1.4
- * @date 2026-07-01
+ * @version 1.5
+ * @date 2026-07-09
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -47,8 +47,8 @@ SpeciesName::SpeciesName(const std::string mutant_name,
                          const std::string epistate_name):
     mutant_name{mutant_name},  epistate_name{epistate_name}
 {
-    validate_name(mutant_name);
-    validate_name(epistate_name);
+    assert_name(mutant_name);
+    assert_name(epistate_name);
 }
 
 SpeciesName::SpeciesName(const std::string& species_name)
@@ -124,7 +124,7 @@ SpeciesName::operator std::string() const
     return mutant_name + "[" + epistate_name + "]";
 }
 
-void SpeciesName::validate_name(const std::string& s)
+void SpeciesName::assert_name(const std::string& s)
 {
     if (s == "") {
          throw Error<std::domain_error>("Mutant and epigenetic state names must "
