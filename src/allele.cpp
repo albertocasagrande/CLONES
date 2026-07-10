@@ -2,8 +2,8 @@
  * @file allele.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements allele representation
- * @version 1.9
- * @date 2026-06-11
+ * @version 1.10
+ * @date 2026-07-10
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -574,6 +574,16 @@ Allele Allele::copy_structure() const
     }
 
     return copy;
+}
+
+size_t Allele::num_of_mutations() const
+{
+    size_t count{0};
+    for (const auto& [pos, fragment] : get_fragments()) {
+        count += fragment.num_of_mutations();
+    }
+
+    return count;
 }
 
 bool operator==(const CLONES::Mutations::AlleleFragment& lhs,

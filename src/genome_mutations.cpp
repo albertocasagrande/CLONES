@@ -2,8 +2,8 @@
  * @file genome_mutations.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements genome and chromosome data structures
- * @version 1.24
- * @date 2026-06-11
+ * @version 1.25
+ * @date 2026-07-10
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -585,6 +585,16 @@ ChromosomeMutations::get_allelic_map(const std::set<ChrPosition>& break_points,
     return allelic_map;
 }
 
+size_t ChromosomeMutations::num_of_mutations() const
+{
+    size_t count{0};
+    for (const auto& [allele_id, allele] : get_alleles()) {
+        count += allele.num_of_mutations();
+    }
+
+    return count;
+}
+
 GenomeMutations::GenomeMutations()
 {}
 
@@ -954,6 +964,26 @@ GenomeMutations::get_CNA_break_points() const
     }
 
     return b_points;
+}
+
+size_t GenomeMutations::num_of_mutations() const
+{
+    size_t count{0};
+    for (const auto& [chr_id, chr] : get_chromosomes()) {
+        count += chr.num_of_mutations();
+    }
+
+    return count;
+}
+
+size_t GenomeMutations::num_of_CNAs() const
+{
+    size_t count{0};
+    for (const auto& [chr_id, chr] : get_chromosomes()) {
+        count += chr.num_of_CNAs();
+    }
+
+    return count;
 }
 
 CellGenomeMutations::CellGenomeMutations():

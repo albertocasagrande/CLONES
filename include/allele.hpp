@@ -2,8 +2,8 @@
  * @file allele.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines allele representation
- * @version 1.8
- * @date 2026-05-22
+ * @version 1.9
+ * @date 2026-07-10
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -332,6 +332,16 @@ public:
      *      mutations in `genomic_region`
      */
     bool has_driver_mutations_in(const GenomicRegion& genomic_region) const;
+
+    /**
+     * @brief Get the number of mutations
+     *
+     * @return The number of mutations in the object
+     */
+    inline size_t num_of_mutations() const
+    {
+        return get_mutations().size();
+    }
 
     /**
      * @brief Save an allele fragment in an archive
@@ -669,6 +679,13 @@ public:
      * @return A deep copy of the allele
      */
     Allele deep_copy() const;
+
+    /**
+     * @brief Get the number of mutations
+     *
+     * @return The number of mutations in the object
+     */
+    size_t num_of_mutations() const;
 
     /**
      * @brief Save an allele in an archive

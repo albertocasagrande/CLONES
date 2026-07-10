@@ -2,8 +2,8 @@
  * @file genome_mutations.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines genome and chromosome data structures
- * @version 1.19
- * @date 2026-06-11
+ * @version 1.20
+ * @date 2026-07-10
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -735,6 +735,23 @@ public:
     bool includes(const SID& mutation) const;
 
     /**
+     * @brief Get the number of mutations
+     *
+     * @return The number of mutations in the object
+     */
+    size_t num_of_mutations() const;
+
+    /**
+     * @brief  Get the number of CNAs
+     *
+     * @return The number of CNAs in the object
+     */
+    inline size_t num_of_CNAs() const
+    {
+        return get_CNAs().size();
+    }
+
+    /**
      * @brief Save chromosome mutations in an archive
      *
      * @tparam ARCHIVE is the output archive type
@@ -1346,6 +1363,20 @@ public:
      */
     std::map<ChromosomeId, std::set<ChrPosition>>
     get_CNA_break_points() const;
+
+    /**
+     * @brief Get the number of mutations
+     *
+     * @return The number of mutations in the object
+     */
+    size_t num_of_mutations() const;
+
+    /**
+     * @brief  Get the number of CNAs
+     *
+     * @return The number of CNAs in the object
+     */
+    size_t num_of_CNAs() const;
 
     /**
      * @brief Save genome mutations in an archive
