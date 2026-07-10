@@ -2,8 +2,8 @@
  * @file label_tour.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines the label tour class
- * @version 1.2
- * @date 2026-02-24
+ * @version 1.3
+ * @date 2026-07-10
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -119,63 +119,15 @@ public:
     {
     public:
         /**
+         * @brief The label type
+         */
+        using label_type = typename LABELLING_FUNCTOR::label_type;
+
+        /**
          * @brief The dereferenced value type
          */
         using value_type = std::pair<Mutants::CellId, label_type>;
-    private:
-        forest_type const* forest;   //!< A pointer to the forest
 
-        labelling_functor_type const* l_functor;
-
-        bool only_leaves;   //!< A Boolean flag to enable/disable internal node visit
-        bool tour_end;      //!< A Boolean flag to mark the end of the tour
-
-        std::stack<value_type> iterator_stack; //!< The recursion stack
-        value_type node_label; //!< The current node label
-
-        /**
-         * @brief A constructor
-         *
-         * @param[in] forest is a constant pointer to the forest
-         * @param[in] labelling_functor is the labelling functor
-         * @param[in] init_label is the initialization label
-         * @param[in] only_leaves is a Boolean flag to enable/disable
-         *      internal node visit
-         */
-        const_iterator(const forest_type* forest,
-                       const labelling_functor_type& labelling_functor,
-                       const label_type& init_label,
-                       const bool& only_leaves):
-            forest{forest}, l_functor{&labelling_functor},
-            only_leaves{only_leaves}, tour_end{false}
-        {
-            if (forest != nullptr) {
-                auto forest_roots = forest->get_roots();
-                for (auto root_it = forest_roots.rbegin();
-                        root_it != forest_roots.rend(); ++root_it) {
-                    label_type label = labelling_functor(init_label, *root_it);
-
-                    iterator_stack.emplace(root_it->get_id(), std::move(label));
-                }
-
-                std::swap(node_label, iterator_stack.top());
-
-                iterator_stack.pop();
-
-                const_node node{forest, node_label.first};
-                if (only_leaves && !node.is_leaf()) {
-                    this->operator++();
-                }
-            } else {
-                tour_end = true;
-            }
-        }
-
-        const_iterator(const forest_type* forest, const bool& only_leaves):
-            forest{forest}, l_functor{nullptr}, only_leaves{only_leaves},
-            tour_end{true}
-        {}
-    public:
         /**
          * @brief The empty constructor
          */
@@ -209,7 +161,7 @@ public:
                     return *this;
                 }
 
-                // take a new cell genome mutations object from the stack
+                // take a new cell label object from the stack
                 std::swap(node_label, iterator_stack.top());
                 iterator_stack.pop();
 
@@ -225,7 +177,7 @@ public:
             while (!next_node_found) {
                 auto children = node.children();
 
-                // place all children's cell genome mutations, but the first one, into the stack
+                // place all children's cell label, but the first one, into the stack
                 for (auto child_it = children.rbegin();
                         child_it != children.rend()-1; ++child_it) {
 
@@ -234,7 +186,6 @@ public:
                     iterator_stack.emplace(child_it->get_id(), std::move(child_label));
                 }
 
-                // apply the first children mutations to the current cell genome mutations
                 std::swap(node, children.front());
                 node_label.second = (*l_functor)(node_label.second, node);
 
@@ -321,6 +272,60 @@ public:
         {
             return !(*this == rhs);
         }
+
+    private:
+        forest_type const* forest;   //!< A pointer to the forest
+
+        labelling_functor_type const* l_functor;
+
+        bool only_leaves;   //!< A Boolean flag to enable/disable internal node visit
+        bool tour_end;      //!< A Boolean flag to mark the end of the tour
+
+        std::stack<value_type> iterator_stack; //!< The recursion stack
+        value_type node_label; //!< The current node label
+
+        /**
+         * @brief A constructor
+         *
+         * @param[in] forest is a constant pointer to the forest
+         * @param[in] labelling_functor is the labelling functor
+         * @param[in] init_label is the initialization label
+         * @param[in] only_leaves is a Boolean flag to enable/disable
+         *      internal node visit
+         */
+        const_iterator(const forest_type* forest,
+                       const labelling_functor_type& labelling_functor,
+                       const label_type& init_label,
+                       const bool& only_leaves):
+            forest{forest}, l_functor{&labelling_functor},
+            only_leaves{only_leaves}, tour_end{false}
+        {
+            if (forest != nullptr) {
+                auto forest_roots = forest->get_roots();
+                for (auto root_it = forest_roots.rbegin();
+                        root_it != forest_roots.rend(); ++root_it) {
+                    label_type label = labelling_functor(init_label, *root_it);
+
+                    iterator_stack.emplace(root_it->get_id(), std::move(label));
+                }
+
+                std::swap(node_label, iterator_stack.top());
+
+                iterator_stack.pop();
+
+                const_node node{forest, node_label.first};
+                if (only_leaves && !node.is_leaf()) {
+                    this->operator++();
+                }
+            } else {
+                tour_end = true;
+            }
+        }
+
+        const_iterator(const forest_type* forest, const bool& only_leaves):
+            forest{forest}, l_functor{nullptr}, only_leaves{only_leaves},
+            tour_end{true}
+        {}
 
         friend class LabelTour<FOREST, LABELLING_FUNCTOR>;
     };
