@@ -2,8 +2,8 @@
  * @file rs_index.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements a class to compute the repeated substring index
- * @version 1.5
- * @date 2026-06-11
+ * @version 1.6
+ * @date 2026-07-14
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -311,9 +311,8 @@ void RSIndex::collect_repetitions(const char* s, const ChromosomeId& chr_id,
 {
     auto candidates = collect_candidates(begin, h, h_suffix_array, classes);
 
-    ChrPosition r_begin=0;
     std::map<size_t, ChrPosition> r_endings;
-    for (auto c_it=candidates.begin(); c_it != candidates.end(); ++c_it, ++r_begin) {
+    for (auto c_it=candidates.begin(); c_it != candidates.end(); ++c_it) {
         for (const auto& [unit_size, r_end]: c_it->second) {
             const auto& r_begin = c_it->first;
             auto e_it = r_endings.find(unit_size);
