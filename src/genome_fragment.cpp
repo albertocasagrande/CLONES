@@ -2,7 +2,7 @@
  * @file genome_fragment.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements genome DNA fragments
- * @version 1.3
+ * @version 1.4
  * @date 2026-07-14
  *
  * @copyright Copyright (c) 2023-2026
@@ -249,11 +249,9 @@ GenomeFragment::GenomeFragment(const std::string& reference_fragment,
 
         --prev;
 
-        if (prev != mutation_union.begin()) {
-            auto begin_ref = (prev->second)->get_region().end()+1;
-            if (begin_ref>this->genomic_position.position) {
-                this->genomic_position.position = begin_ref;
-            }
+        auto begin_ref = (prev->second)->get_region().end()+1;
+        if (begin_ref>this->genomic_position.position) {
+            this->genomic_position.position = begin_ref;
         }
     }
 
