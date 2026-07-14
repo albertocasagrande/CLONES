@@ -2,8 +2,8 @@
  * @file genome_fragment.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements genome DNA fragments
- * @version 1.2
- * @date 2026-07-07
+ * @version 1.3
+ * @date 2026-07-14
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -31,6 +31,7 @@
 #include <map>
 
 #include "genome_fragment.hpp"
+#include "union_map_proxy.hpp"
 
 #include "error.hpp"
 
@@ -39,201 +40,6 @@ namespace CLONES
 
 namespace Mutations
 {
-
-void GenomeFragment::MutationIterator::set_current_mutation()
-{
-    if (direction == Direction::FORWARD) {
-        if (p_end) {
-            s_it_curr = false;
-        } else {
-            s_it_curr = (g_end ? true : s_it->first.position<g_it->first.position);
-        }
-    } else {
-        if (p_begin) {
-            s_it_curr = false;
-        } else {
-            s_it_curr = (g_begin ? true : s_it->first.position > g_it->first.position);
-        }
-    }
-}
-
-GenomeFragment::MutationIterator::MutationIterator(const std::map<GenomicPosition, std::shared_ptr<SID>>& germline,
-                                                    const std::map<GenomicPosition, std::shared_ptr<SID>>& somatic,
-                                                    const std::map<GenomicPosition, std::shared_ptr<SID>>::const_iterator& germline_it,
-                                                    const std::map<GenomicPosition, std::shared_ptr<SID>>::const_iterator& somatic_it):
-    somatic{&somatic}, germline{&germline},
-    s_it{somatic_it}, g_it{germline_it},
-    direction{Direction::FORWARD},
-    p_begin{somatic.begin() == somatic_it},
-    p_end{somatic.end() == somatic_it},
-    g_begin{germline.begin() == germline_it},
-    g_end{germline.end() == germline_it}
-{
-    set_current_mutation();
-}
-
-GenomeFragment::MutationIterator::MutationIterator():
-    somatic{nullptr}, germline{nullptr}, s_it{}, g_it{},
-    direction{GenomeFragment::Direction::FORWARD},
-    p_begin{true}, p_end{true}, g_begin{true}, g_end{true}
-{}
-
-GenomeFragment::MutationIterator
-GenomeFragment::MutationIterator::lower_bound(const std::map<GenomicPosition, std::shared_ptr<SID>>& germline,
-                                               const std::map<GenomicPosition, std::shared_ptr<SID>>& somatic,
-                                               const GenomicPosition& genomic_position)
-{
-    auto g_it = germline.lower_bound(genomic_position);
-    auto s_it = somatic.lower_bound(genomic_position);
-
-    return {germline, somatic, g_it, s_it};
-}
-
-GenomeFragment::MutationIterator&
-GenomeFragment::MutationIterator::operator++()
-{
-    if (direction == Direction::BACKWARD) {
-        if (!p_end) {
-            ++s_it;
-
-            if (s_it == somatic->end()) {
-                p_end = true;
-            }
-        }
-        if (!g_end) {
-            ++g_it;
-
-            if (g_it == germline->end()) {
-                g_end = true;
-            }
-        }
-        direction = Direction::FORWARD;
-
-        set_current_mutation();
-
-        return *this;
-    }
-
-    if (is_end()) {
-        return *this;
-    }
-
-    if (s_it_curr) {
-        ++s_it;
-        p_begin = false;
-
-        if (s_it == somatic->end()) {
-            s_it_curr = false;
-            p_end = true;
-
-            return *this;
-        }
-
-        if (g_end) {
-            return *this;
-        }
-    } else {
-        ++g_it;
-        g_begin = false;
-
-        if (g_it == germline->end()) {
-            s_it_curr = true;
-            g_end = true;
-
-            return *this;
-        }
-
-        if (p_end) {
-            return *this;
-        }
-    }
-
-    s_it_curr = (s_it->first.position < g_it->first.position);
-
-    return *this;
-}
-
-GenomeFragment::MutationIterator GenomeFragment::MutationIterator::operator++(int)
-{
-    auto curr = *this;
-
-    this->operator++();
-
-    return curr;
-}
-
-GenomeFragment::MutationIterator&
-GenomeFragment::MutationIterator::operator--()
-{
-    if (direction == Direction::FORWARD) {
-        if (!p_begin) {
-            --s_it;
-
-            if (s_it == somatic->begin()) {
-                p_begin = true;
-            }
-        }
-        if (!g_begin) {
-            --g_it;
-
-            if (g_it == germline->begin()) {
-                g_begin = true;
-            }
-        }
-        direction = Direction::BACKWARD;
-
-        set_current_mutation();
-
-        return *this;
-    }
-
-    if (is_begin()) {
-        return *this;
-    }
-
-    if (s_it_curr) {
-        if (s_it == somatic->begin()) {
-            s_it_curr = false;
-            p_begin = true;
-
-            return *this;
-        }
-
-        --s_it;
-        p_end = false;
-
-        if (g_begin) {
-            return *this;
-        }
-    } else {
-        if (g_it == germline->begin()) {
-            s_it_curr = true;
-            g_begin = true;
-
-            return *this;
-        }
-
-        --g_it;
-        g_end = false;
-
-        if (p_end) {
-            return *this;
-        }
-    }
-
-    s_it_curr = (s_it->first.position >= g_it->first.position);
-
-    return *this;
-}
-
-GenomeFragment::MutationIterator GenomeFragment::MutationIterator::operator--(int)
-{
-    auto curr = *this;
-
-    this->operator--();
-
-    return curr;
-}
 
 GenomeFragment::GenomeFragment()
 {}
@@ -427,22 +233,23 @@ GenomeFragment::GenomeFragment(const std::string& reference,
 {}
 
 GenomeFragment::GenomeFragment(const std::string& reference_fragment,
-                                 const size_t& fragment_offset,
-                                 const std::map<GenomicPosition, std::shared_ptr<SID>>& germline,
-                                 const std::map<GenomicPosition, std::shared_ptr<SID>>& somatic,
-                                 const GenomicPosition& begin_pos,
-                                 const size_t& size):
+                               const size_t& fragment_offset,
+                               const std::map<GenomicPosition, std::shared_ptr<SID>>& germline,
+                               const std::map<GenomicPosition, std::shared_ptr<SID>>& somatic,
+                               const GenomicPosition& begin_pos,
+                               const size_t& size):
     genomic_position{begin_pos}
 {
-    auto it = MutationIterator::lower_bound(germline, somatic, begin_pos);
+    const auto mutation_union = union_map_proxy<GenomicPosition, std::shared_ptr<SID>>(germline, somatic);
+    auto it = mutation_union.lower_bound(begin_pos);
 
     // remove initial deletions from the mutated fragment
-    if (!it.is_begin()) {
+    if (it != mutation_union.begin()) {
         auto prev = it;
 
         --prev;
 
-        if (!prev.is_begin()) {
+        if (prev != mutation_union.begin()) {
             auto begin_ref = (prev->second)->get_region().end()+1;
             if (begin_ref>this->genomic_position.position) {
                 this->genomic_position.position = begin_ref;
@@ -460,7 +267,7 @@ GenomeFragment::GenomeFragment(const std::string& reference_fragment,
     size_t last_base = std::min(this->genomic_position.position+size,
                                 reference_fragment.size()+fragment_offset)-1;
 
-    while (!it.is_end() && frag_end < size
+    while (it != mutation_union.end() && frag_end < size
             && ref_end <= reference_fragment.size()) {
 
         // copy from the reference up to the mutation begin

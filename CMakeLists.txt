@@ -147,6 +147,7 @@ set(CLONES_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/include/allele.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/tissue_sample.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/tissue_simulation.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/variables.hpp
+                ${CMAKE_CURRENT_SOURCE_DIR}/include/union_map_proxy.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/utils.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/warning.hpp
 )

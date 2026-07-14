@@ -35,9 +35,9 @@ if(${Boost_unit_test_framework_FOUND})
     link_directories(${Boost_LIBRARY_DIRS})
     set(TEST_LIBRARIES ${Boost_LIBRARIES} ${BUILD_LIB_TARGET} )
 
-    set(RACES_TESTS archive fasta_reader context_index genome_mutations bucket index tissue_simulation)
+    set(CLONES_TESTS archive fasta_reader context_index genome_mutations bucket index tissue_simulation union_map_proxy)
 
-    foreach(TEST ${RACES_TESTS})
+    foreach(TEST ${CLONES_TESTS})
         add_executable( test_${TEST} ${TEST}.cpp test_common.cpp)
         add_dependencies( test_${TEST} ${BUILD_LIB_TARGET} )
         target_link_libraries(test_${TEST} ${TEST_LIBRARIES})
@@ -50,10 +50,10 @@ if(${Boost_unit_test_framework_FOUND})
     target_compile_definitions(test_context_index PUBLIC FASTA_FILE="${ASSET_DIR}/context_index_test.fasta")
     target_compile_definitions(test_genome_mutations PUBLIC FASTA_FILE="${ASSET_DIR}/context_index_test.fasta")
 
-    download_asset_and_add_test(sbs_signature "${ASSET_DIR}/v3.3_SBS3_PROFILE.txt" 
+    download_asset_and_add_test(sbs_signature "${ASSET_DIR}/v3.3_SBS3_PROFILE.txt"
                                 "https://cancer.sanger.ac.uk/signatures/documents/1944/v3.3_SBS3_PROFILE.txt"
                                 "SBS_EXAMPLE")
-    download_asset_and_add_test(id_signature "${ASSET_DIR}/COSMIC_v3.4_ID_GRCh37.txt" 
+    download_asset_and_add_test(id_signature "${ASSET_DIR}/COSMIC_v3.4_ID_GRCh37.txt"
                                 "https://cog.sanger.ac.uk/cosmic-signatures-production/documents/COSMIC_v3.4_ID_GRCh37.txt"
                                 "ID_EXAMPLE")
 
