@@ -2,8 +2,8 @@
  * @file tissue.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Define tissue class
- * @version 1.12
- * @date 2026-07-09
+ * @version 1.13
+ * @date 2026-07-14
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -578,7 +578,7 @@ std::list<Cell> Tissue::push_cells(const PositionInTissue from_position, const D
     PositionDelta delta(direction);
     PositionInTissue to_position(from_position+delta);
     CellInTissue* to_be_moved = cell_pointer(from_position);
-    bool old_on_border;
+    bool old_on_border{true};
     if (duplicate_internal_cells) {
         old_on_border = operator()(from_position).is_on_border();
     }
