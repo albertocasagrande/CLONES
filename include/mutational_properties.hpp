@@ -2,8 +2,8 @@
  * @file mutational_properties.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a class to represent the mutational properties
- * @version 1.11
- * @date 2026-06-30
+ * @version 1.12
+ * @date 2026-07-14
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -401,7 +401,7 @@ class MutationalProperties
 
     /**
      * @brief Initialize the passenger rates
-     * 
+     *
      * @param mutant_name is the name of the mutant
      * @param epistate_passenger_rates is a map from epigenetic state to
      *          passenger rates
@@ -420,7 +420,7 @@ class MutationalProperties
 
     /**
      * @brief Initialize the passenger rates
-     * 
+     *
      * @param mutant_name is the name of the mutant
      * @param passenger_rates are the passenger rates
      */
@@ -459,7 +459,7 @@ public:
                                      const std::list<CNA>& driver_CNAs={},
                                      const bool& wg_doubling=false)
     {
-        auto application_order = DriverMutations::get_default_order(driver_SIDs, 
+        auto application_order = DriverMutations::get_default_order(driver_SIDs,
                                                                     driver_CNAs,
                                                                     wg_doubling);
 
@@ -494,7 +494,7 @@ public:
 
         driver_mutations.insert({mutant_name, {mutant_name, driver_SIDs,
                                                driver_CNAs, application_order}});
-        
+
         init_passenger_rates(mutant_name, passenger_rates);
 
         return *this;
@@ -509,7 +509,7 @@ public:
      *
      * @param time is a time stamp
      * @param mutant_name is a mutant name
-     * @param passenger_rates are the new 
+     * @param passenger_rates are the new
      * @return a reference to the updated object
      */
     MutationalProperties& change_rates_from(const Time& time, const std::string& mutant_name,

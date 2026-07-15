@@ -2,8 +2,8 @@
  * @file genomic_region.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines genomic regions
- * @version 1.4
- * @date 2026-02-06
+ * @version 1.5
+ * @date 2026-07-14
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -519,7 +519,7 @@ public:
 
 /**
  * @brief Test whether two `GenomicRegion` objects are the same
- * 
+ *
  * @param lhs is the left-hand side of the relation
  * @param rhs is the right-hand side of the relation
  * @return `true` is and only if `lhs` and `rhs` represent the same
@@ -534,7 +534,7 @@ inline bool operator==(const CLONES::Mutations::GenomicRegion& lhs,
 
 /**
  * @brief Test whether two `GenomicRegion` objects differ
- * 
+ *
  * @param lhs is the left-hand side of the relation
  * @param rhs is the right-hand side of the relation
  * @return `false` is and only if `lhs` and `rhs` represent the same

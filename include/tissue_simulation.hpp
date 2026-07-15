@@ -2,8 +2,8 @@
  * @file tissue_simulation.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a tumour evolution simulation
- * @version 1.11
- * @date 2026-06-30
+ * @version 1.12
+ * @date 2026-07-14
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -818,7 +818,7 @@ public:
      *      the selected cell
      * @param args is the parameter pack of the remaining arguments of the
      *      function
-     * @return whenever the set of cells whose mutant or species name is 
+     * @return whenever the set of cells whose mutant or species name is
      *      among those in `names` is not empty, a randomly selected cell in it.
      *      If one of the names does not correspond to either a mutant or a
      *      species or if any cell is available to be selected, a domain error
@@ -849,7 +849,7 @@ public:
      *      the selected cell
      * @param args is the parameter pack of the remaining arguments of the
      *      function
-     * @return whenever the set of cells whose mutant or species name is 
+     * @return whenever the set of cells whose mutant or species name is
      *      among those in `names` is not empty, a randomly selected cell in it.
      *      If one of the names does not correspond to either a mutant or a
      *      species or if any cell is available to be selected, a domain error

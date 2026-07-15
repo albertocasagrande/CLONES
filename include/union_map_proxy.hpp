@@ -2,7 +2,7 @@
  * @file union_map_proxy.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines union map representation
- * @version 1.0
+ * @version 1.1
  * @date 2026-07-14
  *
  * @copyright Copyright (c) 2023-2026
@@ -260,7 +260,7 @@ public:
 
     /**
      * @brief A constructor
-     * 
+     *
      * @param map1 the first map in the union
      * @param map2 the second map in the union
      */
@@ -290,7 +290,7 @@ public:
 
     /**
      * @brief Get an iterator to the first element greater than the given key
-     * 
+     *
      * @param key the key of the aimed value
      * @return a constant iterator to the first element greater than the given key
      */
@@ -301,7 +301,7 @@ public:
 
     /**
      * @brief Get an iterator to the first element greater than the given key
-     * 
+     *
      * @param key the key of the aimed value
      * @return a constant iterator to the first element greater than the given key
      */
@@ -313,7 +313,7 @@ public:
 
     /**
      * @brief Get an iterator to the first element not less than the given key
-     * 
+     *
      * @param key the key of the aimed value
      * @return a constant iterator to the first element not less than the given key
      */
@@ -324,7 +324,7 @@ public:
 
     /**
      * @brief Get an iterator to the first element not less than the given key
-     * 
+     *
      * @param key the key of the aimed value
      * @return a constant iterator to the first element not less than the given key
      */
@@ -336,7 +336,7 @@ public:
 
     /**
      * @brief Finds element with specific key
-     * 
+     *
      * @param key the key of the aimed value
      * @return a constant iterator to the aimed value, if one of the two maps
      *   contains `key`, or to the end of the union, otherwise.
@@ -348,7 +348,7 @@ public:
 
     /**
      * @brief Finds element with specific key
-     * 
+     *
      * @param key the key of the aimed value
      * @return a constant iterator to the aimed value, if one of the two maps
      *   contains `key`, or to the end of the union, otherwise.
