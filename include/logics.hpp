@@ -2,8 +2,8 @@
  * @file logics.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a logic about the simulation
- * @version 1.3
- * @date 2026-06-11
+ * @version 1.4
+ * @date 2026-07-14
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -214,7 +214,7 @@ public:
                 return (lhs->evaluate(context))*(rhs->evaluate(context));
             default:
                 throw Error<std::runtime_error>("Unsupported expression type code "
-                                                + std::to_string(static_cast<unsigned int>(type))
+                                                + std::to_string(static_cast<size_t>(type))
                                                 + ".");
         }
     }
@@ -387,7 +387,7 @@ public:
                 return l_value != r_value;
             default:
                 throw Error<std::runtime_error>("Unsupported expression type code "
-                                                + std::to_string(static_cast<unsigned int>(type))
+                                                + std::to_string(static_cast<size_t>(type))
                                                 + ".");
         }
     }
@@ -418,7 +418,7 @@ public:
                 return (l_dist != r_dist? 0: 1);
             default:
                 throw Error<std::domain_error>("Unknown relation type code "
-                                                + std::to_string(static_cast<unsigned int>(type))
+                                                + std::to_string(static_cast<size_t>(type))
                                                 + ".");
         }
     }
@@ -687,7 +687,7 @@ struct Formula
                 return (lhs->evaluate(context) || rhs->evaluate(context));
             default:
                 throw Error<std::domain_error>("Unknown formula type code "
-                                                + std::to_string(static_cast<unsigned int>(type))
+                                                + std::to_string(static_cast<size_t>(type))
                                                 + ".");
         }
     }
@@ -715,7 +715,7 @@ struct Formula
                 return std::min(lhs->sat_distance(context), rhs->sat_distance(context));
             default:
                 throw Error<std::domain_error>("Unknown formula type code "
-                                                + std::to_string(static_cast<unsigned int>(type))
+                                                + std::to_string(static_cast<size_t>(type))
                                                 + ".");
         }
     }

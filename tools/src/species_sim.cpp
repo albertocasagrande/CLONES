@@ -2,8 +2,8 @@
  * @file mutants_sim.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Main file for the mutants simulator
- * @version 1.3
- * @date 2026-06-19
+ * @version 1.4
+ * @date 2026-07-14
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -71,9 +71,9 @@ class DriverSimulator : public BasicExecutable
     std::filesystem::path simulation_filename;
     std::filesystem::path logging_dir;
     std::string snapshot_path;
-    long double time_horizon;
+    double time_horizon;
 #ifdef WITH_SDL2
-    unsigned int frames_per_second;
+    uint8_t frames_per_second;
 #endif
     bool plot;
     bool quiet;
@@ -523,7 +523,7 @@ public:
     #ifdef WITH_SDL2
             ("plot,p",
              "plot a graphical representation of the simulation")
-            ("frames-per-second,f", po::value<unsigned int>(&frames_per_second)->default_value(1),
+            ("frames-per-second,f", po::value<uint8_t>(&frames_per_second)->default_value(1),
              "the number of frames per second")
     #endif
             ("help,h", "get the help");
@@ -531,7 +531,7 @@ public:
         hidden_options.add_options()
             ("simulation file", po::value<std::filesystem::path>(&simulation_filename),
              "the name of the file describing the simulation")
-            ("time horizon", po::value<long double>(&time_horizon),
+            ("time horizon", po::value<double>(&time_horizon),
              "the simulation time horizon");
 
         po::options_description program_options;

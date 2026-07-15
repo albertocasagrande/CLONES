@@ -2,8 +2,8 @@
  * @file archive.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines some archive classes and their methods
- * @version 1.10
- * @date 2026-06-11
+ * @version 1.11
+ * @date 2026-07-14
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -718,11 +718,11 @@ public:
     template<typename charT>
     Out& operator&(const std::basic_string<charT>& text)
     {
-        const size_t size = text.size();
-        fs.write((char const*)(&size), sizeof(size_t));
+        const uint64_t size = text.size();
+        fs.write((char const*)(&size), sizeof(uint64_t));
         fs.write((const char*)text.c_str(), size*sizeof(charT));
 
-        advance(sizeof(size_t)+size*sizeof(charT));
+        advance(sizeof(uint64_t)+size*sizeof(charT));
 
         return *this;
     }
@@ -737,9 +737,27 @@ public:
     template<typename ARITHMETIC_TYPE, std::enable_if_t<std::is_arithmetic_v<ARITHMETIC_TYPE>, bool> = true>
     inline Out& operator&(const ARITHMETIC_TYPE& value)
     {
+        static_assert(!std::is_same_v<ARITHMETIC_TYPE, std::size_t>,
+                      "The template argument ARITHMETIC_TYPE cannot be std::size_t!");
+
         fs.write((char const*)(&value), sizeof(ARITHMETIC_TYPE));
 
         advance(sizeof(ARITHMETIC_TYPE));
+
+        return *this;
+    }
+
+    /**
+     * @brief Save a size_t value in the archive
+     *
+     * @param value is the value to save
+     * @return a reference to the updated archive
+     */
+    inline Out& operator&(const size_t& value)
+    {
+        const uint64_t temp_value = value;
+
+        *this & temp_value;
 
         return *this;
     }
@@ -814,7 +832,7 @@ public:
     template<typename charT>
     ByteCounter& operator&(const std::basic_string<charT>& text)
     {
-        bytes += sizeof(size_t);
+        bytes += sizeof(uint64_t);
         bytes += text.size()*sizeof(charT);
 
         if (progress_bar != nullptr) {
@@ -888,7 +906,7 @@ public:
  */
 class In : public Archive::Basic::In, private Archive::Basic::ProgressViewer
 {
-    std::map<size_t, std::pair<size_t, std::shared_ptr<void>>> dm_lookup;
+    std::map<uint64_t, std::pair<size_t, std::shared_ptr<void>>> dm_lookup;
 
 public:
     /**
@@ -947,9 +965,29 @@ public:
     template<typename ARITHMETIC_TYPE, std::enable_if_t<std::is_arithmetic_v<ARITHMETIC_TYPE>, bool> = true>
     inline In& operator&(ARITHMETIC_TYPE& value)
     {
+        static_assert(!std::is_same_v<ARITHMETIC_TYPE, std::size_t>,
+                      "The template argument ARITHMETIC_TYPE cannot be std::size_t!");
+
         fs.read((char *)(&value), sizeof(ARITHMETIC_TYPE));
 
         advance(sizeof(ARITHMETIC_TYPE));
+
+        return *this;
+    }
+
+    /**
+     * @brief Load a size_t value from the archive
+     *
+     * @param value is the object in which the value is loaded
+     * @return a reference to the updated archive
+     */
+    inline In& operator&(size_t& value)
+    {
+        uint64_t load_value;
+
+        *this & load_value;
+
+        value = static_cast<size_t>(load_value);
 
         return *this;
     }
@@ -963,8 +1001,8 @@ public:
     template<typename charT>
     In& operator&(std::basic_string<charT>& text)
     {
-        size_t size;
-        fs.read((char *)(&size), sizeof(size_t));
+        uint64_t size;
+        fs.read((char *)(&size), sizeof(uint64_t));
 
         charT* buffer = new charT[size+1];
 
@@ -976,7 +1014,7 @@ public:
 
         delete[] buffer;
 
-        advance(sizeof(size_t)+size*sizeof(charT));
+        advance(sizeof(uint64_t)+size*sizeof(charT));
 
         return *this;
     }
@@ -1095,7 +1133,7 @@ operator&(ARCHIVE& archive, const std::chrono::time_point<CLOCK,DURATION>& time_
 {
     using namespace std::chrono;
 
-    size_t epoch = duration_cast<milliseconds>(time_point.time_since_epoch()).count();
+    uint64_t epoch = duration_cast<milliseconds>(time_point.time_since_epoch()).count();
 
     archive & epoch;
 
@@ -1119,7 +1157,7 @@ operator&(ARCHIVE& archive, std::chrono::time_point<CLOCK,DURATION>& time_point)
 {
     using namespace std::chrono;
 
-    size_t epoch;
+    uint64_t epoch;
 
     archive & epoch;
 
@@ -1190,7 +1228,7 @@ template<class ARCHIVE, template<class,class> class CONTAINER, class T, class Al
                           CLONES::Archive::has_load<T, ARCHIVE>::value, bool> = true>
 ARCHIVE& operator&(ARCHIVE& archive, CONTAINER<T,Alloc>& container)
 {
-    size_t size;
+    uint64_t size;
 
     archive & size;
 
@@ -1200,7 +1238,7 @@ ARCHIVE& operator&(ARCHIVE& archive, CONTAINER<T,Alloc>& container)
         container.reserve(size);
     }
 
-    for (size_t i=0; i<size; ++i) {
+    for (uint64_t i=0; i<size; ++i) {
         container.push_back(T::load(archive));
     }
 
@@ -1228,7 +1266,7 @@ template<class ARCHIVE, template<typename,typename> class CONTAINER, class T, cl
                           !CLONES::Archive::has_load<T, ARCHIVE>::value, bool> = true>
 ARCHIVE& operator&(ARCHIVE& archive, CONTAINER<T,Alloc>& container)
 {
-    size_t size;
+    uint64_t size;
 
     archive & size;
 
@@ -1238,7 +1276,7 @@ ARCHIVE& operator&(ARCHIVE& archive, CONTAINER<T,Alloc>& container)
         container.reserve(size);
     }
 
-    for (size_t i=0; i<size; ++i) {
+    for (uint64_t i=0; i<size; ++i) {
         T value;
 
         archive & value;
@@ -1268,13 +1306,13 @@ template<class ARCHIVE, class T, class Compare, class Alloc,
                           CLONES::Archive::has_load<T, ARCHIVE>::value, bool> = true>
 ARCHIVE& operator&(ARCHIVE& archive, std::set<T,Compare,Alloc>& S)
 {
-    size_t size;
+    uint64_t size;
 
     archive & size;
 
     S = std::set<T,Compare,Alloc>();
 
-    for (size_t i=0; i<size; ++i) {
+    for (uint64_t i=0; i<size; ++i) {
         S.insert(T::load(archive));
     }
 
@@ -1300,13 +1338,13 @@ template<class ARCHIVE, class T, class Compare, class Alloc,
                           !CLONES::Archive::has_load<T, ARCHIVE>::value, bool> = true>
 ARCHIVE& operator&(ARCHIVE& archive, std::set<T,Compare,Alloc>& S)
 {
-    size_t size;
+    uint64_t size;
 
     archive & size;
 
     S = std::set<T,Compare,Alloc>();
 
-    for (size_t i=0; i<size; ++i) {
+    for (uint64_t i=0; i<size; ++i) {
         T value;
 
         archive & value;
@@ -1335,13 +1373,13 @@ template<class ARCHIVE, class Key, class T, class Compare, class Allocator,
                              CLONES::Archive::has_load<T, ARCHIVE>::value, bool> = true>
 ARCHIVE& operator&(ARCHIVE& archive, std::map<Key,T,Compare,Allocator>& m)
 {
-    size_t size;
+    uint64_t size;
 
     archive & size;
 
     m.clear();
 
-    for (size_t i=0; i<size; ++i) {
+    for (uint64_t i=0; i<size; ++i) {
         Key key;
 
         archive & key;
@@ -1370,13 +1408,13 @@ template<class ARCHIVE, class Key, class T, class Compare, class Allocator,
                              !CLONES::Archive::has_load<T, ARCHIVE>::value, bool> = true>
 ARCHIVE& operator&(ARCHIVE& archive, std::map<Key,T,Compare,Allocator>& m)
 {
-    size_t size;
+    uint64_t size;
 
     archive & size;
 
     m.clear();
 
-    for (size_t i=0; i<size; ++i) {
+    for (uint64_t i=0; i<size; ++i) {
         Key key;
         T value;
 
@@ -1406,13 +1444,13 @@ template<class ARCHIVE, class Key, class T, class Compare, class Allocator,
                              !CLONES::Archive::has_load<T, ARCHIVE>::value, bool> = true>
 ARCHIVE& operator&(ARCHIVE& archive, std::map<Key,T,Compare,Allocator>& m)
 {
-    size_t size;
+    uint64_t size;
 
     archive & size;
 
     m.clear();
 
-    for (size_t i=0; i<size; ++i) {
+    for (uint64_t i=0; i<size; ++i) {
         Key key = Key::load(archive);
         T value;
 
@@ -1442,13 +1480,13 @@ template<class ARCHIVE, class Key, class T, class Compare, class Allocator,
                              CLONES::Archive::has_load<T, ARCHIVE>::value, bool> = true>
 ARCHIVE& operator&(ARCHIVE& archive, std::map<Key,T,Compare,Allocator>& m)
 {
-    size_t size;
+    uint64_t size;
 
     archive & size;
 
     m.clear();
 
-    for (size_t i=0; i<size; ++i) {
+    for (uint64_t i=0; i<size; ++i) {
         auto key = Key::load(archive);
         auto value = T::load(archive);
 
@@ -1691,7 +1729,7 @@ In& In::operator&(std::shared_ptr<T>& obj_ptr)
     *this & in_lookup;
 
     if (in_lookup) {
-        size_t idx;
+        uint64_t idx;
         *this & idx;
 
         auto it = dm_lookup.find(idx);
@@ -1714,7 +1752,8 @@ In& In::operator&(std::shared_ptr<T>& obj_ptr)
 
         auto dm_entry = std::make_pair<size_t, std::shared_ptr<void>>(
                                 typeid(T).hash_code(), obj_ptr);
-        auto res = dm_lookup.insert({dm_lookup.size(), dm_entry});
+        auto res = dm_lookup.emplace(static_cast<uint64_t>(dm_lookup.size()),
+                                     dm_entry);
 
         if (!res.second) {
             // the pointer was not inserted

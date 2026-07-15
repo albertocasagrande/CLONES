@@ -2,8 +2,8 @@
  * @file build_context_index.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Builds the context index
- * @version 1.2
- * @date 2026-02-06
+ * @version 1.3
+ * @date 2026-07-14
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -49,7 +49,7 @@ class ContextIndexBuilder : public BasicExecutable
     std::string genome_fasta_filename;
     std::string driver_mutations_filename;
     size_t sampling_rate;
-    unsigned int byte_per_abs_position;
+    uint8_t byte_per_abs_position;
     bool quiet;
 
     template<typename GENOME_WIDE_POSITION>
@@ -139,7 +139,7 @@ public:
             ("sampling-rate,s", po::value<size_t>(&sampling_rate)->default_value(1),
              "context sampling rate (to sample contexts and reduce index memory and space requirements)")
             ("force-overwrite,f", "force overwriting output file")
-            ("bytes-per-pos,b", po::value<unsigned int>(&byte_per_abs_position)->default_value(4),
+            ("bytes-per-pos,b", po::value<uint8_t>(&byte_per_abs_position)->default_value(4),
              "bytes per absolute position (2, 4, or 8)")
 #if WITH_INDICATORS
             ("quiet,q", "disable output messages")

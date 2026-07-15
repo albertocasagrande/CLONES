@@ -2,8 +2,8 @@
  * @file progress_bar.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements a progress bar
- * @version 1.1
- * @date 2026-02-06
+ * @version 1.2
+ * @date 2026-07-14
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -100,11 +100,11 @@ ProgressBar& ProgressBar::set_message(const std::string& message)
     return *this;
 }
 
-ProgressBar& ProgressBar::set_progress(const unsigned int percentage, const std::string& message)
+ProgressBar& ProgressBar::set_progress(const uint8_t percentage, const std::string& message)
 {
     using namespace std::chrono;
 
-    this->percentage = std::min(percentage, static_cast<unsigned int>(100));
+    this->percentage = std::min(percentage, static_cast<uint8_t>(100));
     this->message = message;
 
     updated = false;
@@ -120,7 +120,7 @@ ProgressBar& ProgressBar::set_progress(const unsigned int percentage, const std:
 }
 
 
-ProgressBar& ProgressBar::set_progress(const unsigned int percentage)
+ProgressBar& ProgressBar::set_progress(const uint8_t percentage)
 {
     using namespace std::chrono;
 
@@ -144,7 +144,7 @@ ProgressBar& ProgressBar::set_progress(const unsigned int percentage)
     return *this;
 }
 
-const unsigned int& ProgressBar::get_progress() const
+const uint8_t& ProgressBar::get_progress() const
 {
     return percentage;
 }

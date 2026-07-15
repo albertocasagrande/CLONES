@@ -2,8 +2,8 @@
  * @file read_simulator.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements classes to simulate sequencing
- * @version 1.12
- * @date 2026-07-07
+ * @version 1.13
+ * @date 2026-07-14
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -938,7 +938,7 @@ void SampleSetStatistics::save_coverage_image(const std::filesystem::path& filen
 
         area(d_coverage);
 
-        long chr_size = coverage.size();
+        uint64_t chr_size = coverage.size();
         xticks({1, new_size/2, new_size});
         xticklabels({"0",std::to_string(chr_size/2),std::to_string(chr_size)});
 
@@ -949,7 +949,7 @@ void SampleSetStatistics::save_coverage_image(const std::filesystem::path& filen
 
         tiledlayout(++num_of_plots, 1);
 
-        long chr_size;
+        uint64_t chr_size;
         for (const auto& [sample_name, sample_stats]: *stats_map) {
             nexttile();
 

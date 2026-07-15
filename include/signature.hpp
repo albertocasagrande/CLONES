@@ -2,8 +2,8 @@
  * @file signature.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines mutational signatures
- * @version 1.6
- * @date 2026-07-02
+ * @version 1.7
+ * @date 2026-07-14
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -296,7 +296,7 @@ class Signature
         std::map<std::string, std::map<MUTATION_TYPE, double>> result;
         std::vector<std::string> name_vector = read_row(in, delimiter);
 
-        unsigned int row_number = 2;
+        uint32_t row_number = 2;
         std::vector<std::string> row = read_row(in, delimiter);
         while (row.size() != 0) {
             if (row.size() != name_vector.size()) {

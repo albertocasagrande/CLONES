@@ -2,8 +2,8 @@
  * @file phyloXML.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements phyloXML stream
- * @version 1.3
- * @date 2026-06-11
+ * @version 1.4
+ * @date 2026-07-14
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -93,9 +93,9 @@ phyloXMLStream& phyloXMLStream::operator<<(const UI::Color& color)
     os << indent_string << "<color>" << std::endl;
     change_indentation_level(indent_level+1);
 
-       os << indent_string << "<red>" << static_cast<unsigned int>(color.red) << "</red>" << std::endl
-          << indent_string << "<green>" << static_cast<unsigned int>(color.green) << "</green>" << std::endl
-           << indent_string << "<blue>" << static_cast<unsigned int>(color.blue) << "</blue>" << std::endl;
+       os << indent_string << "<red>" << static_cast<size_t>(color.red) << "</red>" << std::endl
+          << indent_string << "<green>" << static_cast<size_t>(color.green) << "</green>" << std::endl
+           << indent_string << "<blue>" << static_cast<size_t>(color.blue) << "</blue>" << std::endl;
 
     change_indentation_level(indent_level-1);
     os << indent_string << "</color>" << std::endl;

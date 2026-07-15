@@ -2,8 +2,8 @@
  * @file sbs_context.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements SBS contexts and extended context automata
- * @version 1.3
- * @date 2026-06-11
+ * @version 1.4
+ * @date 2026-07-14
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -99,7 +99,7 @@ SBSContext::SBSContext(const char* nucleic_triplet):
     // this is to have the central nucleotide associated
     // to the most significant bits
     const std::array<uint8_t, 3> shifts{0,4,2};
-    for (unsigned int i=0; i<3; ++i) {
+    for (uint64_t i=0; i<3; ++i) {
         code = code | (encode_base(nucleic_triplet[i]) << shifts[i]);
     }
 }
@@ -115,7 +115,7 @@ SBSContext::SBSContext(const std::string& nucleic_triplet):
     // this is to have the central nucleotide associated
     // to the most significant bits
     const std::array<uint8_t, 3> shifts{0,4,2};
-    for (unsigned int i=0; i<3; ++i) {
+    for (uint64_t i=0; i<3; ++i) {
         code = code | (encode_base(nucleic_triplet[i]) << shifts[i]);
     }
 }
@@ -133,7 +133,7 @@ std::string SBSContext::get_sequence() const
     // this is to have the central nucleotide associated
     // to the most significant bits
     const std::array<uint8_t, 3> shifts{0,4,2};
-    for (unsigned int i=0; i<3; ++i) {
+    for (uint64_t i=0; i<3; ++i) {
         auto base = decode_base((code >> shifts[i])&nucleotide_mask);
         sequence.push_back(static_cast<char>(base));
     }
@@ -163,7 +163,7 @@ uint8_t SBSContext::get_complement(const uint8_t& code)
     const std::array<uint8_t, 3> shifts{0,4,2};
 
     uint8_t complementary_code{0};
-    for (unsigned int i=0; i<3; ++i) {
+    for (uint64_t i=0; i<3; ++i) {
         auto base_code = (code >> shifts[i])&nucleotide_mask;
 
         // Complement base code by using this tricky feature
@@ -189,7 +189,7 @@ uint8_t SBSContext::get_reverse_complement(const uint8_t& code)
     const std::array<uint8_t, 3> shifts{0,4,2};
 
     uint8_t revcomp_code{0};
-    for (unsigned int i=0; i<3; ++i) {
+    for (uint64_t i=0; i<3; ++i) {
         auto base_code = (code >> shifts[2-i])&nucleotide_mask;
 
         // Complement base code by using this tricky feature

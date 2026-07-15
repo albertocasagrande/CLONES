@@ -2,8 +2,8 @@
  * @file logics.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implement a logic about the simulation
- * @version 1.4
- * @date 2026-06-26
+ * @version 1.5
+ * @date 2026-07-14
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -292,7 +292,7 @@ std::ostream& operator<<(std::ostream& os, const Formula& formula)
             break;
         default:
             throw Error<std::runtime_error>("Unknown formula type code "
-                                            + std::to_string(static_cast<unsigned int>(formula.type))
+                                            + std::to_string(static_cast<size_t>(formula.type))
                                             + "." );
     }
 

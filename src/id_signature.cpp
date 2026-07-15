@@ -2,8 +2,8 @@
  * @file id_signature.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements SBS signature
- * @version 1.3
- * @date 2026-06-11
+ * @version 1.4
+ * @date 2026-07-14
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -179,9 +179,9 @@ std::ostream& operator<<(std::ostream& out, const CLONES::Mutations::IDType& typ
             << (type.fl_index=='C'?"C":"T");
     } else {
         if (!type.insertion) {
-            out << static_cast<unsigned int>(type.fl_index-1) << ":Del:";
+            out << static_cast<size_t>(type.fl_index-1) << ":Del:";
         } else {
-            out << static_cast<unsigned int>(type.fl_index) << ":Ins:";
+            out << static_cast<size_t>(type.fl_index) << ":Ins:";
         }
 
         out << (type.ftype == FragmentType::HETEROPOLYMER?"R":"M");

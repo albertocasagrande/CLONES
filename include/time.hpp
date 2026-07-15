@@ -2,8 +2,8 @@
  * @file time.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines time type
- * @version 1.1
- * @date 2026-02-06
+ * @version 1.2
+ * @date 2026-07-14
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -39,7 +39,7 @@ namespace CLONES
 /**
  * @brief The simulation time type
  */
-using Time = long double;
+using Time = double;
 
 }  // CLONES
 

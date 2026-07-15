@@ -2,8 +2,8 @@
  * @file fasta_reader.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a FASTA file reader and support structures
- * @version 1.7
- * @date 2026-06-11
+ * @version 1.8
+ * @date 2026-07-14
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -386,8 +386,8 @@ struct IndexEntry
     std::string name;   //!< Sequence name
     size_t length;      //!< Number of sequence bases
     size_t offset;      //!< File offset to the first base
-    unsigned int linebases; //!< Number of bases in each line
-    unsigned int linebytes; //!< Number of bytes per line
+    uint16_t linebases; //!< Number of bases in each line
+    uint16_t linebytes; //!< Number of bytes per line
 
     /**
      * @brief The empty constructor

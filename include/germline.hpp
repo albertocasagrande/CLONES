@@ -2,8 +2,8 @@
  * @file germline.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines the functions to generate and load germline mutations
- * @version 1.2
- * @date 2026-05-25
+ * @version 1.3
+ * @date 2026-07-14
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -77,7 +77,7 @@ class GermlineMutations
      *
      * @return the percentage of progresses
      */
-    inline unsigned int get_process_percentage() const
+    inline uint8_t get_process_percentage() const
     {
         return 100-(100*(not_processed_size+mutations_not_placed))/(genome_size+expected_mutations);
     }

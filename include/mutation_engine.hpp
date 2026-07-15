@@ -2,8 +2,8 @@
  * @file mutation_engine.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a class to place mutations on a descendant forest
- * @version 1.40
- * @date 2026-07-09
+ * @version 1.41
+ * @date 2026-07-14
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -227,7 +227,7 @@ class MutationEngine
 
     std::vector<CNA> passenger_CNAs;    //!< the admissible passenger CNAs
 
-    unsigned int driver_CNA_min_distance;         //!< the minimum distance between a driver mutation and a passenger CNA
+    uint32_t driver_CNA_min_distance;   //!< the minimum distance between a driver mutation and a passenger CNA
 
     WarningFunction warning;            //!< the warning function
 
@@ -841,7 +841,7 @@ class MutationEngine
                 return true;
             default:
                 throw Error<std::runtime_error>("Unsupported CNA type "
-                                                + std::to_string(static_cast<unsigned int>(cna.type))
+                                                + std::to_string(static_cast<size_t>(cna.type))
                                                 + ".");
         }
     }
@@ -965,7 +965,7 @@ class MutationEngine
                         break;
                     default:
                         throw Error<std::runtime_error>("Unsupported driver mutation type "
-                                                + std::to_string(static_cast<unsigned int>(*order_it))
+                                                + std::to_string(static_cast<size_t>(*order_it))
                                                 + ".");
                 }
             }
@@ -1380,7 +1380,7 @@ class MutationEngine
                                 || std::is_base_of_v<CNA, MUTATION_TYPE> , bool> = true>
     static std::list<GenomicRegion>
     get_region_list(const std::list<MUTATION_TYPE>& mutations,
-                    const unsigned int& expansion_size=0)
+                    const uint32_t& expansion_size=0)
     {
         std::list<GenomicRegion> region_list;
 
@@ -1483,7 +1483,7 @@ public:
                    const GenomeMutations& germline_mutations,
                    const DriverStorage& driver_storage,
                    const std::vector<CNA>& passenger_CNAs={},
-                   const unsigned int& driver_CNA_min_distance=10000,
+                   const uint32_t& driver_CNA_min_distance=10000,
                    WarningFunction warning=CLONES::warning):
         MutationEngine(context_index, repetition_index, SBS_signatures,
                        ID_signatures, MutationalProperties(),
@@ -1514,7 +1514,7 @@ public:
                    const GenomeMutations& germline_mutations,
                    const DriverStorage& driver_storage,
                    const std::vector<CNA>& passenger_CNAs={},
-                   const unsigned int& driver_CNA_min_distance=10000,
+                   const uint32_t& driver_CNA_min_distance=10000,
                    WarningFunction warning=CLONES::warning):
         generator(), context_index(context_index), rs_index(repetition_index),
         SBS_signatures{SBS_signatures}, ID_signatures{ID_signatures},

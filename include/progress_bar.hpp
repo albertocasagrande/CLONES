@@ -2,8 +2,8 @@
  * @file progress_bar.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a progress bar
- * @version 1.1
- * @date 2026-02-06
+ * @version 1.2
+ * @date 2026-07-14
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -68,7 +68,7 @@ class ProgressBar
 {
     std::chrono::system_clock::time_point last_update;  //!< the last update time
 
-    unsigned int percentage;  //!< the percentage level
+    uint8_t percentage;       //!< the percentage level
     std::string message;      //!< the progress bar message
 
     bool updated;             //!< the last percentage has been shown
@@ -107,7 +107,7 @@ public:
      * @param percentage is the percentage level
      * @return a reference to the updated object
      */
-    ProgressBar& set_progress(const unsigned int percentage);
+    ProgressBar& set_progress(const uint8_t percentage);
 
     /**
      * @brief Update the progress bar level
@@ -116,14 +116,14 @@ public:
      * @param message is the message to be set
      * @return a reference to the updated object
      */
-    ProgressBar& set_progress(const unsigned int percentage, const std::string& message);
+    ProgressBar& set_progress(const uint8_t percentage, const std::string& message);
 
     /**
      * @brief Get the percentage level
      *
      * @return a constant reference to the percentage level
      */
-    const unsigned int& get_progress() const;
+    const uint8_t& get_progress() const;
 
     /**
      * @brief Update elapse time

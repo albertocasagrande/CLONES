@@ -2,8 +2,8 @@
  * @file archive.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Some archive tests
- * @version 1.6
- * @date 2026-06-19
+ * @version 1.7
+ * @date 2026-07-14
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -47,7 +47,7 @@
 #include "test_common.hpp"
 
 struct ArchiveFixture {
-    long double time_horizon;
+    double time_horizon;
 
     CLONES::Mutants::Evolutions::TissueSimulation tissue_simulation;
 
