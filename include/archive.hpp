@@ -2,8 +2,8 @@
  * @file archive.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines some archive classes and their methods
- * @version 1.11
- * @date 2026-07-14
+ * @version 1.12
+ * @date 2026-07-16
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -40,6 +40,8 @@
 #include <filesystem>
 #include <type_traits>
 #include <chrono>
+#include <concepts>
+#include <algorithm>
 
 #include "progress_bar.hpp"
 
@@ -650,6 +652,21 @@ struct requires_constant_size : public std::is_arithmetic<T>
 };
 
 /**
+ * @brief A function to reverse bytes in a data structure
+ * 
+ * @tparam T is the data structure type
+ * @param value is the value whose bytes should be reversed 
+ * @return The reversed bytes of `value`
+ */
+template <typename T>
+ requires std::is_trivial_v<T>
+constexpr void reverse_bytes(T& value)
+{
+    auto* bytes = reinterpret_cast<std::byte*>(&value);
+    std::reverse(bytes, bytes + sizeof(T));
+}
+
+/**
  * @brief The binary output archive
  */
 class Out : public Archive::Basic::Out, private Archive::Basic::ProgressViewer
@@ -718,12 +735,12 @@ public:
     template<typename charT>
     Out& operator&(const std::basic_string<charT>& text)
     {
-        const uint64_t size = text.size();
-        fs.write((char const*)(&size), sizeof(uint64_t));
-        fs.write((const char*)text.c_str(), size*sizeof(charT));
+        const size_t size = text.size();
 
-        advance(sizeof(uint64_t)+size*sizeof(charT));
+        *this & size;
+        fs.write(reinterpret_cast<const char*>(text.c_str()), size*sizeof(charT));
 
+        advance(size*sizeof(charT));
         return *this;
     }
 
@@ -734,13 +751,16 @@ public:
      * @param value is the value to save
      * @return a reference to the updated archive
      */
-    template<typename ARITHMETIC_TYPE, std::enable_if_t<std::is_arithmetic_v<ARITHMETIC_TYPE>, bool> = true>
-    inline Out& operator&(const ARITHMETIC_TYPE& value)
+    template<typename ARITHMETIC_TYPE>
+     requires (std::is_arithmetic_v<ARITHMETIC_TYPE> 
+                && (!std::same_as<ARITHMETIC_TYPE, size_t> 
+                    || std::same_as<size_t, uint64_t>))
+    inline Out& operator&(ARITHMETIC_TYPE value)
     {
-        static_assert(!std::is_same_v<ARITHMETIC_TYPE, std::size_t>,
-                      "The template argument ARITHMETIC_TYPE cannot be std::size_t!");
-
-        fs.write((char const*)(&value), sizeof(ARITHMETIC_TYPE));
+        if constexpr (std::endian::native == std::endian::big) {
+            reverse_bytes(value);
+        }
+        fs.write(reinterpret_cast<const char*>(&value), sizeof(ARITHMETIC_TYPE));
 
         advance(sizeof(ARITHMETIC_TYPE));
 
@@ -750,10 +770,18 @@ public:
     /**
      * @brief Save a size_t value in the archive
      *
+     * This method saves a `size_t` value in the archive only when
+     * `size_t` <> `uint64_t`.
+     * 
+     * @tparam ARITHMETIC_TYPE is the type of the value to save, 
+     *   i.e., `size_t`.
      * @param value is the value to save
      * @return a reference to the updated archive
      */
-    inline Out& operator&(const size_t& value)
+    template<typename ARITHMETIC_TYPE>
+     requires (std::same_as<ARITHMETIC_TYPE, size_t> 
+                && (!std::same_as<size_t, uint64_t>))
+    inline Out& operator&(const ARITHMETIC_TYPE& value)
     {
         const uint64_t temp_value = value;
 
@@ -832,7 +860,8 @@ public:
     template<typename charT>
     ByteCounter& operator&(const std::basic_string<charT>& text)
     {
-        bytes += sizeof(uint64_t);
+        *this & text.size();
+
         bytes += text.size()*sizeof(charT);
 
         if (progress_bar != nullptr) {
@@ -849,7 +878,10 @@ public:
      * @param value is the value whose archive required space is aimed
      * @return a reference to the updated byte counter
      */
-    template<typename ARITHMETIC_TYPE, std::enable_if_t<std::is_arithmetic_v<ARITHMETIC_TYPE>, bool> = true>
+    template<typename ARITHMETIC_TYPE>
+     requires (std::is_arithmetic_v<ARITHMETIC_TYPE> 
+                && (!std::same_as<ARITHMETIC_TYPE, size_t> 
+                    || std::same_as<size_t, uint64_t>))
     inline ByteCounter& operator&(const ARITHMETIC_TYPE& value)
     {
         (void)value;
@@ -859,6 +891,27 @@ public:
         if (progress_bar != nullptr) {
             progress_bar->update_elapsed_time();
         }
+
+        return *this;
+    }
+
+    /**
+     * @brief Measure the space required by a size_t
+     *
+     * This method measures the space required by a `size_t` value in
+     * the archive only when `size_t` <> `uint64_t`.
+     *
+     * @tparam ARITHMETIC_TYPE is the type whose size we aim to measure, 
+     *   i.e., `size_t`.
+     * @param value is the value whose archive required space is aimed
+     * @return a reference to the updated byte counter
+     */
+    template<typename ARITHMETIC_TYPE>
+     requires (std::same_as<ARITHMETIC_TYPE, size_t> 
+                && (!std::same_as<size_t, uint64_t>))
+    inline ByteCounter& operator&(const ARITHMETIC_TYPE& value)
+    {
+        *this & static_cast<uint64_t>(value);
 
         return *this;
     }
@@ -906,7 +959,7 @@ public:
  */
 class In : public Archive::Basic::In, private Archive::Basic::ProgressViewer
 {
-    std::map<uint64_t, std::pair<size_t, std::shared_ptr<void>>> dm_lookup;
+    std::map<size_t, std::pair<size_t, std::shared_ptr<void>>> dm_lookup;
 
 public:
     /**
@@ -962,13 +1015,17 @@ public:
      * @param value is the object in which the value is loaded
      * @return a reference to the updated archive
      */
-    template<typename ARITHMETIC_TYPE, std::enable_if_t<std::is_arithmetic_v<ARITHMETIC_TYPE>, bool> = true>
+    template<typename ARITHMETIC_TYPE>
+     requires (std::is_arithmetic_v<ARITHMETIC_TYPE> 
+                && (!std::same_as<ARITHMETIC_TYPE, size_t> 
+                    || std::same_as<size_t, uint64_t>))
     inline In& operator&(ARITHMETIC_TYPE& value)
     {
-        static_assert(!std::is_same_v<ARITHMETIC_TYPE, std::size_t>,
-                      "The template argument ARITHMETIC_TYPE cannot be std::size_t!");
+        fs.read(reinterpret_cast<char*>(&value), sizeof(ARITHMETIC_TYPE));
 
-        fs.read((char *)(&value), sizeof(ARITHMETIC_TYPE));
+        if constexpr (std::endian::native == std::endian::big) {
+            reverse_bytes(value);
+        }
 
         advance(sizeof(ARITHMETIC_TYPE));
 
@@ -978,10 +1035,18 @@ public:
     /**
      * @brief Load a size_t value from the archive
      *
+     * This method loads a `size_t` value from the archive only when
+     * `size_t` <> `uint64_t`.
+     *
+     * @tparam ARITHMETIC_TYPE is the type of the value to load, 
+     *   i.e., `size_t`.
      * @param value is the object in which the value is loaded
      * @return a reference to the updated archive
      */
-    inline In& operator&(size_t& value)
+    template<typename ARITHMETIC_TYPE>
+     requires (std::same_as<ARITHMETIC_TYPE, size_t> 
+                && (!std::same_as<size_t, uint64_t>))
+    inline In& operator&(ARITHMETIC_TYPE& value)
     {
         uint64_t load_value;
 
@@ -1001,12 +1066,12 @@ public:
     template<typename charT>
     In& operator&(std::basic_string<charT>& text)
     {
-        uint64_t size;
-        fs.read((char *)(&size), sizeof(uint64_t));
+        size_t size;
+        *this & size;
 
         charT* buffer = new charT[size+1];
 
-        fs.read((char *)buffer, size*sizeof(charT));
+        fs.read(reinterpret_cast<char*>(buffer), size*sizeof(charT));
 
         buffer[size] = '\0';
 
@@ -1014,7 +1079,7 @@ public:
 
         delete[] buffer;
 
-        advance(sizeof(uint64_t)+size*sizeof(charT));
+        advance(size*sizeof(charT));
 
         return *this;
     }
@@ -1228,7 +1293,7 @@ template<class ARCHIVE, template<class,class> class CONTAINER, class T, class Al
                           CLONES::Archive::has_load<T, ARCHIVE>::value, bool> = true>
 ARCHIVE& operator&(ARCHIVE& archive, CONTAINER<T,Alloc>& container)
 {
-    uint64_t size;
+    size_t size;
 
     archive & size;
 
@@ -1238,7 +1303,7 @@ ARCHIVE& operator&(ARCHIVE& archive, CONTAINER<T,Alloc>& container)
         container.reserve(size);
     }
 
-    for (uint64_t i=0; i<size; ++i) {
+    for (size_t i=0; i<size; ++i) {
         container.push_back(T::load(archive));
     }
 
@@ -1266,7 +1331,7 @@ template<class ARCHIVE, template<typename,typename> class CONTAINER, class T, cl
                           !CLONES::Archive::has_load<T, ARCHIVE>::value, bool> = true>
 ARCHIVE& operator&(ARCHIVE& archive, CONTAINER<T,Alloc>& container)
 {
-    uint64_t size;
+    size_t size;
 
     archive & size;
 
@@ -1276,7 +1341,7 @@ ARCHIVE& operator&(ARCHIVE& archive, CONTAINER<T,Alloc>& container)
         container.reserve(size);
     }
 
-    for (uint64_t i=0; i<size; ++i) {
+    for (size_t i=0; i<size; ++i) {
         T value;
 
         archive & value;
@@ -1306,13 +1371,13 @@ template<class ARCHIVE, class T, class Compare, class Alloc,
                           CLONES::Archive::has_load<T, ARCHIVE>::value, bool> = true>
 ARCHIVE& operator&(ARCHIVE& archive, std::set<T,Compare,Alloc>& S)
 {
-    uint64_t size;
+    size_t size;
 
     archive & size;
 
     S = std::set<T,Compare,Alloc>();
 
-    for (uint64_t i=0; i<size; ++i) {
+    for (size_t i=0; i<size; ++i) {
         S.insert(T::load(archive));
     }
 
@@ -1338,13 +1403,13 @@ template<class ARCHIVE, class T, class Compare, class Alloc,
                           !CLONES::Archive::has_load<T, ARCHIVE>::value, bool> = true>
 ARCHIVE& operator&(ARCHIVE& archive, std::set<T,Compare,Alloc>& S)
 {
-    uint64_t size;
+    size_t size;
 
     archive & size;
 
     S = std::set<T,Compare,Alloc>();
 
-    for (uint64_t i=0; i<size; ++i) {
+    for (size_t i=0; i<size; ++i) {
         T value;
 
         archive & value;
@@ -1373,13 +1438,13 @@ template<class ARCHIVE, class Key, class T, class Compare, class Allocator,
                              CLONES::Archive::has_load<T, ARCHIVE>::value, bool> = true>
 ARCHIVE& operator&(ARCHIVE& archive, std::map<Key,T,Compare,Allocator>& m)
 {
-    uint64_t size;
+    size_t size;
 
     archive & size;
 
     m.clear();
 
-    for (uint64_t i=0; i<size; ++i) {
+    for (size_t i=0; i<size; ++i) {
         Key key;
 
         archive & key;
@@ -1408,13 +1473,13 @@ template<class ARCHIVE, class Key, class T, class Compare, class Allocator,
                              !CLONES::Archive::has_load<T, ARCHIVE>::value, bool> = true>
 ARCHIVE& operator&(ARCHIVE& archive, std::map<Key,T,Compare,Allocator>& m)
 {
-    uint64_t size;
+    size_t size;
 
     archive & size;
 
     m.clear();
 
-    for (uint64_t i=0; i<size; ++i) {
+    for (size_t i=0; i<size; ++i) {
         Key key;
         T value;
 
@@ -1444,13 +1509,13 @@ template<class ARCHIVE, class Key, class T, class Compare, class Allocator,
                              !CLONES::Archive::has_load<T, ARCHIVE>::value, bool> = true>
 ARCHIVE& operator&(ARCHIVE& archive, std::map<Key,T,Compare,Allocator>& m)
 {
-    uint64_t size;
+    size_t size;
 
     archive & size;
 
     m.clear();
 
-    for (uint64_t i=0; i<size; ++i) {
+    for (size_t i=0; i<size; ++i) {
         Key key = Key::load(archive);
         T value;
 
@@ -1480,13 +1545,13 @@ template<class ARCHIVE, class Key, class T, class Compare, class Allocator,
                              CLONES::Archive::has_load<T, ARCHIVE>::value, bool> = true>
 ARCHIVE& operator&(ARCHIVE& archive, std::map<Key,T,Compare,Allocator>& m)
 {
-    uint64_t size;
+    size_t size;
 
     archive & size;
 
     m.clear();
 
-    for (uint64_t i=0; i<size; ++i) {
+    for (size_t i=0; i<size; ++i) {
         auto key = Key::load(archive);
         auto value = T::load(archive);
 
@@ -1729,7 +1794,7 @@ In& In::operator&(std::shared_ptr<T>& obj_ptr)
     *this & in_lookup;
 
     if (in_lookup) {
-        uint64_t idx;
+        size_t idx;
         *this & idx;
 
         auto it = dm_lookup.find(idx);
@@ -1752,8 +1817,7 @@ In& In::operator&(std::shared_ptr<T>& obj_ptr)
 
         auto dm_entry = std::make_pair<size_t, std::shared_ptr<void>>(
                                 typeid(T).hash_code(), obj_ptr);
-        auto res = dm_lookup.emplace(static_cast<uint64_t>(dm_lookup.size()),
-                                     dm_entry);
+        auto res = dm_lookup.emplace(dm_lookup.size(), dm_entry);
 
         if (!res.second) {
             // the pointer was not inserted
@@ -1823,7 +1887,7 @@ ByteCounter& ByteCounter::operator&(const std::shared_ptr<T>& obj_ptr)
     }
 
     // insert the pointer in the lookup
-    auto res = dm_lookup.insert({obj_ptr, dm_lookup.size()});
+    auto res = dm_lookup.emplace(obj_ptr, dm_lookup.size());
 
     if (!res.second) {
         // the pointer was not inserted
