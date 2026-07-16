@@ -2,7 +2,7 @@
  * @file archive.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines some archive classes and their methods
- * @version 1.12
+ * @version 1.13
  * @date 2026-07-16
  *
  * @copyright Copyright (c) 2023-2026
@@ -783,6 +783,9 @@ public:
                 && (!std::same_as<size_t, uint64_t>))
     inline Out& operator&(const ARITHMETIC_TYPE& value)
     {
+        static_assert(sizeof(size_t)<=sizeof(uint64_t),
+                      "size_t is supported if it uses 8 bytes at most.");
+
         const uint64_t temp_value = value;
 
         *this & temp_value;
@@ -911,6 +914,9 @@ public:
                 && (!std::same_as<size_t, uint64_t>))
     inline ByteCounter& operator&(const ARITHMETIC_TYPE& value)
     {
+        static_assert(sizeof(size_t)<=sizeof(uint64_t),
+                      "size_t is supported if it uses 8 bytes at most.");
+
         *this & static_cast<uint64_t>(value);
 
         return *this;
@@ -1048,6 +1054,9 @@ public:
                 && (!std::same_as<size_t, uint64_t>))
     inline In& operator&(ARITHMETIC_TYPE& value)
     {
+        static_assert(sizeof(size_t)<=sizeof(uint64_t),
+                      "size_t is supported if it uses 8 bytes at most.");
+
         uint64_t load_value;
 
         *this & load_value;
