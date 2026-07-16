@@ -2,8 +2,8 @@
  * @file phylogenetic_forest.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines classes and function for phylogenetic forests
- * @version 1.21
- * @date 2026-07-09
+ * @version 1.22
+ * @date 2026-07-16
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -533,7 +533,7 @@ public:
     template<typename ARCHIVE, std::enable_if_t<std::is_base_of_v<Archive::Basic::Out, ARCHIVE>, bool> = true>
     inline void save(ARCHIVE& archive) const
     {
-        ARCHIVE::write_header(archive, "CLONES Phylogenetic Forest", 4);
+        ARCHIVE::write_header(archive, "CLONES Phylogenetic Forest", 5);
 
         archive & static_cast<const Mutants::DescendantForest&>(*this)
                 & pre_neoplastic_mutations
@@ -555,7 +555,7 @@ public:
     template<typename ARCHIVE, std::enable_if_t<std::is_base_of_v<Archive::Basic::In, ARCHIVE>, bool> = true>
     static PhylogeneticForest load(ARCHIVE& archive)
     {
-        ARCHIVE::read_header(archive, "CLONES Phylogenetic Forest", 4);
+        ARCHIVE::read_header(archive, "CLONES Phylogenetic Forest", 5);
 
         PhylogeneticForest forest;
 

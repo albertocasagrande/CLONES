@@ -2,8 +2,8 @@
  * @file rs_index.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a class to compute the repeated substring index
- * @version 1.6
- * @date 2026-06-11
+ * @version 1.7
+ * @date 2026-07-16
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -928,7 +928,7 @@ public:
     template<typename ARCHIVE, std::enable_if_t<std::is_base_of_v<Archive::Basic::Out, ARCHIVE>, bool> = true>
     inline void save(ARCHIVE& archive) const
     {
-        ARCHIVE::write_header(archive, "CLONES RS Index", 0);
+        ARCHIVE::write_header(archive, "CLONES RS Index", 1);
 
         archive & sizeof(RepetitionType)
                 & *hetero_map
@@ -948,7 +948,7 @@ public:
     template<typename ARCHIVE, std::enable_if_t<std::is_base_of_v<Archive::Basic::In, ARCHIVE>, bool> = true>
     inline static RSIndex load(ARCHIVE& archive)
     {
-        ARCHIVE::read_header(archive, "CLONES RS Index", 0);
+        ARCHIVE::read_header(archive, "CLONES RS Index", 1);
 
         RSIndex rs_index;
 

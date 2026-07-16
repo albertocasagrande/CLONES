@@ -2,8 +2,8 @@
  * @file genome_mutations.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines genome and chromosome data structures
- * @version 1.20
- * @date 2026-07-10
+ * @version 1.21
+ * @date 2026-07-16
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -760,7 +760,7 @@ public:
     template<typename ARCHIVE, std::enable_if_t<std::is_base_of_v<Archive::Basic::Out, ARCHIVE>, bool> = true>
     inline void save(ARCHIVE& archive) const
     {
-        ARCHIVE::write_header(archive, "CLONES Genome Mutations", 1);
+        ARCHIVE::write_header(archive, "CLONES Chromosome Mutations", 0);
 
         archive & _data;
     }
@@ -777,7 +777,7 @@ public:
     {
         ChromosomeMutations chr_mutations;
 
-        ARCHIVE::read_header(archive, "CLONES Genome Mutations", 1);
+        ARCHIVE::read_header(archive, "CLONES Chromosome Mutations", 0);
 
         archive & chr_mutations._data;
 
@@ -1387,7 +1387,7 @@ public:
     template<typename ARCHIVE, std::enable_if_t<std::is_base_of_v<Archive::Basic::Out, ARCHIVE>, bool> = true>
     inline void save(ARCHIVE& archive) const
     {
-        ARCHIVE::write_header(archive, "CLONES GenomeMutations", 0);
+        ARCHIVE::write_header(archive, "CLONES Genome Mutations", 0);
 
         archive & chromosomes;
     }
@@ -1402,7 +1402,7 @@ public:
     template<typename ARCHIVE, std::enable_if_t<std::is_base_of_v<Archive::Basic::In, ARCHIVE>, bool> = true>
     inline static GenomeMutations load(ARCHIVE& archive)
     {
-        ARCHIVE::read_header(archive, "CLONES GenomeMutations", 0);
+        ARCHIVE::read_header(archive, "CLONES Genome Mutations", 0);
 
         GenomeMutations g_mutations;
 

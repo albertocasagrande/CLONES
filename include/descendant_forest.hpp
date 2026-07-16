@@ -2,8 +2,8 @@
  * @file descendant_forest.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines classes and function for descendant forests
- * @version 1.13
- * @date 2026-07-09
+ * @version 1.14
+ * @date 2026-07-16
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -876,7 +876,7 @@ public:
     template<typename ARCHIVE, std::enable_if_t<std::is_base_of_v<Archive::Basic::Out, ARCHIVE>, bool> = true>
     inline void save(ARCHIVE& archive) const
     {
-        ARCHIVE::write_header(archive, "CLONES Descendants Forest", 1);
+        ARCHIVE::write_header(archive, "CLONES Descendant Forest", 0);
 
         archive & roots
                 & cells
@@ -897,7 +897,7 @@ public:
     template<typename ARCHIVE, std::enable_if_t<std::is_base_of_v<Archive::Basic::In, ARCHIVE>, bool> = true>
     inline static DescendantForest load(ARCHIVE& archive)
     {
-        ARCHIVE::read_header(archive, "CLONES Descendants Forest", 1);
+        ARCHIVE::read_header(archive, "CLONES Descendant Forest", 0);
 
         DescendantForest forest;
 

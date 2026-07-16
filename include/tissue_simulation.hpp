@@ -2,8 +2,8 @@
  * @file tissue_simulation.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a tumour evolution simulation
- * @version 1.12
- * @date 2026-07-14
+ * @version 1.13
+ * @date 2026-07-16
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -1276,7 +1276,7 @@ public:
     template<typename ARCHIVE, std::enable_if_t<std::is_base_of_v<Archive::Basic::Out, ARCHIVE>, bool> = true>
     inline void save(ARCHIVE& archive) const
     {
-        ARCHIVE::write_header(archive, "CLONES Tissue TissueSimulation", 0);
+        ARCHIVE::write_header(archive, "CLONES Tissue Simulation", 0);
 
         archive & tissues
                 & lineage_graph
@@ -1303,7 +1303,7 @@ public:
     template<typename ARCHIVE, std::enable_if_t<std::is_base_of_v<Archive::Basic::In, ARCHIVE>, bool> = true>
     static TissueSimulation load(ARCHIVE& archive)
     {
-        ARCHIVE::read_header(archive, "CLONES Tissue TissueSimulation", 0);
+        ARCHIVE::read_header(archive, "CLONES Tissue Simulation", 0);
 
         TissueSimulation simulation;
 

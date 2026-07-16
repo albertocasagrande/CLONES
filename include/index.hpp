@@ -2,8 +2,8 @@
  * @file index.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines index
- * @version 1.2
- * @date 2026-06-11
+ * @version 1.3
+ * @date 2026-07-16
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -48,7 +48,7 @@ namespace Archive
 {
 
 #define CLONES_INDEX_DESC "CLONES index"
-#define CLONES_INDEX_VERSION 0
+#define CLONES_INDEX_VERSION 1
 
 /**
  * @brief A structure to define the partitions of the values of a type

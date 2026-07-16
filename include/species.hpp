@@ -2,8 +2,8 @@
  * @file species.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines species representation
- * @version 1.7
- * @date 2026-06-26
+ * @version 1.8
+ * @date 2026-07-16
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -477,7 +477,7 @@ public:
     template<typename ARCHIVE, std::enable_if_t<std::is_base_of_v<Archive::Basic::Out, ARCHIVE>, bool> = true>
     void save(ARCHIVE& archive) const
     {
-        ARCHIVE::write_header(archive, "CLONES Species", 0);
+        ARCHIVE::write_header(archive, "CLONES Species", 1);
 
         archive & static_cast<const SpeciesProperties &>(*this);
 
@@ -508,7 +508,7 @@ public:
     template<typename ARCHIVE, std::enable_if_t<std::is_base_of_v<Archive::Basic::In, ARCHIVE>, bool> = true>
     static Species load(ARCHIVE& archive)
     {
-        ARCHIVE::read_header(archive, "CLONES Species", 0);
+        ARCHIVE::read_header(archive, "CLONES Species", 1);
 
         auto species_properties = SpeciesProperties::load(archive);
         Species species(species_properties);
