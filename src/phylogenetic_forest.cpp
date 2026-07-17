@@ -2,8 +2,8 @@
  * @file phylogenetic_forest.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements classes and function for phylogenetic forests
- * @version 1.22
- * @date 2026-07-09
+ * @version 1.23
+ * @date 2026-07-17
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -212,11 +212,11 @@ CellGenomeMutations PhylogeneticForest::get_cell_mutations(const Mutants::CellId
 
     // find the branch from root to the node
     std::stack<Mutants::CellId> cell_id_stack;
-    do {
+    while (!node.is_root()) {
         cell_id_stack.push(node.get_id());
 
         node = node.parent();
-    } while (!node.is_root());
+    }
 
     // initialize the node genome mutations to the wild-type with or
     // without germline
