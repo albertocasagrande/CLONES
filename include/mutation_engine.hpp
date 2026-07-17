@@ -2,8 +2,8 @@
  * @file mutation_engine.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a class to place mutations on a descendant forest
- * @version 1.41
- * @date 2026-07-14
+ * @version 1.42
+ * @date 2026-07-17
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -370,6 +370,9 @@ class MutationEngine
     size_t number_of_mutations(GenomeMutations::Length genome_size,
                                const double& passenger_mutation_rate)
     {
+        if (passenger_mutation_rate == 0) {
+            return 0;
+        }
         auto mean = genome_size*passenger_mutation_rate;
 
         std::poisson_distribution<> p_dist(mean);
