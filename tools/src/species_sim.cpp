@@ -2,8 +2,8 @@
  * @file mutants_sim.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Main file for the mutants simulator
- * @version 1.4
- * @date 2026-07-14
+ * @version 1.5
+ * @date 2026-07-23
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -489,7 +489,7 @@ class DriverSimulator : public BasicExecutable
 
         using namespace std::chrono_literals;
 
-        simulation.set_interval_between_snapshots(5min);
+        simulation.get_snapshot_trigger().set_time_trigger(5min);
     }
 
     void init_simulation()

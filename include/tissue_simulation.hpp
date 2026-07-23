@@ -2,8 +2,8 @@
  * @file tissue_simulation.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a tumour evolution simulation
- * @version 1.13
- * @date 2026-07-16
+ * @version 1.14
+ * @date 2026-07-23
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -69,6 +69,258 @@ namespace Evolutions
 class TissueSimulation
 {
 public:
+
+    /**
+     * @brief A class to represent simulation status at snapshot
+     */
+    struct StatusAtSnapshot
+    {
+        using Clock = std::chrono::system_clock;
+        using TimePoint = std::chrono::time_point<Clock>;
+        using Duration = TimePoint::duration;
+
+        TimePoint time;         //!< The time at snapshot
+        Time clock;             //!< The simulated time at snapshot
+        uint64_t num_of_cells;  //!< The number of cells at snapshot
+
+        /**
+         * @brief The empty constructor
+         */
+        StatusAtSnapshot();
+
+        /**
+         * @brief Construct a new Status At Snapshot object
+         *
+         * @param simulation is the tissue simulation whose snapshot
+         *   has been taken
+         */
+        explicit StatusAtSnapshot(const TissueSimulation& simulation);
+
+        /**
+         * @brief Get the simulated time at the snapshot
+         *
+         * @return the simulated time at the snapshot
+         */
+        inline const Time& get_clock() const
+        {
+            return clock;
+        }
+
+        /**
+         * @brief Set the time
+         *
+         * @return a constant reference to the updated object
+         */
+        inline const StatusAtSnapshot& set_time()
+        {
+            time = Clock::now();
+
+            return *this;
+        }
+
+        /**
+         * @brief Get the snapshot time
+         *
+         * @return the snapshot time
+         */
+        inline const TimePoint& get_time() const
+        {
+            return time;
+        }
+
+        /**
+         * @brief Get the number of cells at snapshot
+         *
+         * @return the number of cells at snapshot
+         */
+        inline const uint64_t& get_num_of_cells() const
+        {
+            return num_of_cells;
+        }
+
+        /**
+         * @brief Save an object of the class `StatusAtSnapshot` in an archive
+         *
+         * @tparam ARCHIVE is the output archive type
+         * @param archive is the output archive
+         */
+        template<typename ARCHIVE>
+          requires std::is_base_of_v<Archive::Basic::Out, ARCHIVE>
+        inline void save(ARCHIVE& archive) const
+        {
+            archive & time.time_since_epoch().count()
+                    & clock
+                    & num_of_cells;
+        }
+
+        /**
+         * @brief Load an object of the class `StatusAtSnapshot` from an archive
+         *
+         * @tparam ARCHIVE is the input archive type
+         * @param archive is the input archive
+         * @return the loaded object
+         */
+        template<typename ARCHIVE>
+          requires std::is_base_of_v<Archive::Basic::In, ARCHIVE>
+        inline static StatusAtSnapshot load(ARCHIVE& archive)
+        {
+            StatusAtSnapshot status;
+
+            TimePoint::duration::rep ticks;
+
+            archive & ticks
+                    & status.clock
+                    & status.num_of_cells;
+
+            status.time = TimePoint(TimePoint::duration(ticks));
+
+            return status;
+        }
+    };
+
+    /**
+     * @brief A snapshot trigger type
+     *
+     * The object of this class establish whether a snapshot must
+     * be taken.
+     */
+    struct SnapshotTrigger
+    {
+        using Duration = StatusAtSnapshot::Duration;
+
+        Duration time_delta;            //!< The maximum time difference between two successive snapshots
+        Time clock_delta;               //!< The maximum simulated time difference between two successive snapshots
+        uint64_t cardinality_delta;     //!< The maximum difference in the number of cells between two successive snapshots
+
+        /**
+         * @brief The empty constructor
+         */
+        SnapshotTrigger();
+
+        /**
+         * @brief Set the time trigger
+         *
+         * @param time_delta is the new maximum time interval between two
+         *   consecutive snapshots.
+         * @return A reference to the updated object.
+         */
+        inline SnapshotTrigger& set_time_trigger(const Duration& time_delta)
+        {
+            this->time_delta = time_delta;
+
+            return *this;
+        }
+
+        /**
+         * @brief Get the time trigger
+         *
+         * @return the maximum time interval between two
+         *   consecutive snapshots.
+         */
+        inline const Duration& get_time_trigger() const
+        {
+            return this->time_delta;
+        }
+
+        /**
+         * @brief Set the clock trigger
+         *
+         * @param clock_delta is the new maximum simulated time interval
+         *   between two consecutive snapshots.
+         * @return A reference to the updated object.
+         */
+        inline SnapshotTrigger& set_clock_trigger(const Time& clock_delta)
+        {
+            this->clock_delta = clock_delta;
+
+            return *this;
+        }
+
+        /**
+         * @brief Get the clock trigger
+         *
+         * @return the maximum simulated time interval
+         *   between two consecutive snapshots.
+         */
+        inline const Time& get_clock_trigger() const
+        {
+            return clock_delta;
+        }
+
+        /**
+         * @brief Set the cardinality trigger
+         *
+         * @param cardinality_delta is the new maximum difference in the number of cells
+         *   between two consecutive snapshots.
+         * @return A reference to the updated object.
+         */
+        inline SnapshotTrigger& set_cardinality_trigger(const uint64_t& cardinality_delta)
+        {
+            this->cardinality_delta = cardinality_delta;
+
+            return *this;
+        }
+
+        /**
+         * @brief Get the cardinality trigger
+         *
+         * @return The maximum difference in the number of cells
+         *   between two consecutive snapshots.
+         */
+        inline const uint64_t& get_cardinality_trigger() const
+        {
+            return cardinality_delta;
+        }
+
+        /**
+         * @brief Test whether the simulation triggers a new snapshot
+         *
+         * @param simulation is the tissue simulation to be tested.
+         * @return `true` if and only if the current simulation triggers
+         *   a new snapshot.
+         */
+        bool is_triggered_by(const TissueSimulation& simulation) const;
+
+        /**
+         * @brief Save an object of the class `SnapshotTrigger` in an archive
+         *
+         * @tparam ARCHIVE is the output archive type
+         * @param archive is the output archive
+         */
+        template<typename ARCHIVE>
+          requires std::is_base_of_v<Archive::Basic::Out, ARCHIVE>
+        inline void save(ARCHIVE& archive) const
+        {
+            archive & time_delta.count()
+                    & clock_delta
+                    & cardinality_delta;
+        }
+
+        /**
+         * @brief Load an object of the class `SnapshotTrigger` from an archive
+         *
+         * @tparam ARCHIVE is the input archive type
+         * @param archive is the input archive
+         * @return the loaded object
+         */
+        template<typename ARCHIVE>
+          requires std::is_base_of_v<Archive::Basic::In, ARCHIVE>
+        inline static SnapshotTrigger load(ARCHIVE& archive)
+        {
+            SnapshotTrigger trigger;
+
+            Duration::rep ticks;
+
+            archive & ticks
+                    & trigger.clock_delta
+                    & trigger.cardinality_delta;
+
+            trigger.time_delta = Duration(ticks);
+
+            return trigger;
+        }
+    };
+
     /**
      * @brief Information about the cells manually added to the simulation
      */
@@ -146,8 +398,8 @@ protected:
 
     std::vector<Direction> valid_directions;   //!< valid simulation tissue directions
 
-    system_clock::time_point last_snapshot_time;    //!< Time of the last snapshot
-    long secs_between_snapshots;    //!< The number of seconds between two snapshots
+    StatusAtSnapshot status_at_snapshot;    //!< The simulation status at the last snapshot
+    SnapshotTrigger snapshot_trigger;       //!< The object testing whether a snapshot is needed
 
     TissueStatistics statistics;     //!< The tissue simulation statistics
 
@@ -306,19 +558,6 @@ protected:
      * @return a cell event among those due to cell liveness
      */
     CellEvent select_next_cell_event();
-
-    /**
-     * @brief Performs a simulation snapshot
-     *
-     * This method performs a simulation snapshot if the time
-     * elapsed from the last snapshot is greater than that set
-     * in `secs_between_snapshots`.
-     *
-     * @tparam INDICATOR is the type of progress bar
-     * @param indicator is the progress bar
-     */
-    template<typename INDICATOR>
-    void snapshot_on_time(INDICATOR *indicator);
 
     /**
      * @brief Collect proxies of cells in a rectangle
@@ -604,9 +843,10 @@ public:
             run_up_to_next_event(plotter);
 
             if (storage_enabled) {
-                snapshot_on_time(indicator);
+                if (snapshot_trigger.is_triggered_by(*this)) {
+                    make_snapshot(indicator);
+                }
             }
-
 
             if (indicator != nullptr) {
                 indicator->set_progress(done.percentage(*this),
@@ -643,7 +883,7 @@ public:
              std::enable_if_t<std::is_base_of_v<BasicTest, SIMULATION_TEST> &&
                               std::is_base_of_v<UI::Plot2DWindow, PLOT_WINDOW>, bool> = true>
     inline TissueSimulation& run(SIMULATION_TEST& done, UI::TissuePlotter<PLOT_WINDOW>& plotter,
-                           INDICATOR_TYPE& indicator)
+                                 INDICATOR_TYPE& indicator)
     {
         return run(done, &plotter, &indicator);
     }
@@ -704,6 +944,36 @@ public:
     inline TissueSimulation& run(SIMULATION_TEST& done)
     {
         return run<SIMULATION_TEST, UI::Plot2DWindow, UI::ProgressBar>(done, nullptr, nullptr);
+    }
+
+    /**
+     * @brief Get the last snapshot status
+     *
+     * @return the last snapshot status
+     */
+    inline const StatusAtSnapshot& get_last_snapshot_status() const
+    {
+        return status_at_snapshot;
+    }
+
+    /**
+     * @brief Get the snapshot trigger
+     *
+     * @return A reference to the snapshot trigger
+     */
+    inline SnapshotTrigger& get_snapshot_trigger()
+    {
+        return snapshot_trigger;
+    }
+
+    /**
+     * @brief Get the snapshot trigger
+     *
+     * @return A constant reference to the snapshot trigger
+     */
+    inline const SnapshotTrigger& get_snapshot_trigger() const
+    {
+        return snapshot_trigger;
     }
 
     /**
@@ -1079,19 +1349,6 @@ public:
     Tissue& tissue();
 
     /**
-     * @brief Set the interval between snapshots
-     *
-     * @param time_interval is the time interval between two snapshots
-     */
-    template<class Rep, class Period>
-    inline void set_interval_between_snapshots(const std::chrono::duration<Rep,Period> time_interval)
-    {
-        using namespace std::chrono;
-
-        secs_between_snapshots = duration_cast<seconds>(time_interval).count();
-    }
-
-    /**
      * @brief Reset a simulation
      */
     void reset();
@@ -1282,7 +1539,8 @@ public:
                 & lineage_graph
                 & mutant_name2id
                 & logger
-                & secs_between_snapshots
+                & status_at_snapshot
+                & snapshot_trigger
                 & statistics
                 & time
                 & timed_event_queue
@@ -1303,7 +1561,7 @@ public:
     template<typename ARCHIVE, std::enable_if_t<std::is_base_of_v<Archive::Basic::In, ARCHIVE>, bool> = true>
     static TissueSimulation load(ARCHIVE& archive)
     {
-        ARCHIVE::read_header(archive, "CLONES Tissue Simulation", 0);
+        ARCHIVE::read_header(archive, "CLONES Tissue Simulation", 1);
 
         TissueSimulation simulation;
 
@@ -1311,7 +1569,8 @@ public:
                 & simulation.lineage_graph
                 & simulation.mutant_name2id
                 & simulation.logger
-                & simulation.secs_between_snapshots
+                & simulation.status_at_snapshot
+                & simulation.snapshot_trigger
                 & simulation.statistics
                 & simulation.time
                 & simulation.timed_event_queue
@@ -1328,7 +1587,7 @@ public:
 
         simulation.init_valid_directions();
 
-        simulation.last_snapshot_time = system_clock::now();
+        simulation.status_at_snapshot.set_time();
 
         return simulation;
     }
@@ -1339,22 +1598,8 @@ public:
 /* Template implementations */
 
 template<typename INDICATOR>
-void TissueSimulation::snapshot_on_time(INDICATOR *indicator)
-{
-    using namespace std::chrono;
-
-    const auto from_last_snapshot = duration_cast<seconds>(system_clock::now()-last_snapshot_time);
-
-    if (secs_between_snapshots>0 && from_last_snapshot.count()>=secs_between_snapshots) {
-        make_snapshot(indicator);
-    }
-}
-
-template<typename INDICATOR>
 void TissueSimulation::make_snapshot(INDICATOR *indicator)
 {
-    last_snapshot_time = system_clock::now();
-
     if (storage_enabled) {
         if (indicator != nullptr) {
             indicator->set_message("Saving snapshot");
@@ -1363,6 +1608,8 @@ void TissueSimulation::make_snapshot(INDICATOR *indicator)
         logger.snapshot(*this);
         logger.flush_archives();
     }
+
+    status_at_snapshot = StatusAtSnapshot(*this);
 }
 
 template<typename PLOT_WINDOW>
