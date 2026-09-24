@@ -2,8 +2,8 @@
  * @file bucket.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Bucket tests
- * @version 1.5
- * @date 2026-06-21
+ * @version 1.6
+ * @date 2026-09-24
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -69,7 +69,7 @@ template<typename TYPE>
 struct BucketFixture
 {
     CLONES::Archive::Bucket<TYPE> bucket;
-    std::set<TYPE> dataset;
+    CLONES::set<TYPE> dataset;
 
     BucketFixture():
         bucket{get_a_temporary_path(), DEFAULT_WRITE_CACHE_SIZE}
@@ -94,9 +94,9 @@ struct BucketFixture
 template<typename TYPE, typename RANDOM_GENERATOR>
 TYPE
 test_random_tour_on(const CLONES::Archive::BucketRandomTour<TYPE, RANDOM_GENERATOR>& tour,
-                    const std::set<TYPE>& dataset)
+                    const CLONES::set<TYPE>& dataset)
 {
-    std::set<TYPE> local_dataset(dataset.begin(), dataset.end());
+    CLONES::set<TYPE> local_dataset(dataset.begin(), dataset.end());
 
     TYPE last_value;
     for (TYPE value : tour) {
@@ -116,7 +116,7 @@ test_random_tour_on(const CLONES::Archive::BucketRandomTour<TYPE, RANDOM_GENERAT
 
 template<typename TYPE>
 void shuffle_bucket(CLONES::Archive::Bucket<TYPE>& bucket,
-                    const std::set<TYPE>& dataset,
+                    const CLONES::set<TYPE>& dataset,
                     const size_t read_cache_size)
 {
     using namespace CLONES::Archive;
@@ -131,7 +131,7 @@ void shuffle_bucket(CLONES::Archive::Bucket<TYPE>& bucket,
 
     {
         Bucket<TYPE> bucket2(bucket.path(), DEFAULT_READ_CACHE_SIZE);
-        std::set<TYPE> local_dataset(dataset.begin(), dataset.end());
+        CLONES::set<TYPE> local_dataset(dataset.begin(), dataset.end());
 
         BOOST_CHECK(bucket2.size()==dataset.size());
 
@@ -220,7 +220,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(random_tour_T, T, test_types, BucketFixture<T>)
     std::mt19937_64 gen(0);
 
     // testing different tours with different generators
-    std::set<T> last_values;
+    CLONES::set<T> last_values;
     for (size_t i=0; i<5; ++i) {
         std::mt19937_64 gen(i);
 
@@ -231,7 +231,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(random_tour_T, T, test_types, BucketFixture<T>)
     BOOST_CHECK(last_values.size()>1);
 
     // testing different tours with the same generator
-    last_values = std::set<T>();
+    last_values = CLONES::set<T>();
     for (size_t i=0; i<5; ++i) {
         auto tour = this->bucket.random_tour(gen, DEFAULT_READ_CACHE_SIZE);
 
@@ -240,7 +240,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(random_tour_T, T, test_types, BucketFixture<T>)
     BOOST_CHECK(last_values.size()==1);
 
     // testing multiple time the same generator
-    last_values = std::set<T>();
+    last_values = CLONES::set<T>();
     auto tour = this->bucket.random_tour(gen, DEFAULT_READ_CACHE_SIZE);
     for (size_t i=0; i<5; ++i) {
         last_values.insert(test_random_tour_on(tour, this->dataset));

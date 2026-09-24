@@ -2,8 +2,8 @@
  * @file genome_fragment.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements genome DNA fragments
- * @version 1.4
- * @date 2026-07-14
+ * @version 1.5
+ * @date 2026-09-24
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -225,17 +225,17 @@ void update_alignment(std::vector<MatchingType>& alignment,
 }
 
 GenomeFragment::GenomeFragment(const std::string& reference,
-                                 const std::map<GenomicPosition, std::shared_ptr<SID>>& germline,
-                                 const std::map<GenomicPosition, std::shared_ptr<SID>>& somatic,
-                                 const GenomicPosition& begin_pos,
-                                 const size_t& size):
+                               const CLONES::map<GenomicPosition, std::shared_ptr<SID>>& germline,
+                               const CLONES::map<GenomicPosition, std::shared_ptr<SID>>& somatic,
+                               const GenomicPosition& begin_pos,
+                               const size_t& size):
     GenomeFragment{reference, 0, germline, somatic, begin_pos, size}
 {}
 
 GenomeFragment::GenomeFragment(const std::string& reference_fragment,
                                const size_t& fragment_offset,
-                               const std::map<GenomicPosition, std::shared_ptr<SID>>& germline,
-                               const std::map<GenomicPosition, std::shared_ptr<SID>>& somatic,
+                               const CLONES::map<GenomicPosition, std::shared_ptr<SID>>& germline,
+                               const CLONES::map<GenomicPosition, std::shared_ptr<SID>>& somatic,
                                const GenomicPosition& begin_pos,
                                const size_t& size):
     genomic_position{begin_pos}

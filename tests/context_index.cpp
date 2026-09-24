@@ -2,8 +2,8 @@
  * @file context_index.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Testing CLONES::Mutations::ContextIndex class
- * @version 1.1
- * @date 2026-06-11
+ * @version 1.2
+ * @date 2026-09-24
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -47,9 +47,9 @@ BOOST_AUTO_TEST_CASE(context_index_creation)
 
     BOOST_CHECK_NO_THROW(ContextIndex<>::build_index(FASTA_FILE));
 
-    std::set<GenomicRegion> regions{{{2,115}, 20},
-                                    {{1,5}, 73},
-                                    {{2,247}, 11}};
+    CLONES::set<GenomicRegion> regions{{{2,115}, 20},
+                                       {{1,5}, 73},
+                                       {{2,247}, 11}};
 
     BOOST_CHECK_NO_THROW(ContextIndex<>::build_index(FASTA_FILE, regions));
 
@@ -57,10 +57,11 @@ BOOST_AUTO_TEST_CASE(context_index_creation)
 }
 
 template<typename GENOME_WIDE_POSITION>
-std::set<CLONES::Mutations::GenomicPosition> get_genomic_positions(const CLONES::Mutations::ContextIndex<GENOME_WIDE_POSITION>& context_index,
-                                                                   const CLONES::Mutations::SBSContext& mutational_context)
+CLONES::set<CLONES::Mutations::GenomicPosition>
+get_genomic_positions(const CLONES::Mutations::ContextIndex<GENOME_WIDE_POSITION>& context_index,
+                      const CLONES::Mutations::SBSContext& mutational_context)
 {
-    std::set<CLONES::Mutations::GenomicPosition> positions;
+    CLONES::set<CLONES::Mutations::GenomicPosition> positions;
 
     for (const auto& abs_pos: context_index[mutational_context]) {
         positions.insert(context_index.get_genomic_position(abs_pos));
@@ -74,7 +75,7 @@ struct ContextFixture
     using SBSContext = CLONES::Mutations::SBSContext;
     using GenomicPosition = CLONES::Mutations::GenomicPosition;
 
-    std::map<SBSContext, std::set<GenomicPosition> > test_positions;
+    CLONES::map<SBSContext, CLONES::set<GenomicPosition>> test_positions;
 
     ContextFixture():
         test_positions{
@@ -98,7 +99,7 @@ BOOST_AUTO_TEST_CASE(context_index_whole_genome)
     auto context_index = ContextIndex<>::build_index(FASTA_FILE);
 
     for (const auto& [context_test, positions_test]: test_positions) {
-        std::set<CLONES::Mutations::GenomicPosition> positions;
+        CLONES::set<CLONES::Mutations::GenomicPosition> positions;
 
         if (positions_test.size() != 0) {
             BOOST_CHECK_NO_THROW(positions = get_genomic_positions(context_index, context_test));
@@ -118,8 +119,8 @@ BOOST_AUTO_TEST_CASE(context_index_whole_genome)
     }
 }
 
-bool in_regions(const std::set<CLONES::Mutations::GenomicRegion>& genomic_regions,
-               const CLONES::Mutations::GenomicPosition& genomic_position)
+bool in_regions(const CLONES::set<CLONES::Mutations::GenomicRegion>& genomic_regions,
+                const CLONES::Mutations::GenomicPosition& genomic_position)
 {
     for (const auto& genomic_region: genomic_regions) {
         if (genomic_region.contains(genomic_position)) {
@@ -134,8 +135,8 @@ BOOST_AUTO_TEST_CASE(context_index_regions)
 {
     using namespace CLONES::Mutations;
 
-    const std::set<GenomicRegion> regions{{{2,115}, 20}, {{1,5}, 73},
-                                          {{2,247}, 11}};
+    const CLONES::set<GenomicRegion> regions{{{2,115}, 20}, {{1,5}, 73},
+                                             {{2,247}, 11}};
 
     decltype(test_positions) in_context_positions;
 
@@ -150,7 +151,7 @@ BOOST_AUTO_TEST_CASE(context_index_regions)
     auto context_index = ContextIndex<>::build_index(FASTA_FILE, regions);
 
     for (const auto& [context_test, positions_test]: in_context_positions) {
-        std::set<CLONES::Mutations::GenomicPosition> positions;
+        CLONES::set<CLONES::Mutations::GenomicPosition> positions;
 
         if (positions_test.size() != 0) {
             BOOST_CHECK_NO_THROW(positions = get_genomic_positions(context_index, context_test));

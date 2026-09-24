@@ -2,8 +2,8 @@
  * @file mutation_spec.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a wrapper class to specify mutation allele
- * @version 1.1
- * @date 2026-02-06
+ * @version 1.2
+ * @date 2026-09-24
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -111,19 +111,14 @@ struct MutationSpec : public MUTATION_TYPE
 
 }   // Mutations
 
-}   // CLONES
-
-
-namespace std
-{
 
 template<typename MUTATION_TYPE>
-struct less<CLONES::Mutations::MutationSpec<MUTATION_TYPE>>
+struct order<Mutations::MutationSpec<MUTATION_TYPE>>
 {
-    inline bool operator()(const CLONES::Mutations::MutationSpec<MUTATION_TYPE> &lhs,
-                           const CLONES::Mutations::MutationSpec<MUTATION_TYPE> &rhs) const
+    inline bool operator()(const Mutations::MutationSpec<MUTATION_TYPE> &lhs,
+                           const Mutations::MutationSpec<MUTATION_TYPE> &rhs) const
     {
-        less<MUTATION_TYPE> cmp;
+        order<MUTATION_TYPE> cmp;
 
         if (cmp(lhs, rhs)) {
             return true;
@@ -136,6 +131,12 @@ struct less<CLONES::Mutations::MutationSpec<MUTATION_TYPE>>
         return lhs.allele_id < rhs.allele_id;
     }
 };
+
+}   // CLONES
+
+
+namespace std
+{
 
 template<typename MUTATION_TYPE>
 std::ostream& operator<<(std::ostream& os, const CLONES::Mutations::MutationSpec<MUTATION_TYPE>& specification)

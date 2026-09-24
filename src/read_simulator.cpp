@@ -2,8 +2,8 @@
  * @file read_simulator.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements classes to simulate sequencing
- * @version 1.13
- * @date 2026-07-14
+ * @version 1.14
+ * @date 2026-09-24
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -354,11 +354,11 @@ SIDData ChrSampleStatistics::get_data(const SID& mutation) const
     return SID_data_it->second;
 }
 
-std::map<SID, SIDData>::iterator
-find_not_before(const SID& mutation, const std::map<SID, SIDData>& data,
-                std::map<SID, SIDData>::iterator it)
+CLONES::map<SID, SIDData>::iterator
+find_not_before(const SID& mutation, const CLONES::map<SID, SIDData>& data,
+                CLONES::map<SID, SIDData>::iterator it)
 {
-    std::less<SID> before;
+    CLONES::order<SID> before;
     while (it != data.end() && before(it->first, mutation)) {
         ++it;
     }
@@ -366,12 +366,12 @@ find_not_before(const SID& mutation, const std::map<SID, SIDData>& data,
     return it;
 }
 
-void update_data(std::map<SID, SIDData>& a, const std::map<SID, SIDData>& b)
+void update_data(CLONES::map<SID, SIDData>& a, const CLONES::map<SID, SIDData>& b)
 {
     auto a_it = a.begin();
     auto b_it = b.begin();
 
-    std::less<SID> before;
+    CLONES::order<SID> before;
     while (b_it != b.end()) {
 
         // find occurrence of b_it->first in a
@@ -574,11 +574,11 @@ SampleSetStatistics::SampleSetStatistics(const std::filesystem::path& data_direc
     create_dir(data_dir);
 }
 
-std::map<std::string, std::map<GenomicPosition, BaseCoverage>>
+std::map<std::string, CLONES::map<GenomicPosition, BaseCoverage>>
 get_sample_coverages_for_SIDs(const std::map<std::string, SampleStatistics>& stats_map,
-                              const std::map<SID, BaseCoverage>& SID_occurrences)
+                              const CLONES::map<SID, BaseCoverage>& SID_occurrences)
 {
-    using SIDCoverage = std::map<GenomicPosition, BaseCoverage>;
+    using SIDCoverage = CLONES::map<GenomicPosition, BaseCoverage>;
     std::map<std::string, SIDCoverage> sample_locus_coverage;
 
     for (auto& [sample_name, sample_stats]: stats_map) {
@@ -602,8 +602,9 @@ get_sample_coverages_for_SIDs(const std::map<std::string, SampleStatistics>& sta
     return sample_locus_coverage;
 }
 
-template<typename K, typename V>
-bool have_different_keys(const std::map<K, V>& map_a, const std::map<K, V>& map_b)
+template<typename K, typename V, typename C, typename A>
+bool have_different_keys(const std::map<K, V, C, A>& map_a,
+                         const std::map<K, V, C, A>& map_b)
 {
     if (map_a.size() != map_b.size()) {
         return true;
@@ -728,10 +729,10 @@ void SampleSetStatistics::save_VAF_CSVs(const std::string& base_name,
     progress_bar.set_progress(100, "VAFs saved");
 }
 
-std::map<SID, SIDData>
+CLONES::map<SID, SIDData>
 get_total_SID_data(const std::map<std::string, SampleStatistics>& stats_map)
 {
-    std::map<SID, SIDData> total_SID_data;
+    CLONES::map<SID, SIDData> total_SID_data;
 
     for (const auto& [sample_name, sample_stats]: stats_map) {
         update_data(total_SID_data, sample_stats.get_data());
@@ -740,11 +741,11 @@ get_total_SID_data(const std::map<std::string, SampleStatistics>& stats_map)
     return total_SID_data;
 }
 
-std::map<GenomicPosition, BaseCoverage>
+CLONES::map<GenomicPosition, BaseCoverage>
 get_total_SID_coverage(const std::map<std::string, SampleStatistics>& stats_map,
-                       const std::map<SID, SIDData>& total_SID_data)
+                       const CLONES::map<SID, SIDData>& total_SID_data)
 {
-    std::map<GenomicPosition, BaseCoverage> total_locus_coverage;
+    CLONES::map<GenomicPosition, BaseCoverage> total_locus_coverage;
 
     for (const auto& [mutation, total_mutation_data]: total_SID_data) {
         auto it = total_locus_coverage.emplace(mutation,0).first;
@@ -997,8 +998,8 @@ void SampleSetStatistics::save_coverage_image(const std::filesystem::path& filen
     f->save(data_dir/filename);
 }
 
-std::vector<double> get_VAF_data(const std::map<SID, SIDData>& SID_data,
-                                 const std::map<GenomicPosition, BaseCoverage>& locus_coverage,
+std::vector<double> get_VAF_data(const CLONES::map<SID, SIDData>& SID_data,
+                                 const CLONES::map<GenomicPosition, BaseCoverage>& locus_coverage,
                                  const ChromosomeId& chr_id,
                                  const double& threshold=0.0)
 {

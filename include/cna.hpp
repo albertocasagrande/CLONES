@@ -2,8 +2,8 @@
  * @file cna.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a class for copy number alterations
- * @version 1.5
- * @date 2026-06-11
+ * @version 1.6
+ * @date 2026-09-24
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -282,17 +282,17 @@ struct CNA : public Mutation
 
 }   // Mutations
 
+template<>
+struct order<Mutations::CNA>
+{
+    bool operator()(const Mutations::CNA &lhs,
+                    const Mutations::CNA &rhs) const;
+};
+
 }   // CLONES
 
 namespace std
 {
-
-template<>
-struct less<CLONES::Mutations::CNA>
-{
-    bool operator()(const CLONES::Mutations::CNA &lhs,
-                    const CLONES::Mutations::CNA &rhs) const;
-};
 
 /**
  * @brief Write a CNA in a output stream

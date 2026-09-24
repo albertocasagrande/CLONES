@@ -2,8 +2,8 @@
  * @file genomic_region.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines genomic regions
- * @version 1.5
- * @date 2026-07-14
+ * @version 1.6
+ * @date 2026-09-24
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -548,16 +548,11 @@ inline bool operator!=(const CLONES::Mutations::GenomicRegion& lhs,
 
 }   // Mutations
 
-}   // CLONES
-
-namespace std
-{
-
 template<>
-struct less<CLONES::Mutations::GenomicRegion>
+struct order<Mutations::GenomicRegion>
 {
-    inline bool operator()(const CLONES::Mutations::GenomicRegion &lhs,
-                           const CLONES::Mutations::GenomicRegion &rhs) const
+    inline bool operator()(const Mutations::GenomicRegion &lhs,
+                           const Mutations::GenomicRegion &rhs) const
     {
         return ((lhs.get_chromosome_id()<rhs.get_chromosome_id())
                 || ((lhs.get_chromosome_id()==rhs.get_chromosome_id())
@@ -567,6 +562,11 @@ struct less<CLONES::Mutations::GenomicRegion>
                     && (lhs.size()<rhs.size())));
     }
 };
+
+}   // CLONES
+
+namespace std
+{
 
 /**
  * @brief Write a genomic region in a output stream

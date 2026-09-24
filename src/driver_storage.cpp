@@ -2,8 +2,8 @@
  * @file driver_storage.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements class to load and store driver mutations
- * @version 1.3
- * @date 2026-06-11
+ * @version 1.4
+ * @date 2026-09-24
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -43,9 +43,9 @@ namespace Mutations
 DriverStorage::DriverStorage()
 {}
 
-std::map<SID, std::string> DriverStorage::get_reverse_map() const
+CLONES::map<SID, std::string> DriverStorage::get_reverse_map() const
 {
-    std::map<SID, std::string> reverse_map;
+    CLONES::map<SID, std::string> reverse_map;
 
     for (const auto& [code, mutation_entry] : mutation_map) {
         reverse_map[mutation_entry.mutation] = code;

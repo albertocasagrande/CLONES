@@ -2,8 +2,8 @@
  * @file build_repetition_index.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Builds the repetition index
- * @version 1.3
- * @date 2026-07-14
+ * @version 1.4
+ * @date 2026-09-24
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -60,7 +60,7 @@ class RepetitionIndexBuilder: public BasicExecutable
         using namespace CLONES::Mutations;
 
         std::list<GenomicRegion> chr_regions;
-        std::set<GenomicRegion> regions_to_avoid;
+        CLONES::set<GenomicRegion> regions_to_avoid;
 
         if (driver_mutations_filename!="") {
             auto driver_storage = DriverStorage::load(driver_mutations_filename);

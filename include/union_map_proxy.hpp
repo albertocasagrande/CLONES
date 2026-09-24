@@ -2,8 +2,8 @@
  * @file union_map_proxy.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines union map representation
- * @version 1.1
- * @date 2026-07-14
+ * @version 1.2
+ * @date 2026-09-24
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -33,6 +33,7 @@
 
 #include <map>
 
+#include "ordered_containers.hpp"
 
 namespace CLONES
 {
@@ -47,7 +48,7 @@ namespace CLONES
  * @tparam COMPARE the compare class
  * @tparam ALLOCATOR the allocator class
  */
-template<class KEY, class VALUE, class COMPARE = std::less<KEY>,
+template<class KEY, class VALUE, class COMPARE = CLONES::order<KEY>,
          class ALLOCATOR = std::allocator<std::pair<const KEY, VALUE>>>
 class union_map_proxy
 {
@@ -264,7 +265,8 @@ public:
      * @param map1 the first map in the union
      * @param map2 the second map in the union
      */
-    union_map_proxy(const std::map<KEY, VALUE>& map1, const std::map<KEY, VALUE>& map2):
+    union_map_proxy(const std::map<KEY, VALUE, COMPARE, ALLOCATOR>& map1,
+                    const std::map<KEY, VALUE, COMPARE, ALLOCATOR>& map2):
         map1{map1}, map2{map2}
     {}
 

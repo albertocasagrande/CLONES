@@ -2,8 +2,8 @@
  * @file allele.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines allele representation
- * @version 1.9
- * @date 2026-07-10
+ * @version 1.10
+ * @date 2026-09-24
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -31,9 +31,9 @@
 #ifndef __CLONES_ALLELE__
 #define __CLONES_ALLELE__
 
-#include <map>
 #include <limits>
 
+#include "ordered_containers.hpp"
 #include "sid.hpp"
 #include "genomic_region.hpp"
 
@@ -71,8 +71,8 @@ class AlleleFragment : public GenomicRegion
      */
     class Data
     {
-        std::map<GenomicPosition,
-                 std::shared_ptr<SID>> mutations;  //!< the fragment SIDs
+        CLONES::map<GenomicPosition,
+                    std::shared_ptr<SID>> mutations;  //!< the fragment SIDs
     public:
         /**
          * @brief The empty constructor
@@ -162,7 +162,7 @@ public:
      *
      * @return a constant reference to the allele fragment SID mutations
      */
-    inline const std::map<GenomicPosition, std::shared_ptr<SID>>&
+    inline const CLONES::map<GenomicPosition, std::shared_ptr<SID>>&
     get_mutations() const
     {
         return _data->mutations;
@@ -403,7 +403,7 @@ bool operator!=(const CLONES::Mutations::AlleleFragment& lhs,
  */
 class Allele
 {
-    std::map<GenomicPosition, AlleleFragment> fragments;    //!< the sequence fragments
+    CLONES::map<GenomicPosition, AlleleFragment> fragments;    //!< the sequence fragments
 
     std::list<AlleleId> history;    //!< the allele history
 
@@ -474,7 +474,7 @@ public:
      *
      * @return a constant reference to the allele fragments
      */
-    inline const std::map<GenomicPosition, AlleleFragment>& get_fragments() const
+    inline const CLONES::map<GenomicPosition, AlleleFragment>& get_fragments() const
     {
         return fragments;
     }
@@ -644,7 +644,7 @@ public:
      *
      * @return the allele SID mutations
      */
-    std::map<GenomicPosition, std::shared_ptr<SID>> get_mutations() const;
+    CLONES::map<GenomicPosition, std::shared_ptr<SID>> get_mutations() const;
 
     /**
      * @brief Get the size of the allele

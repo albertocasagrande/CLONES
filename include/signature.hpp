@@ -2,8 +2,8 @@
  * @file signature.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines mutational signatures
- * @version 1.7
- * @date 2026-07-14
+ * @version 1.8
+ * @date 2026-09-24
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -34,7 +34,6 @@
 #include <string>
 #include <vector>
 #include <random>   // std::discrete_distribution
-#include <map>
 #include <set>
 #include <ranges>    // std::views::keys and std::views::values
 #include <initializer_list>
@@ -42,6 +41,7 @@
 #include <istream>
 #include <sstream>
 
+#include "ordered_containers.hpp"
 #include "error.hpp"
 
 namespace CLONES
@@ -74,7 +74,7 @@ class Signature;
 template<typename MUTATION_TYPE>
 class SignatureExprResult
 {
-    std::map<MUTATION_TYPE, size_t> pos_map; //!< the mutation type-position map
+    CLONES::map<MUTATION_TYPE, size_t> pos_map; //!< the mutation type-position map
     std::vector<double> probabilities;    //!< the probability distribution
 
     /**
@@ -194,9 +194,9 @@ public:
      *
      * @return the corresponding `std::map<MUTATION_TYPE, double>` object
      */
-    operator std::map<MUTATION_TYPE, double>()
+    operator CLONES::map<MUTATION_TYPE, double>()
     {
-        std::map<MUTATION_TYPE, double> dist_map;
+        CLONES::map<MUTATION_TYPE, double> dist_map;
 
         for (const auto& [type, pos] : pos_map) {
             dist_map.emplace(type, probabilities[pos]);
@@ -216,7 +216,7 @@ public:
      */
     inline operator Signature<MUTATION_TYPE>()
     {
-        const auto dist_map = static_cast<std::map<MUTATION_TYPE, double>>(*this);
+        const auto dist_map = static_cast<CLONES::map<MUTATION_TYPE, double>>(*this);
 
         return Signature<MUTATION_TYPE>(dist_map);
     }
@@ -290,10 +290,10 @@ class Signature
      * @param[in] delimiter is the character delimiting the columns
      * @return a map name-(mutation type-probability map)
      */
-    static std::map<std::string, std::map<MUTATION_TYPE, double>>
+    static std::map<std::string, CLONES::map<MUTATION_TYPE, double>>
     read_map_from_stream(std::istream& in, const char& delimiter)
     {
-        std::map<std::string, std::map<MUTATION_TYPE, double>> result;
+        std::map<std::string, CLONES::map<MUTATION_TYPE, double>> result;
         std::vector<std::string> name_vector = read_row(in, delimiter);
 
         uint32_t row_number = 2;
@@ -321,7 +321,7 @@ class Signature
         return result;
     }
 public:
-    using const_iterator = typename std::map<MUTATION_TYPE, double>::const_iterator;
+    using const_iterator = typename CLONES::map<MUTATION_TYPE, double>::const_iterator;
 
     /**
      * @brief The empty constructor
@@ -335,7 +335,7 @@ public:
      *
      * @param[in] distribution is a mutation type-value map representing a distribution
      */
-    explicit Signature(const std::map<MUTATION_TYPE, double>& distribution):
+    explicit Signature(const CLONES::map<MUTATION_TYPE, double>& distribution):
         mutations{std::views::keys(distribution).begin(),
                   std::views::keys(distribution).end()},
         dist{std::views::values(distribution).begin(),

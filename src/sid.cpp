@@ -2,8 +2,8 @@
  * @file sid.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements SNV, Insertion, and Deletion mutations
- * @version 1.2
- * @date 2026-02-06
+ * @version 1.3
+ * @date 2026-09-24
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -117,16 +117,12 @@ SID::SID(GenomicPosition&& genomic_position,
 
 }   // Mutations
 
-}   // CLONES
 
-namespace std
-{
-
-bool less<CLONES::Mutations::SID>::operator()(const CLONES::Mutations::SID &lhs,
-                                             const CLONES::Mutations::SID &rhs) const
+bool order<Mutations::SID>::operator()(const Mutations::SID &lhs,
+                                      const Mutations::SID &rhs) const
 {
     {
-        less<CLONES::Mutations::GenomicPosition> gp_op;
+        order<Mutations::GenomicPosition> gp_op;
 
         if (gp_op(lhs, rhs)) {
             return true;
@@ -149,6 +145,11 @@ bool less<CLONES::Mutations::SID>::operator()(const CLONES::Mutations::SID &lhs,
 
     return lhs.alt.compare(rhs.alt) < 0;
 }
+
+}   // CLONES
+
+namespace std
+{
 
 bool operator==(const CLONES::Mutations::SID &lhs,
                 const CLONES::Mutations::SID &rhs)

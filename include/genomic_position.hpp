@@ -2,8 +2,8 @@
  * @file genomic_position.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines genomic position and related functions
- * @version 1.3
- * @date 2026-02-06
+ * @version 1.4
+ * @date 2026-09-24
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -32,9 +32,9 @@
 #define __CLONES_GENOMIC_POSITION__
 
 #include <cstdint>
-#include <functional>   // std::less
 #include <ostream>
 
+#include "ordered_containers.hpp"
 #include "archive.hpp"
 
 namespace CLONES
@@ -174,25 +174,23 @@ struct GenomicPosition
     CHECK_CONSTANT_SPACE_ON_DISK(chr_id, position)
 };
 
-
 }   // Mutations
 
-}   // CLONES
-
-namespace std
-{
-
-
 template<>
-struct less<CLONES::Mutations::GenomicPosition>
+struct order<Mutations::GenomicPosition>
 {
-    inline bool operator()(const CLONES::Mutations::GenomicPosition &lhs,
-                           const CLONES::Mutations::GenomicPosition &rhs) const
+    inline bool operator()(const Mutations::GenomicPosition &lhs,
+                           const Mutations::GenomicPosition &rhs) const
     {
         return ((lhs.chr_id<rhs.chr_id) ||
                 ((lhs.chr_id==rhs.chr_id) && (lhs.position<rhs.position)));
     }
 };
+
+}   // CLONES
+
+namespace std
+{
 
 /**
  * @brief Write a genomic position in a output stream

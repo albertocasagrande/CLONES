@@ -2,8 +2,8 @@
  * @file cna.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements a class for copy number alterations
- * @version 1.2
- * @date 2026-06-11
+ * @version 1.3
+ * @date 2026-09-24
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -61,20 +61,15 @@ CNA::CNA(const GenomicPosition& initial_position, const CNA::Length& length,
 
 }   // Mutations
 
-}   // CLONES
 
-
-namespace std
-{
-
-bool less<CLONES::Mutations::CNA>::operator()(const CLONES::Mutations::CNA &lhs,
-                                             const CLONES::Mutations::CNA &rhs) const
+bool order<Mutations::CNA>::operator()(const Mutations::CNA &lhs,
+                                       const Mutations::CNA &rhs) const
 {
     using namespace CLONES::Mutations;
 
     // differences in initial position
     {
-        less<GenomicPosition> gr_op;
+        order<GenomicPosition> gr_op;
 
         if (gr_op(lhs, rhs)) {
             return true;
@@ -126,6 +121,13 @@ bool less<CLONES::Mutations::CNA>::operator()(const CLONES::Mutations::CNA &lhs,
 
     return false;
 }
+
+
+}   // CLONES
+
+
+namespace std
+{
 
 std::ostream& operator<<(std::ostream& out, const CLONES::Mutations::CNA& cna)
 {

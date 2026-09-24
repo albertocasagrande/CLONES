@@ -2,8 +2,8 @@
  * @file context_index.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements a class to build a context index
- * @version 1.3
- * @date 2026-06-11
+ * @version 1.4
+ * @date 2026-09-24
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -38,6 +38,7 @@
 #include <fstream>
 #include <type_traits>
 
+#include "ordered_containers.hpp"
 #include "archive.hpp"
 #include "utils.hpp"
 #include "genomic_sequence.hpp"
@@ -75,7 +76,7 @@ protected:
     /**
      * @brief Maps associating mutational contexts to their position in the genome
      */
-    using ContextPositionMap = std::map<SBSContext, std::vector<GenomeWidePosition> >;
+    using ContextPositionMap = CLONES::map<SBSContext, std::vector<GenomeWidePosition> >;
 
     std::shared_ptr<ContextPositionMap> context2pos;             //!< the context-genomic positions map
     std::map<GenomeWidePosition, ChromosomeId> abs_pos2chr;      //!< the absolute genomic position-chromosome id map
@@ -191,7 +192,7 @@ protected:
      */
     void build_index_in_seq(std::ifstream& fasta_stream, const std::streampos& streamsize,
                             const ChromosomeId& chr_id,
-                            const std::set<GenomicRegion>& regions_to_avoid,
+                            const CLONES::set<GenomicRegion>& regions_to_avoid,
                             std::array<size_t, 125>& skipped_contexts,
                             const size_t& sampling_rate, UI::ProgressBar* progress_bar)
     {
@@ -247,9 +248,10 @@ protected:
      * @return a map that associates a chromosome id to the the set of genomic regions
      *     laying in the corresponding chromosome
      */
-    static std::map<ChromosomeId, std::set<GenomicRegion> > split_by_chromosome_id(const std::set<GenomicRegion>& genomic_regions)
+    static std::map<ChromosomeId, CLONES::set<GenomicRegion>>
+    split_by_chromosome_id(const CLONES::set<GenomicRegion>& genomic_regions)
     {
-        std::map<ChromosomeId, std::set<GenomicRegion> > split;
+        std::map<ChromosomeId, CLONES::set<GenomicRegion>> split;
 
         for (const auto& genomic_region: genomic_regions) {
             split[genomic_region.get_chromosome_id()].insert(genomic_region);
@@ -291,7 +293,8 @@ protected:
      *          in the index
      * @param[in,out] progress_bar is the progress bar
      */
-    void reset_with(std::ifstream& fasta_stream, const std::set<GenomicRegion>& regions_to_avoid,
+    void reset_with(std::ifstream& fasta_stream,
+                    const CLONES::set<GenomicRegion>& regions_to_avoid,
                     const size_t& sampling_rate, UI::ProgressBar* progress_bar)
     {
         if (!fasta_stream.good()) {
@@ -359,7 +362,8 @@ protected:
      *          in the index
      * @param[in,out] progress_bar is the progress bar
      */
-    inline void reset_with(const std::filesystem::path& fasta_filename, const std::set<GenomicRegion>& regions_to_avoid,
+    inline void reset_with(const std::filesystem::path& fasta_filename,
+                           const CLONES::set<GenomicRegion>& regions_to_avoid,
                            const size_t& sampling_rate, UI::ProgressBar* progress_bar)
     {
 
@@ -424,7 +428,7 @@ public:
      *      but that are located outside the regions in `regions_to_avoid`
      */
     static inline ContextIndex build_index(const std::filesystem::path& genome_fasta,
-                                           const std::set<GenomicRegion>& regions_to_avoid,
+                                           const CLONES::set<GenomicRegion>& regions_to_avoid,
                                            UI::ProgressBar* progress_bar=nullptr)
     {
         return build_index(genome_fasta, regions_to_avoid, 1, progress_bar);
@@ -443,7 +447,7 @@ public:
      *      but that are located outside the regions in `regions_to_avoid`
      */
     static ContextIndex build_index(const std::filesystem::path& genome_fasta,
-                                    const std::set<GenomicRegion>& regions_to_avoid,
+                                    const CLONES::set<GenomicRegion>& regions_to_avoid,
                                     const size_t& sampling_rate,
                                     UI::ProgressBar* progress_bar=nullptr)
     {
@@ -459,7 +463,7 @@ public:
      *
      * @return a constant reference to simulator context positions
      */
-    inline const std::map<SBSContext, std::vector<GENOME_WIDE_POSITION> >& get_context_positions() const
+    inline const CLONES::map<SBSContext, std::vector<GENOME_WIDE_POSITION> >& get_context_positions() const
     {
         return *context2pos;
     }

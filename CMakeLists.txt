@@ -122,6 +122,7 @@ set(CLONES_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/include/allele.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/mutation_spec.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/mutation.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/mutational_properties.hpp
+                ${CMAKE_CURRENT_SOURCE_DIR}/include/ordered_containers.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/palette.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/phyloXML.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/phylogenetic_forest.hpp

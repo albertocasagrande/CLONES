@@ -2,8 +2,8 @@
  * @file union_map_proxy.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Testing CLONES::union_map_proxy class
- * @version 1.0
- * @date 2026-07-14
+ * @version 1.1
+ * @date 2026-09-24
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -39,7 +39,7 @@
 
 struct union_fixture
 {
-    using map_type = std::map<int, std::string>;
+    using map_type = CLONES::map<int, std::string>;
     using result_list_type =  std::list<std::pair<int, std::string>>;
 
     struct test_type

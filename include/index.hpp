@@ -2,8 +2,8 @@
  * @file index.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines index
- * @version 1.3
- * @date 2026-07-16
+ * @version 1.4
+ * @date 2026-09-24
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -36,6 +36,7 @@
 #include <sstream>
 #include <type_traits>
 
+#include "ordered_containers.hpp"
 #include "bucket.hpp"
 #include "progress_bar.hpp"
 
@@ -267,7 +268,7 @@ public:
     /**
      * @brief The bucket map type
      */
-    using BucketMapType = std::map<KEY, BucketType>;
+    using BucketMapType = CLONES::map<KEY, BucketType>;
 
 private:
     BucketMapType buckets;  //!< the key-bucket map
@@ -484,12 +485,12 @@ public:
     /**
      * @brief The bucket map type
      */
-    using BucketMapType = std::map<KEY, BucketType>;
+    using BucketMapType = CLONES::map<KEY, BucketType>;
 
     /**
      * @brief The bucket iterator map
      */
-    using TourIteratorType = std::map<KEY, typename RandomTourType::const_iterator>;
+    using TourIteratorType = CLONES::map<KEY, typename RandomTourType::const_iterator>;
 
 private:
     BucketMapType buckets;      //!< the key-bucket map

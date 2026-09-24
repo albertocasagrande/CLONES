@@ -2,8 +2,8 @@
  * @file sbs_sbs_context.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines SBS contexts and extended context automata
- * @version 1.2
- * @date 2026-02-06
+ * @version 1.3
+ * @date 2026-09-24
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -32,12 +32,12 @@
 #define __CLONES_SBS_CONTEXT__
 
 #include <cstdint>
-#include <functional>   // std::less
 #include <string>
 #include <iostream>
 #include <array>
 #include <limits>
 
+#include "ordered_containers.hpp"
 #include "archive.hpp"
 
 namespace CLONES
@@ -337,17 +337,17 @@ public:
 
 }   // Mutations
 
-}   // CLONES
-
 template<>
-struct std::less<CLONES::Mutations::SBSContext>
+struct order<Mutations::SBSContext>
 {
-    inline bool operator()(const CLONES::Mutations::SBSContext &lhs,
-                           const CLONES::Mutations::SBSContext &rhs) const
+    inline bool operator()(const Mutations::SBSContext &lhs,
+                           const Mutations::SBSContext &rhs) const
     {
         return lhs.get_code() < rhs.get_code();
     }
 };
+
+}   // CLONES
 
 namespace std
 {

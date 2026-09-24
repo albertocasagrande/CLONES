@@ -2,8 +2,8 @@
  * @file index.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Index tests
- * @version 1.2
- * @date 2026-06-11
+ * @version 1.3
+ * @date 2026-09-24
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -42,6 +42,7 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/mpl/list.hpp>
 
+#include "ordered_containers.hpp"
 #include "index.hpp"
 #include "genomic_position.hpp"
 
@@ -83,7 +84,7 @@ struct IndexFixture
     using IndexBuilderType = CLONES::Archive::IndexBuilder<key_type, value_type>;
 
     std::filesystem::path index_path;
-    std::map<key_type, std::set<value_type>> dataset;
+    CLONES::map<key_type, CLONES::set<value_type>> dataset;
 
     IndexFixture():
         index_path(get_a_temporary_path())
@@ -100,7 +101,7 @@ struct IndexFixture
                 found->second.insert(std::move(value));
             } else {
                 dataset.emplace(std::move(key),
-                                std::set<value_type>({std::move(value)}));
+                                CLONES::set<value_type>({std::move(value)}));
             }
         }
 
@@ -145,8 +146,9 @@ void create_index()
 
 template<class KEY, class VALUE>
 void test_random_function(const std::filesystem::path& index_path,
-                          const std::map<KEY, std::set<VALUE>>& dataset,
-                          const std::function<void(std::mt19937_64&, const std::filesystem::path&, const std::map<KEY, std::set<VALUE>>&)>& test_function)
+                          const CLONES::map<KEY, CLONES::set<VALUE>>& dataset,
+                          const std::function<void(std::mt19937_64&, const std::filesystem::path&,
+                          const CLONES::map<KEY, CLONES::set<VALUE>>&)>& test_function)
 {
     {
         std::mt19937_64 random_generator(0);
@@ -222,10 +224,10 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(index_key_bucket_access_T, T, test_types, Index
 template<class KEY, class VALUE>
 void index_extract(std::mt19937_64& random_generator,
                    const std::filesystem::path& index_path,
-                   const std::map<KEY, std::set<VALUE>>& dataset)
+                   const CLONES::map<KEY, CLONES::set<VALUE>>& dataset)
 {
     using namespace CLONES::Archive;
-    std::map<KEY, std::set<VALUE>> local_dataset(dataset);
+    CLONES::map<KEY, CLONES::set<VALUE>> local_dataset(dataset);
 
     IndexReader<KEY, VALUE, std::mt19937_64> index(index_path, READ_CACHE_SIZE);
 
@@ -255,13 +257,14 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(index_extract_T, T, test_types, IndexFixture<T>
     using key_type = typename T::first_type;
     using value_type = typename T::second_type;
 
-    test_random_function<key_type, value_type>(this->index_path, this->dataset, index_extract<key_type, value_type>);
+    test_random_function<key_type, value_type>(this->index_path, this->dataset,
+                                               index_extract<key_type, value_type>);
 }
 
 template<class KEY, class VALUE>
 void index_choose(std::mt19937_64& random_generator,
                   const std::filesystem::path& index_path,
-                  const std::map<KEY, std::set<VALUE>>& dataset)
+                  const CLONES::map<KEY, CLONES::set<VALUE>>& dataset)
 {
     using namespace CLONES::Archive;
 
@@ -287,27 +290,28 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(index_choose_T, T, test_types, IndexFixture<T>)
     using key_type = typename T::first_type;
     using value_type = typename T::second_type;
 
-    test_random_function<key_type, value_type>(this->index_path, this->dataset, index_choose<key_type, value_type>);
+    test_random_function<key_type, value_type>(this->index_path, this->dataset,
+                                               index_choose<key_type, value_type>);
 }
 
 template<class KEY, class VALUE>
 void index_extract_class(std::mt19937_64& random_generator,
                          const std::filesystem::path& index_path,
-                         const std::map<KEY, std::set<VALUE>>& dataset)
+                         const CLONES::map<KEY, CLONES::set<VALUE>>& dataset)
 {
     using namespace CLONES::Archive;
-    std::map<KEY, std::set<VALUE>> local_dataset(dataset);
+    CLONES::map<KEY, CLONES::set<VALUE>> local_dataset(dataset);
 
     IndexReader<KEY, VALUE, std::mt19937_64> index(index_path, READ_CACHE_SIZE);
 
-    std::set<KEY> key_done;
+    CLONES::set<KEY> key_done;
 
     for (const auto key : index.get_keys()) {
         if (!key_done.contains(key)) {
             auto class_keys = partition<KEY>::get_class_of(key);
             key_done.insert(class_keys.begin(), class_keys.end());
 
-            std::set<KEY> class_set(class_keys.begin(), class_keys.end());
+            CLONES::set<KEY> class_set(class_keys.begin(), class_keys.end());
 
             size_t num_of_values;
 
@@ -328,7 +332,7 @@ void index_extract_class(std::mt19937_64& random_generator,
                     BOOST_CHECK(found_dataset != local_dataset.end());
 
                     if (found_dataset != local_dataset.end()) {
-                        std::set<VALUE>& bucket_set = found_dataset->second;
+                        CLONES::set<VALUE>& bucket_set = found_dataset->second;
 
                         auto set_found = bucket_set.find(extracted.second);
                         BOOST_CHECK(set_found != bucket_set.end());
@@ -362,18 +366,19 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(index_extract_class_T, T, test_types, IndexFixt
     using key_type = typename T::first_type;
     using value_type = typename T::second_type;
 
-    test_random_function<key_type, value_type>(this->index_path, this->dataset, index_extract_class<key_type, value_type>);
+    test_random_function<key_type, value_type>(this->index_path, this->dataset,
+                                               index_extract_class<key_type, value_type>);
 }
 
 template<class KEY, class VALUE>
 void index_choose_class(std::mt19937_64& random_generator,
                         const std::filesystem::path& index_path,
-                        const std::map<KEY, std::set<VALUE>>& dataset)
+                        const CLONES::map<KEY, CLONES::set<VALUE>>& dataset)
 {
     using namespace CLONES::Archive;
     IndexReader<KEY, VALUE, std::mt19937_64> index(index_path, READ_CACHE_SIZE);
 
-    std::set<KEY> key_done;
+    CLONES::set<KEY> key_done;
 
     size_t total_available{0};
     for (const auto key : index.get_keys()) {
@@ -381,7 +386,7 @@ void index_choose_class(std::mt19937_64& random_generator,
             auto class_keys = partition<KEY>::get_class_of(key);
             key_done.insert(class_keys.begin(), class_keys.end());
 
-            std::set<KEY> class_set(class_keys.begin(), class_keys.end());
+            CLONES::set<KEY> class_set(class_keys.begin(), class_keys.end());
 
             for (size_t i=0;i<NUM_OF_CHOICES; ++i) {
                 std::pair<KEY, VALUE> choosen;
@@ -398,7 +403,7 @@ void index_choose_class(std::mt19937_64& random_generator,
                     BOOST_CHECK(found_dataset != dataset.end());
 
                     if (found_dataset != dataset.end()) {
-                        const std::set<VALUE>& bucket_set = found_dataset->second;
+                        const CLONES::set<VALUE>& bucket_set = found_dataset->second;
 
                         const auto set_found = bucket_set.find(choosen.second);
                         BOOST_CHECK(set_found != bucket_set.end());
@@ -429,5 +434,6 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(index_choose_class_T, T, test_types, IndexFixtu
     using key_type = typename T::first_type;
     using value_type = typename T::second_type;
 
-    test_random_function<key_type, value_type>(this->index_path, this->dataset, index_choose_class<key_type, value_type>);
+    test_random_function<key_type, value_type>(this->index_path, this->dataset,
+                                               index_choose_class<key_type, value_type>);
 }

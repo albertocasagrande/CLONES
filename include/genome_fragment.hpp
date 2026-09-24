@@ -2,8 +2,8 @@
  * @file genome_fragment.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines genome DNA fragments
- * @version 1.3
- * @date 2026-07-14
+ * @version 1.4
+ * @date 2026-09-24
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -168,10 +168,10 @@ public:
      * @param size is the aimed genome fragment size
      */
     GenomeFragment(const std::string& reference,
-                    const std::map<GenomicPosition, std::shared_ptr<SID>>& germline,
-                    const std::map<GenomicPosition, std::shared_ptr<SID>>& somatic,
-                    const GenomicPosition& begin_pos,
-                    const size_t& size);
+                   const CLONES::map<GenomicPosition, std::shared_ptr<SID>>& germline,
+                   const CLONES::map<GenomicPosition, std::shared_ptr<SID>>& somatic,
+                   const GenomicPosition& begin_pos,
+                   const size_t& size);
 
     /**
      * @brief A genome fragment constructor
@@ -186,11 +186,11 @@ public:
      * @param size is the aimed genome fragment size
      */
     GenomeFragment(const std::string& reference_fragment,
-                    const size_t& fragment_offset,
-                    const std::map<GenomicPosition, std::shared_ptr<SID>>& germline,
-                    const std::map<GenomicPosition, std::shared_ptr<SID>>& somatic,
-                    const GenomicPosition& begin_pos,
-                    const size_t& size);
+                   const size_t& fragment_offset,
+                   const CLONES::map<GenomicPosition, std::shared_ptr<SID>>& germline,
+                   const CLONES::map<GenomicPosition, std::shared_ptr<SID>>& somatic,
+                   const GenomicPosition& begin_pos,
+                   const size_t& size);
 
     /**
      * @brief Count the number of mismatched

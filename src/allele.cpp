@@ -2,8 +2,8 @@
  * @file allele.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements allele representation
- * @version 1.10
- * @date 2026-07-10
+ * @version 1.11
+ * @date 2026-09-24
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -138,7 +138,7 @@ bool AlleleFragment::remove_from_object_at(const GenomicPosition& genomic_positi
         return false;
     }
 
-    _data->mutations.extract(it);
+    (void)_data->mutations.extract(it);
 
     return true;
 }
@@ -154,7 +154,7 @@ bool AlleleFragment::remove_from_object(const SID& mutation)
     auto it = _data->mutations.find(mutation);
     if (it != _data->mutations.end()) {
         if (*(it->second)==mutation) {
-            _data->mutations.extract(it);
+            (void)_data->mutations.extract(it);
 
             return true;
         }
@@ -172,7 +172,7 @@ bool AlleleFragment::remove_from_reference_at(const GenomicPosition& genomic_pos
         return false;
     }
 
-    _data->mutations.extract(it);
+    (void)_data->mutations.extract(it);
 
     return true;
 }
@@ -186,7 +186,7 @@ bool AlleleFragment::remove_from_reference(const SID& mutation)
     auto it = _data->mutations.find(mutation);
     if (it != _data->mutations.end()) {
         if (*(it->second)==mutation) {
-            _data->mutations.extract(it);
+            (void)_data->mutations.extract(it);
 
             return true;
         }
@@ -308,10 +308,10 @@ Allele::Allele(const AlleleId& identifier, const GenomicRegion& genomic_region,
     this->history.push_back(identifier);
 }
 
-template<typename KEY, typename VALUE, typename QUERY_VALUE,
+template<typename KEY, typename VALUE, typename COMPARE, typename ALLOCATOR, typename QUERY_VALUE,
          std::enable_if_t<std::is_convertible_v<QUERY_VALUE, KEY>, bool> = true>
-typename std::map<KEY, VALUE>::const_iterator
-find_not_after(const std::map<KEY, VALUE>& value_map, const QUERY_VALUE& key)
+typename std::map<KEY, VALUE, COMPARE, ALLOCATOR>::const_iterator
+find_not_after(const std::map<KEY, VALUE, COMPARE, ALLOCATOR>& value_map, const QUERY_VALUE& key)
 {
     auto it = value_map.upper_bound(key);
 
@@ -322,10 +322,10 @@ find_not_after(const std::map<KEY, VALUE>& value_map, const QUERY_VALUE& key)
     return it;
 }
 
-template<typename KEY, typename VALUE, typename QUERY_VALUE,
+template<typename KEY, typename VALUE, typename COMPARE, typename ALLOCATOR, typename QUERY_VALUE,
          std::enable_if_t<std::is_convertible_v<QUERY_VALUE, KEY>, bool> = true>
-typename std::map<KEY, VALUE>::iterator
-find_not_after(std::map<KEY, VALUE>& value_map, const QUERY_VALUE& key)
+typename std::map<KEY, VALUE, COMPARE, ALLOCATOR>::iterator
+find_not_after(std::map<KEY, VALUE, COMPARE, ALLOCATOR>& value_map, const QUERY_VALUE& key)
 {
     auto it = value_map.upper_bound(key);
 
@@ -519,7 +519,7 @@ bool Allele::remove(const GenomicRegion& genomic_region)
 
             auto new_fragment = it->second.split(g_pos);
 
-            fragments.extract(it);
+            (void)fragments.extract(it);
 
             fragments[new_fragment.get_initial_position()] = std::move(new_fragment);
         }
@@ -528,9 +528,9 @@ bool Allele::remove(const GenomicRegion& genomic_region)
     return true;
 }
 
-std::map<GenomicPosition, std::shared_ptr<SID>> Allele::get_mutations() const
+CLONES::map<GenomicPosition, std::shared_ptr<SID>> Allele::get_mutations() const
 {
-    std::map<GenomicPosition, std::shared_ptr<SID>> mutations;
+    CLONES::map<GenomicPosition, std::shared_ptr<SID>> mutations;
 
     for (const auto& [pos, fragment]: fragments) {
         for (const auto& [mutation_pos, mutation]: fragment.get_mutations()) {
