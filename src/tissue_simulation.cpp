@@ -2,8 +2,8 @@
  * @file simulation.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Define a tumour evolution simulation
- * @version 1.20
- * @date 2026-07-27
+ * @version 1.21
+ * @date 2026-09-25
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -552,9 +552,11 @@ void TissueSimulation::handle_timed_event_queue(CellEvent& candidate_event)
 
         timed_event_queue.pop();
 
-        if (timed_event_queue.top().time != timed_event.time
-                || timed_event_queue.top().type != timed_event.type) {
-            make_snapshot();
+        if (!timed_event_queue.empty()) {
+            if (timed_event_queue.top().time != timed_event.time
+                    || timed_event_queue.top().type != timed_event.type) {
+                make_snapshot();
+            }
         }
 
         switch(timed_event.type) {
