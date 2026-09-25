@@ -2,8 +2,8 @@
  * @file union_map_proxy.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Testing CLONES::union_map_proxy class
- * @version 1.1
- * @date 2026-09-24
+ * @version 1.2
+ * @date 2026-09-25
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -222,11 +222,15 @@ BOOST_AUTO_TEST_CASE(union_map_proxy_lower_bound_iteration)
                         && result_it->first < key) {
                     ++result_it;
                 }
+
                 union_map_proxy<int, std::string>::const_iterator union_it;
                 BOOST_CHECK_NO_THROW(union_it = union_obj.lower_bound(key));
-
-                BOOST_CHECK_EQUAL(result_it->first, union_it->first);
-                BOOST_CHECK_EQUAL(result_it->second, union_it->second);
+                if (result_it != test.result.end()) {
+                    BOOST_CHECK_EQUAL(result_it->first, union_it->first);
+                    BOOST_CHECK_EQUAL(result_it->second, union_it->second);
+                } else {
+                    BOOST_CHECK(union_it == union_obj.end());
+                }
             }
         }
     }
@@ -255,11 +259,16 @@ BOOST_AUTO_TEST_CASE(union_map_proxy_upper_bound_iteration)
                         && result_it->first <= key) {
                     ++result_it;
                 }
+
                 union_map_proxy<int, std::string>::const_iterator union_it;
                 BOOST_CHECK_NO_THROW(union_it = union_obj.upper_bound(key));
 
-                BOOST_CHECK_EQUAL(result_it->first, union_it->first);
-                BOOST_CHECK_EQUAL(result_it->second, union_it->second);
+                if (result_it != test.result.end()) {
+                    BOOST_CHECK_EQUAL(result_it->first, union_it->first);
+                    BOOST_CHECK_EQUAL(result_it->second, union_it->second);
+                } else {
+                    BOOST_CHECK(union_it == union_obj.end());
+                }
             }
         }
     }
