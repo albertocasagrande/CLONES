@@ -2,8 +2,8 @@
  * @file mutant_properties.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines mutant properties
- * @version 1.6
- * @date 2026-06-20
+ * @version 1.8
+ * @date 2026-09-28
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -372,6 +372,16 @@ public:
                                 const SpeciesProperties& dst_species,
                                 const double rate);
 
+    /**
+     * @brief Get the map associating each epistate name to its identifier
+     * 
+     * @return the map associating each epistate name to its identifier
+     */
+    inline static const std::map<std::string, SpeciesId>& get_name2id_map()
+    {
+        return species_ids;
+    }
+    
     /**
      * @brief Save the species in an archive
      *

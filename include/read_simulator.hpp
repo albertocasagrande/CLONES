@@ -2,8 +2,8 @@
  * @file read_simulator.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines classes to simulate sequencing
- * @version 1.35
- * @date 2026-09-24
+ * @version 1.36
+ * @date 2026-09-28
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -209,9 +209,9 @@ private:
      */
     template<typename RANDOM_GENERATOR>
     static std::map<Mutants::Evolutions::TissueSampleId, SampleTarget>
-    build_target_map(RANDOM_GENERATOR& generator, const PhylogeneticForest& forest,
-                     const bool& produce_normal_sample, const double& purity,
-                     const bool& with_pre_neoplastic)
+    build_seq_target_map(RANDOM_GENERATOR& generator, const PhylogeneticForest& forest,
+                         const bool& produce_normal_sample, const double& purity,
+                         const bool& with_pre_neoplastic)
     {
         std::map<Mutants::Evolutions::TissueSampleId, SampleTarget> sample_targets;
         const auto cells_per_root = forest.count_cells_per_root();
@@ -274,12 +274,12 @@ public:
                 const bool with_pre_neoplastic_mutations=true,
                 const bool with_germinal=true)
     {
-        auto target_map = build_target_map(generator, forest, produce_normal_sample,
-                                               purity, with_pre_neoplastic_mutations);
+        auto seq_target_map = build_seq_target_map(generator, forest, produce_normal_sample,
+                                                   purity, with_pre_neoplastic_mutations);
 
         return {forest, purity, with_pre_neoplastic_mutations, with_germinal,
                 forest.get_wild_type_genomes(with_pre_neoplastic_mutations, false),
-                std::move(target_map)};
+                std::move(seq_target_map)};
     }
 
     /**
@@ -1470,6 +1470,19 @@ private:
     }
 
     /**
+     * @brief Get the minimum size for a fragment that producing reads
+     * 
+     * @return the minimum size for a fragment that producing reads
+     */
+    size_t get_fragment_size_threshold() const
+    {
+        const auto insert_size_mean = insert_size.p()*insert_size.t();
+        const auto insert_size_stddev = (1-insert_size.p())*insert_size_mean;
+        return ((read_type==ReadType::PAIRED_READ)
+                  ?2*read_size+insert_size_mean-insert_size_stddev:read_size);
+    }
+
+    /**
      * @brief Generate the reads in an allelic fragment
      *
      * @tparam SEQUENCER is the sequencer model type
@@ -1500,13 +1513,9 @@ private:
                                  const size_t& total_steps, size_t& steps,
                                  CLONES::UI::ProgressBar& progress_bar, std::ostream* SAM_stream)
     {
-        auto insert_size_mean = insert_size.p()*insert_size.t();
-        auto insert_size_stddev = (1-insert_size.p())*insert_size_mean;
-        auto threshold_template_size = ((read_type==ReadType::PAIRED_READ)
-                                          ?2*read_size+insert_size_mean-insert_size_stddev:
-                                          read_size);
+        const auto fragment_size_threshold = get_fragment_size_threshold();
 
-        if (fragment.size() >= threshold_template_size && sample_simulation_data.missing_templates > 0) {
+        if (fragment.size() >= fragment_size_threshold && sample_simulation_data.missing_templates > 0) {
             const double hit_probability = static_cast<double>(fragment.size())/
                                         sample_simulation_data.non_covered_allelic_size;
             std::binomial_distribution<size_t> b_dist(sample_simulation_data.missing_templates,
@@ -1558,6 +1567,34 @@ private:
         steps += fragment.size();
     }
 
+    GenomicRegion get_expanded_target(const GenomicRegion& target,
+                                      const uint32_t& min_target_overlap) const
+    {
+        const auto insert_size_mean = insert_size.p()*insert_size.t();
+        const auto insert_size_stddev = (1-insert_size.p())*insert_size_mean;
+
+        const auto template_size = ((read_type==ReadType::PAIRED_READ)
+                                        ?2*read_size+insert_size_mean
+                                            +insert_size_stddev
+                                        :read_size);
+
+        const auto expansion_size = (template_size>min_target_overlap?
+                                      template_size-min_target_overlap:0);
+        
+        const auto begin_pos = (target.begin()>expansion_size
+                                ?target.begin()-expansion_size
+                                :0);
+
+        GenomicPosition initial_pos{target.get_chromosome_id(),
+                                    begin_pos};
+
+        const auto end_pos = (std::numeric_limits<ChrPosition>::max()-expansion_size>target.end()
+                              ?target.end()+expansion_size
+                              :std::numeric_limits<ChrPosition>::max());
+
+        return {initial_pos, end_pos-begin_pos+1};
+    }
+
     /**
      * @brief Generate simulated reads on a cell chromosome and write their SAM alignments
      *
@@ -1571,6 +1608,7 @@ private:
      * @param[in] germline_chr_mut is a pointer to the germinal chromosome mutations of the
      *          considered cell. No germinal mutation is considered when it is set to `nullptr`
      * @param[in] chr_mutations are the somatic genome mutations of the considered cell
+     * @param[in] chr_target_regions are the regions in the chromosome targeted by sequencing 
      * @param[in] total_steps is the total number of steps required to complete the overall procedure
      * @param[in,out] steps is the number of performed steps
      * @param[in,out] progress_bar is the progress bar
@@ -1588,39 +1626,71 @@ private:
                               const Mutants::CellId& cell_id,
                               const ChromosomeMutations* germline_chr_mut,
                               const ChromosomeMutations& chr_mutations,
+                              const std::vector<GenomicRegion>& chr_target_regions,
                               const size_t& total_steps, size_t& steps,
                               CLONES::UI::ProgressBar& progress_bar,
                               std::ostream* SAM_stream)
     {
         Allele const* germline_allele{nullptr};
+        
+        AlleleFragment* g_frag_in_target{nullptr};
+        if (germline_chr_mut != nullptr) {
+            g_frag_in_target = new AlleleFragment();
+        }
+
         for (const auto& [allele_id, allele] : chr_mutations.get_alleles()) {
             if (germline_chr_mut != nullptr) {
                 const auto& germline_allele_id = allele.get_history().front();
                 germline_allele = &(germline_chr_mut->get_allele(germline_allele_id));
             }
-
-            AlleleFragment const* germline_fragment{nullptr};
+            
+            auto target_it = chr_target_regions.begin();
             for (const auto& [position, fragment] : allele.get_fragments()) {
-                if (germline_allele != nullptr) {
-                    // searching for the germline fragment AFTER `fragment`
-                    auto germline_it = germline_allele->get_fragments().upper_bound(position);
 
-                    // update `germline_mutations` so to the last germline fragment starting
-                    // BEFORE or in the SAME POSITION of `fragment`
-                    --germline_it;
-
-                    germline_fragment = &(germline_it->second);
+                // skip target regions that end before the fragment
+                while (target_it != chr_target_regions.end()
+                        && target_it->ends_before(fragment)) {
+                    ++target_it;
                 }
 
-                // since `cell_mutations` derives from `germline_mutations`, `germline_allele`
-                // fully contains `allele`
-                generate_fragment_reads(sequencer, sample_simulation_data, chr_statistics,
-                                        chr_data, sample_name, cell_id, germline_fragment,
-                                        fragment, total_steps, steps, progress_bar,
-                                        SAM_stream);
+                // while the target region overlaps the fragment
+                while (target_it != chr_target_regions.end()
+                        && target_it->overlaps(fragment)) {
+
+                    // if germline is available, 
+                    if (germline_allele != nullptr) {
+                        // searching for the germline fragment AFTER `fragment`
+                        auto germline_it = germline_allele->get_fragments().upper_bound(position);
+
+                        // update `germline_mutations` so to the last germline fragment starting
+                        // BEFORE or in the SAME POSITION of `fragment`
+                        --germline_it;
+
+                        *g_frag_in_target = germline_it->second.copy(*target_it);
+                    }
+
+                    const auto frag_in_target = fragment.copy(*target_it);
+
+                    // since `cell_mutations` derives from `germline_mutations`,
+                    // `germline_allele` fully contains `allele`
+                    generate_fragment_reads(sequencer, sample_simulation_data, chr_statistics,
+                                            chr_data, sample_name, cell_id, g_frag_in_target,
+                                            frag_in_target, total_steps, steps, progress_bar,
+                                            SAM_stream);
+
+                    ++target_it;
+                }
+
+                if (target_it != chr_target_regions.begin()) {
+                    --target_it;
+                }
             }
 
             progress_bar.set_progress(100*steps/total_steps);
+        }
+
+        if (germline_chr_mut != nullptr) {
+            delete g_frag_in_target;
         }
     }
 
@@ -1641,6 +1711,7 @@ private:
      * @param[in] wild_type_genomes are the wild type genomes
      * @param[in] germline_chr_mut is a pointer to the germinal chromosome mutations of the
      *          considered cell. No germinal mutation is considered when it is set to `nullptr`
+     * @param[in] chr_target_regions are the regions in the chromosome targeted by sequencing 
      * @param[in] total_steps is the total number of steps required to complete the overall procedure
      * @param[in,out] steps is the number of performed steps
      * @param[in,out] progress_bar is the progress bar
@@ -1655,7 +1726,9 @@ private:
                               const CLONES::IO::FASTA::ChromosomeData<CLONES::IO::FASTA::Sequence>& chr_data,
                               const SequencingTargets::SampleTarget& sample_target,
                               const PhylogeneticForest& sample_forest,
-                              const ChromosomeMutations* germline_chr_mut, const size_t& total_steps,
+                              const ChromosomeMutations* germline_chr_mut,
+                              const std::vector<GenomicRegion>& chr_target_regions,
+                              const size_t& total_steps,
                               size_t& steps, CLONES::UI::ProgressBar& progress_bar,
                               std::ostream* SAM_stream=nullptr)
     {
@@ -1664,8 +1737,8 @@ private:
 
             generate_chromosome_reads(sequencer, sample_simulation_data, chr_statistics,
                                       chr_data, sample_target.sample_name, cell_id,
-                                      germline_chr_mut, chr_mutations, total_steps,
-                                      steps, progress_bar, SAM_stream);
+                                      germline_chr_mut, chr_mutations, chr_target_regions,
+                                      total_steps, steps, progress_bar, SAM_stream);
         }
 
         return chr_statistics;
@@ -1689,6 +1762,7 @@ private:
      * @param[in] wild_type_genomes are the wild type genomes
      * @param[in] germline_chr_mut is a pointer to the germinal chromosome mutations of the
      *          considered cell. No germinal mutation is considered when it is set to `nullptr`
+     * @param[in] chr_target_regions are the regions in the chromosome targeted by sequencing 
      * @param[in] total_steps is the total number of steps required to complete the overall procedure
      * @param[in,out] steps is the number of performed steps
      * @param[in,out] progress_bar is the progress bar
@@ -1703,7 +1777,9 @@ private:
                                  const CLONES::IO::FASTA::ChromosomeData<CLONES::IO::FASTA::Sequence>& chr_data,
                                  const SequencingTargets::SampleTarget& sample_target,
                                  const std::map<Mutants::CellId, CellGenomeMutations>& wild_type_genomes,
-                                 const ChromosomeMutations* germline_chr_mut, const size_t& total_steps,
+                                 const ChromosomeMutations* germline_chr_mut,
+                                 const std::vector<GenomicRegion>& chr_target_regions,
+                                 const size_t& total_steps,
                                  size_t& steps, CLONES::UI::ProgressBar& progress_bar,
                                  std::ostream* SAM_stream=nullptr)
     {
@@ -1715,8 +1791,8 @@ private:
 
                 generate_chromosome_reads(sequencer, sample_simulation_data, chr_statistics,
                                           chr_data, sample_target.sample_name, cell_id,
-                                          germline_chr_mut, chr_mutations, total_steps,
-                                          steps, progress_bar, SAM_stream);
+                                          germline_chr_mut, chr_mutations, chr_target_regions,
+                                          total_steps, steps, progress_bar, SAM_stream);
             }
         }
 
@@ -1739,6 +1815,7 @@ private:
      * @param[in] forest is the phylogenetic forest
      * @param[in] wild_type_genomes are the wild type genomes
      * @param[in] with_germinal_mutations is a Boolean flag to enable/disable germinal mutations
+     * @param[in] chr_target_regions are the regions in the chromosome targeted by sequencing 
      * @param[in] total_steps is the total number of steps required to complete the overall procedure
      * @param[in,out] steps is the number of performed steps
      * @param[in,out] progress_bar is the progress bar
@@ -1754,7 +1831,9 @@ private:
                               const SequencingTargets::SampleTarget& sample_target,
                               const PhylogeneticForest& forest,
                               const std::map<Mutants::CellId, CellGenomeMutations>& wild_type_genomes,
-                              const bool& with_germinal_mutations, const size_t& total_steps,
+                              const bool& with_germinal_mutations,
+                              const std::vector<GenomicRegion>& chr_target_regions,
+                              const size_t& total_steps,
                               size_t& steps, CLONES::UI::ProgressBar& progress_bar,
                               std::ostream* SAM_stream=nullptr)
     {
@@ -1769,13 +1848,14 @@ private:
             const auto sample_forest = forest.get_subforest_for({sample_target.sample_name});
             generate_chr_tumour_reads(sequencer, sample_simulation_data, chr_statistics,
                                       chr_data, sample_target, sample_forest, germline_chr_mut,
-                                      total_steps, steps, progress_bar, SAM_stream);
+                                      chr_target_regions, total_steps, steps, progress_bar,
+                                      SAM_stream);
         }
 
         generate_chr_wild_type_reads(sequencer, sample_simulation_data, chr_statistics,
                                      chr_data, sample_target, wild_type_genomes,
-                                     germline_chr_mut, total_steps, steps, progress_bar,
-                                     SAM_stream);
+                                     germline_chr_mut, chr_target_regions, total_steps, steps,
+                                     progress_bar, SAM_stream);
 
         return chr_statistics;
     }
@@ -1791,8 +1871,9 @@ private:
      * @param[in,out] sequencer is the sequencer
      * @param[in, out] statistics are the sample statistics that will be updated with the chromosome read data
      * @param[in,out] simulation_data is a list of simulated data corresponding to `mutations_list` elements
-     * @param[in] targets are the sequencing targets
      * @param[in] chr_data is the data about the chromosome from which the simulated read come from
+     * @param[in] seq_targets are the sequencing targets
+     * @param[in] target_regions are the regions targeted by sequencing
      * @param[in] total_steps is the total number of steps required to complete the overall procedure
      * @param[in,out] steps is the number of performed steps
      * @param[in] missed_SID_statistics is a Boolean flag that enable/disable statistics about SIDs that
@@ -1806,7 +1887,9 @@ private:
     void generate_chromosome_reads(SEQUENCER& sequencer, SampleSetStatistics& statistics,
                                    std::map<Mutants::Evolutions::TissueSampleId, ReadTissueSimulationData>& simulation_data,
                                    const CLONES::IO::FASTA::ChromosomeData<CLONES::IO::FASTA::Sequence>& chr_data,
-                                   const SequencingTargets& targets, const size_t& total_steps, size_t& steps,
+                                   const SequencingTargets& seq_targets,
+                                   const std::map<ChromosomeId, std::vector<GenomicRegion>>& target_regions,
+                                   const size_t& total_steps, size_t& steps,
                                    const bool& missed_SID_statistics, const bool& germinal_statistics,
                                    CLONES::UI::ProgressBar& progress_bar,
                                    std::ostream* SAM_stream=nullptr)
@@ -1814,18 +1897,28 @@ private:
         auto chr_name = GenomicPosition::chrtos(chr_data.chr_id);
         progress_bar.set_message("Processing chr. " + chr_name);
 
-        ChrSampleStatistics basic_chr_stats{chr_data.chr_id,
-                                            static_cast<GenomicRegion::Length>(chr_data.length),
-                                            targets.forest(), missed_SID_statistics, germinal_statistics};
+        const auto target_regions_it = target_regions.find(chr_data.chr_id);
+        
+        if (target_regions_it != target_regions.end()) {
+            const auto& chr_target_regions = target_regions_it->second;
 
-        for (const auto& [sample_id, sample_target] : targets.sample_targets()) {
-            auto chr_stats = generate_chromosome_reads(sequencer, simulation_data.at(sample_id), basic_chr_stats,
-                                                       chr_data, sample_target, targets.forest(),
-                                                       targets.wild_type_genomes(), targets.with_germinal(),
-                                                       total_steps, steps, progress_bar, SAM_stream);
+            ChrSampleStatistics basic_chr_stats{chr_data.chr_id,
+                                                static_cast<GenomicRegion::Length>(chr_data.length),
+                                                seq_targets.forest(), missed_SID_statistics,
+                                                germinal_statistics};
 
-            statistics.add_chr_statistics(sample_target.sample_name, std::move(chr_stats),
-                                          save_coverage);
+            for (const auto& [sample_id, sample_target] : seq_targets.sample_targets()) {
+                auto chr_stats = generate_chromosome_reads(sequencer, simulation_data.at(sample_id),
+                                                           basic_chr_stats, chr_data, sample_target,
+                                                           seq_targets.forest(),
+                                                           seq_targets.wild_type_genomes(),
+                                                           seq_targets.with_germinal(),
+                                                           chr_target_regions, total_steps, steps,
+                                                           progress_bar, SAM_stream);
+
+                statistics.add_chr_statistics(sample_target.sample_name, std::move(chr_stats),
+                                              save_coverage);
+            }
         }
     }
 
@@ -1877,17 +1970,188 @@ private:
     }
 
     /**
+     * @brief Record the quantity of DNA to be sequenced from a cell
+     * 
+     * This method record the quantity of DNA to be sequenced from a cell
+     * according to a set of target regions. This method also supports
+     * sequencing partition by chromosome.
+     * 
+     * @param sample_data is the structure storing the quantity of DNA
+     *    to be sequenced according to `target_regions` and `chromosome_ids`
+     * @param non_relevant_in_sample is the structure storing the quantity
+     *    of DNA in `target_regions` that will not be sequenced by the current
+     *    task because it chromosome in not contained by `chromosome_ids`
+     * @param cell_mutations is the cell mutations whose DNA has
+     *    to be sequenced
+     * @param target_regions is a structure storing the regions targeted by
+     *    the sequencing process. It is a map from the chromosome identifiers
+     *    to sorted vectors of target regions in the corresponding chromosome
+     * @param chromosome_ids is the chromosome identifiers whose sequencing
+     *    is performed by the current task.
+     */
+    void record_allelic_size_in_targets(ReadTissueSimulationData& sample_data,
+                                        size_t& non_relevant_in_sample,
+                                        const GenomeMutations& cell_mutations,
+                                        const std::map<ChromosomeId, std::vector<GenomicRegion>>& target_regions,
+                                        const std::set<ChromosomeId>& chromosome_ids)
+    {
+        for (const auto& [chr_id, chr_mutations]: cell_mutations.get_chromosomes()) {
+            const auto target_regions_it = target_regions.find(chr_id);
+
+            if (target_regions_it != target_regions.end()) {
+                const auto& chr_target_regions = target_regions_it->second;
+
+                size_t in_targets{0};
+                for (const auto& [allele_id, allele_mutations]: chr_mutations.get_alleles()) {
+
+                    auto target_it = chr_target_regions.begin();
+                    for (const auto& [frag_pos, fragment]: allele_mutations.get_fragments()) {
+
+                        // skip target regions that end before the fragment
+                        while (target_it != chr_target_regions.end()
+                                && target_it->ends_before(fragment)) {
+                            ++target_it;
+                        }
+                        
+                        // while the target region overlaps the fragment
+                        while (target_it != chr_target_regions.end()
+                                && target_it->overlaps(fragment)) {
+
+                            // evaluate the overlap between the fragment and the region
+                            const auto targeted_region = intersect(*target_it, fragment);
+
+                            // add the overlap size
+                            in_targets += targeted_region.size();
+
+                            ++target_it;
+                        }
+
+                        // the same target region may overlap two successive fragments
+                        if (target_it != chr_target_regions.begin()) {
+                            --target_it;
+                        }
+                    }
+                }
+
+                if (chromosome_ids.count(chr_id)>0) {
+                    sample_data.non_covered_allelic_size += in_targets;
+                } else {
+                    non_relevant_in_sample += in_targets;
+                }
+            }
+        }
+    }
+
+    /**
+     * @brief Trim the target regions
+     * 
+     * This method trims the target regions according to a reference genome so that any
+     * target region is contained in the associated chromosome.
+     * 
+     * @param reference is a reference genome
+     * @param target_regions is a vector of target regions
+     * @return A vector of regions in the reference genome that exclusively contains
+     *   all non-empty intersections between regions in `target_regions` and the
+     *   `reference`.
+     */
+    static std::vector<GenomicRegion>
+    trim_target_regions(const GenomeMutations& reference,
+                        const std::vector<GenomicRegion>& target_regions)
+    {
+        std::vector<GenomicRegion> output;
+
+        output.reserve(target_regions.size());
+
+        const auto& r_chromosomes = reference.get_chromosomes();
+        for (const auto& target_region : target_regions) {
+            const auto r_chr_it = r_chromosomes.find(target_region.get_chromosome_id());
+
+            if (r_chr_it != r_chromosomes.end()) {
+
+                const auto chr_size = r_chr_it->second.size();
+
+                const auto target_end = std::min(target_region.end(), chr_size);
+                const auto target_begin = std::max(target_region.begin(), chr_size);
+
+                if (target_end >= target_begin) {
+                    const GenomicRegion::Length target_size =
+                            static_cast<GenomicRegion::Length>(target_end-target_begin);
+                    output.emplace_back(target_region.get_chromosome_id(), target_size);
+                }
+            }
+        }
+
+        return output;
+    }
+
+    /**
+     * @brief Get the total target size
+     * 
+     * This method computes the sum of all target regions.
+     * 
+     * @param target_regions are the target regions
+     * @return the sum of all target regions.
+     */
+    static size_t get_total_target_size(const std::map<ChromosomeId, std::vector<GenomicRegion>>& target_regions)
+    {
+        size_t total_target_size{0};
+        for (const auto& [chr_id, chr_target_regions]: target_regions) {
+            for (const auto& target_region : chr_target_regions) {
+                total_target_size += target_region.size();
+            }
+        }
+
+        return total_target_size;
+    }
+
+    /**
+     * @brief Compute the number of templates to be produced by sequencing
+     *
+     * @param target_regions are the target regions
+     * @param coverage is the aimed coverage of the target regions
+     * @return The number of templates to be produced to achieve the aimed
+     *    coverage when sequencing the target regions
+     */
+    size_t get_num_of_templates(const std::map<ChromosomeId, std::vector<GenomicRegion>>& target_regions,
+                                const double& coverage) const
+    {
+        // compute missing templates
+        const size_t total_read_size = (read_type==ReadType::PAIRED_READ?2:1)*read_size;
+        return static_cast<size_t>((get_total_target_size(target_regions)*coverage)/total_read_size);
+    }
+
+    /**
      * @brief Compute the initial read simulation data
      *
-     * @param[in] targets are the sequencing targets
-     * @param[in] chromosome_ids is the set of chromosome identifiers whose reads will be
-     *      simulated
+     * This method computes the quantity of DNA to be sequenced and the
+     * number of reads to be simulated per sample.
+     * Notice that the parameters `target_regions` and `chromosome_ids`
+     * have two different roles: the former specifies which regions are
+     * targeted during the over-all sequencing process; the latter
+     * specifies the identifiers of the chromosomes whose reads are
+     * produced by the current task.
+     * In particular, the average coverage of the produced reads and
+     * the coverage specified as the parameter `coverage` may differ
+     * when `chromosome_ids` does not contain all the identifiers of
+     * the genome chromosomes because the method simulates random
+     * selections of templates from the chromosomes in
+     * `chromosome_ids` over the whole set of chromosomes. On the
+     * contrary, the average coverage of the produced reads in the
+     * regions `target_regions` should be that specified by the
+     * parameter `coverage`.
+     * 
+     * @param[in] seq_targets are the sequencing targets
+     * @param[in] target_regions are the targeted regions
+     * @param[in] chromosome_ids is the set of chromosome identifiers
+     *       whose reads will be simulated
      * @param[in] coverage is the aimed coverage
-     * @return the list of the initial sample read simulation data. The order
-     *       of the returned list matches that of `mutations_list`
+     * @return the list of the initial sample read simulation data.
+     *       The order of the returned list matches that of
+     *       `mutations_list`
      */
     std::map<Mutants::Evolutions::TissueSampleId, ReadTissueSimulationData>
-    get_initial_data(const SequencingTargets& targets,
+    get_initial_data(const SequencingTargets& seq_targets,
+                     const std::map<ChromosomeId, std::vector<GenomicRegion>>& target_regions,
                      const std::set<ChromosomeId>& chromosome_ids,
                      const double& coverage)
     {
@@ -1895,46 +2159,28 @@ private:
         std::map<Mutants::Evolutions::TissueSampleId, ReadTissueSimulationData> simulation_data;
         std::map<Mutants::Evolutions::TissueSampleId, size_t> non_relevant;
 
-        const auto& forest = targets.forest();
+        const auto& forest = seq_targets.forest();
         for (const auto& [leaf_id, leaf_mutations]: get_leaf_mutation_tour(forest)) {
             const auto leaf = forest.get_node(leaf_id);
             const auto sample_id = leaf.get_sample().get_id();
 
-            size_t& non_relevant_in_sample = non_relevant[sample_id];
-            ReadTissueSimulationData& sample_data = simulation_data[sample_id];
-            for (const auto& [chr_id, cell_chr]: leaf_mutations.get_chromosomes()) {
-                const size_t allelic_size = cell_chr.allelic_size();
-
-                if (chromosome_ids.count(chr_id)) {
-                    sample_data.non_covered_allelic_size += allelic_size;
-                } else {
-                    non_relevant_in_sample += allelic_size;
-                }
-            }
+            record_allelic_size_in_targets(simulation_data[sample_id], non_relevant[sample_id],
+                                           leaf_mutations, target_regions, chromosome_ids);
         }
 
-        const auto& wild_type_genomes = targets.wild_type_genomes();
-        for (const auto& [sample_id, sample_target]: targets.sample_targets()) {
+        const auto& wild_type_genomes = seq_targets.wild_type_genomes();
+        for (const auto& [sample_id, sample_target]: seq_targets.sample_targets()) {
             size_t& non_relevant_in_sample = non_relevant[sample_id];
             ReadTissueSimulationData& sample_data = simulation_data[sample_id];
             for (const auto& [cell_id, num_of_cells]: sample_target.num_of_wild_types) {
-                const auto& wild_type_genome = wild_type_genomes.at(cell_id);
-                for (const auto& [chr_id, cell_chr]: wild_type_genome.get_chromosomes()) {
-                    const size_t allelic_size = num_of_cells * cell_chr.allelic_size();
-
-                    if (chromosome_ids.count(chr_id)) {
-                        sample_data.non_covered_allelic_size += allelic_size;
-                    } else {
-                        non_relevant_in_sample += allelic_size;
-                    }
-                }
+                record_allelic_size_in_targets(sample_data, non_relevant_in_sample,
+                                               wild_type_genomes.at(cell_id),
+                                               target_regions, chromosome_ids);
             }
         }
 
         // compute missing templates
-        const size_t total_read_size = (read_type==ReadType::PAIRED_READ?2:1)*read_size;
-        const size_t num_of_templates =  static_cast<size_t>((forest.get_germline_mutations().size()
-                                                               *coverage)/total_read_size);
+        const size_t num_of_templates =  get_num_of_templates(target_regions, coverage);
         for (auto& [sample_id, sample_data] : simulation_data) {
 
             const size_t& non_relevant_in_sample = non_relevant[sample_id];
@@ -1996,22 +2242,23 @@ private:
      */
     template<typename SEQUENCER,
              std::enable_if_t<std::is_base_of_v<CLONES::Sequencers::BasicSequencer, SEQUENCER>, bool> = true>
-    SampleSetStatistics generate_reads(SEQUENCER& sequencer, SequencingTargets& targets,
+    SampleSetStatistics generate_reads(SEQUENCER& sequencer, SequencingTargets& seq_targets,
+                                       const std::map<ChromosomeId, std::vector<GenomicRegion>>& target_regions,
                                        const std::set<ChromosomeId>& chromosome_ids,
                                        const double& coverage, const std::string& base_name,
                                        const bool& missed_SID_statistics, const bool& germinal_statistics,
                                        UI::ProgressBar& progress_bar)
     {
-        auto read_simulation_data = get_initial_data(targets, chromosome_ids, coverage);
+        auto read_simulation_data = get_initial_data(seq_targets, target_regions, chromosome_ids, coverage);
 
         using namespace CLONES::IO::FASTA;
 
         IndexedReader<ChromosomeData<Sequence>> chr_reader(ref_genome_filename);
 
-        const auto relevant_chr_names = get_relevant_chr_names(chr_reader, targets.forest(),
+        const auto relevant_chr_names = get_relevant_chr_names(chr_reader, seq_targets.forest(),
                                                                chromosome_ids);
 
-        size_t total_steps = 2*relevant_chr_names.size()*targets.sample_targets().size();
+        size_t total_steps = 2*relevant_chr_names.size()*seq_targets.sample_targets().size();
         for (const auto& [sample_id, sample_data]: read_simulation_data) {
             total_steps += sample_data.non_covered_allelic_size;
         }
@@ -2025,18 +2272,18 @@ private:
             progress_bar.set_progress((100*(++steps))/total_steps);
 
             if (write_SAM) {
-                std::ofstream SAM_stream = get_SAM_stream(chr_data, targets, base_name,
+                std::ofstream SAM_stream = get_SAM_stream(chr_data, seq_targets, base_name,
                                                           sequencer.get_platform_name());
 
                 generate_chromosome_reads(sequencer, statistics, read_simulation_data,
-                                          chr_data, targets, total_steps, steps,
-                                          missed_SID_statistics, germinal_statistics,
-                                          progress_bar, &SAM_stream);
+                                          chr_data, seq_targets, target_regions,
+                                          total_steps, steps, missed_SID_statistics,
+                                          germinal_statistics, progress_bar, &SAM_stream);
             } else {
                 generate_chromosome_reads(sequencer, statistics, read_simulation_data,
-                                          chr_data, targets, total_steps, steps,
-                                          missed_SID_statistics, germinal_statistics,
-                                          progress_bar);
+                                          chr_data, seq_targets, target_regions,
+                                          total_steps, steps, missed_SID_statistics,
+                                          germinal_statistics, progress_bar);
             }
 
             statistics.chr_ids.insert(chr_data.chr_id);
@@ -2145,6 +2392,54 @@ private:
         return chr_reader.get_index().sort_according_offset(relevant_names);
     }
 
+
+    /**
+     * @brief Get the default target regions for the wild-type genome of a forest
+     * 
+     * @param forest is a phylogenetic forest
+     * @return the default target regions for the wild-type genome of a forest
+     */
+    static std::vector<GenomicRegion> get_default_target_regions(const PhylogeneticForest& forest)
+    {
+        const CellGenomeMutations& wild_type_mutations = forest.get_wild_type_genomes().begin()->second;
+
+        std::vector<GenomicRegion> target_regions;
+        for (const auto& [chr_id, chr_mutations]: wild_type_mutations.get_chromosomes()) {
+            target_regions.emplace_back(chr_id, chr_mutations.size());
+        }
+
+        return target_regions;
+    }
+        
+    /**
+     * @brief Partition, and sort target regions
+     * 
+     * This static method partitions target regions according to the region
+     * chromosomes and sorts them according to their position in the chromosome.
+     *
+     * @param target_regions is the vector of the targeted regions
+     * @return a map that associates the chromosomes to the sorted vector
+     *      of the target regions occurring in them. If no target regions
+     *      occurs in a chromosome, the chromosome is not listed in the
+     *      map.
+     */
+    static std::map<ChromosomeId, std::vector<GenomicRegion>>
+    partition_and_sort(const std::vector<GenomicRegion>& target_regions)
+    {
+        std::map<ChromosomeId, std::vector<GenomicRegion>> target_map;
+
+        for (const auto& region: target_regions) {
+            target_map[region.get_chromosome_id()].push_back(region);
+        }
+
+        CLONES::order<GenomicRegion> region_cmp;
+        for (auto& [chr_id, regions] : target_map) {
+            std::sort(regions.begin(), regions.end(), region_cmp);
+        }
+
+        return target_map;
+    }
+
 public:
 
     /**
@@ -2210,6 +2505,7 @@ public:
      * @tparam SEQUENCER is the sequencer model type
      * @param[in,out] sequencer is the sequencer
      * @param[in] forest is a phylogenetic forest
+     * @param[in] target_regions are the regions targeted by sequencing
      * @param[in] chromosome_ids is the set of chromosome identifiers whose reads will be
      *      simulated
      * @param[in] coverage is the aimed coverage
@@ -2235,6 +2531,7 @@ public:
     template<typename SEQUENCER,
              std::enable_if_t<std::is_base_of_v<CLONES::Sequencers::BasicSequencer, SEQUENCER>, bool> = true>
     SampleSetStatistics operator()(SEQUENCER& sequencer, const PhylogeneticForest& forest,
+                                   const std::vector<GenomicRegion>& target_regions,
                                    const std::set<ChromosomeId>& chromosome_ids,
                                    const double& coverage, const bool& produce_normal_sample,
                                    const double purity, const bool& with_pre_neoplastic=true,
@@ -2263,18 +2560,123 @@ public:
                                            + " does not support paired reads.");
         }
 
-        auto targets = SequencingTargets::get_targets(random_generator, forest,
-                                                      produce_normal_sample,
-                                                      purity,
-                                                      with_pre_neoplastic,
-                                                      with_germinal);
+        auto seq_targets = SequencingTargets::get_targets(random_generator, forest,
+                                                          produce_normal_sample,
+                                                          purity,
+                                                          with_pre_neoplastic,
+                                                          with_germinal);
+
+        const auto trimmed_target_regions = trim_target_regions(forest.get_germline_mutations(),
+                                                                target_regions);
+
+        const auto target_map = partition_and_sort(trimmed_target_regions);
 
         UI::ProgressBar progress_bar(progress_bar_stream, quiet);
 
-        return generate_reads<SEQUENCER>(sequencer, targets, chromosome_ids, coverage,
-                                         base_name, missed_SID_statistics,
+        return generate_reads<SEQUENCER>(sequencer, seq_targets, target_map,
+                                         chromosome_ids, coverage, base_name,
+                                         missed_SID_statistics,
                                          germinal_statistics, progress_bar);
     }
+
+    /**
+     * @brief Generate simulated reads for a list of sample genome mutations
+     *
+     * This method generates simulated reads for a list of sample genome mutations and,
+     * if requested, writes the corresponding SAM alignments. The number of simulated reads
+     * depends on the specified coverage.
+     *
+     * @tparam SEQUENCER is the sequencer model type
+     * @param[in,out] sequencer is the sequencer
+     * @param[in] forest is a phylogenetic forest
+     * @param[in] chromosome_ids is the set of chromosome identifiers whose reads will be
+     *      simulated
+     * @param[in] coverage is the aimed coverage
+     * @param[in] produce_normal_sample is a Boolean flag to produce/avoid a normal sample
+     * @param[in] purity is ratio between the number of sampled tumour cells, which are
+     *              represented in the mutation list, and that of the overall sampled
+     *              cells which contains normal cells too
+     * @param[in] with_pre_neoplastic is a Boolean flag to consider/avoid pre-neoplastic
+     *              mutations (default: true)
+     * @param[in] with_germinal is a Boolean flag to consider/avoid germinal mutations
+     *              (default: true)
+     * @param[in] base_name is the prefix of the filename (default: "chr_")
+     * @param[in] missed_SID_statistics is a Boolean flag that enable/disable statistics
+     *      about SIDs that never occurred in the chromosome reads
+     * @param[in] germinal_statistics is a Boolean flag that enable/disable statistics
+     *      about germinal mutations
+     * @param[in] progress_bar_stream is the output stream for the progress bar
+     *              (default: std::cout)
+     * @param[in] quiet is a Boolean flag to avoid progress bar and user messages
+     *              (default: false)
+     * @return the sample set statistics about the generated reads
+     */
+    template<typename SEQUENCER,
+             std::enable_if_t<std::is_base_of_v<CLONES::Sequencers::BasicSequencer, SEQUENCER>, bool> = true>
+    inline SampleSetStatistics operator()(SEQUENCER& sequencer, const PhylogeneticForest& forest,
+                                          const std::set<ChromosomeId>& chromosome_ids,
+                                          const double& coverage, const bool& produce_normal_sample,
+                                          const double purity, const bool& with_pre_neoplastic=true,
+                                          const bool& with_germinal=true, const std::string& base_name="chr_",
+                                          const bool& missed_SID_statistics=false,
+                                          const bool& germinal_statistics=false,
+                                          std::ostream& progress_bar_stream=std::cout,
+                                          const bool quiet=false)
+    {
+        const auto target_regions = get_default_target_regions(forest);
+
+        return this->operator()(sequencer, forest, target_regions, chromosome_ids, coverage,
+                                produce_normal_sample, purity, with_pre_neoplastic, 
+                                with_germinal, base_name, missed_SID_statistics,
+                                germinal_statistics, progress_bar_stream, quiet);
+    }
+
+    /**
+     * @brief Generate simulated reads for a list of sample genome mutations
+     *
+     * This method generates simulated reads for a list of sample genome mutations and,
+     * if requested, writes the corresponding SAM alignments. The number of simulated reads
+     * depends on the specified coverage.
+     *
+     * @tparam SEQUENCER is the sequencer model type
+     * @param[in,out] sequencer is the sequencer
+     * @param[in] forest is a phylogenetic forest
+     * @param[in] target_regions are the regions targeted by sequencing
+     * @param[in] chromosome_ids is the set of chromosome identifiers whose reads will be
+     *      simulated
+     * @param[in] coverage is the aimed coverage
+     * @param[in] with_pre_neoplastic is a Boolean flag to consider/avoid pre-neoplastic
+     *              mutations (default: true)
+     * @param[in] with_germinal is a Boolean flag to consider/avoid germinal mutations
+     *              (default: true)
+     * @param[in] base_name is the prefix of the filename (default: "chr_")
+     * @param[in] missed_SID_statistics is a Boolean flag that enable/disable statistics
+     *      about SIDs that never occurred in the chromosome reads
+     * @param[in] germinal_statistics is a Boolean flag that enable/disable statistics
+     *      about germinal mutations
+     * @param[in] progress_bar_stream is the output stream for the progress bar
+     *              (default: std::cout)
+     * @param[in] quiet is a Boolean flag to avoid progress bar and user messages
+     *              (default: false)
+     * @return the sample set statistics about the generated reads
+     */
+    template<typename SEQUENCER,
+             std::enable_if_t<std::is_base_of_v<CLONES::Sequencers::BasicSequencer, SEQUENCER>, bool> = true>
+    inline SampleSetStatistics operator()(SEQUENCER& sequencer, const PhylogeneticForest& forest,
+                                          const std::vector<GenomicRegion>& target_regions,
+                                          const std::set<ChromosomeId>& chromosome_ids,
+                                          const double& coverage, const bool& with_pre_neoplastic=true,
+                                          const bool& with_germinal=true, const std::string& base_name="chr_",
+                                          const bool& missed_SID_statistics=false,
+                                          const bool& germinal_statistics=false,
+                                          std::ostream& progress_bar_stream=std::cout,
+                                          const bool quiet=false)
+    {
+        return operator()(sequencer, forest, target_regions, chromosome_ids, coverage, false, 1.0,
+                          with_pre_neoplastic, with_germinal, base_name, missed_SID_statistics,
+                          germinal_statistics, progress_bar_stream, quiet);
+    }
+
 
     /**
      * @brief Generate simulated reads for a list of sample genome mutations
@@ -2315,10 +2717,63 @@ public:
                                           std::ostream& progress_bar_stream=std::cout,
                                           const bool quiet=false)
     {
-        return operator()(sequencer, forest, chromosome_ids, coverage, false, 1.0, with_pre_neoplastic,
+        const auto target_regions = get_default_target_regions(forest);
+
+        return operator()(sequencer, forest, target_regions, chromosome_ids, coverage, with_pre_neoplastic,
                           with_germinal, base_name, missed_SID_statistics, germinal_statistics,
                           progress_bar_stream, quiet);
     }
+
+    /**
+     * @brief Generate simulated reads for a list of sample genome mutations
+     *
+     * This method generates simulated reads for a list of sample genome mutations and,
+     * if requested, writes the corresponding SAM alignments. The number of simulated reads
+     * depends on the specified coverage.
+     *
+     * @tparam SEQUENCER is the sequencer model type
+     * @param[in,out] sequencer is the sequencer
+     * @param[in] forest is a phylogenetic forest
+     * @param[in] target_regions are the regions targeted by sequencing
+     * @param[in] coverage is the aimed coverage
+     * @param[in] produce_normal_sample is a Boolean flag to produce/avoid a normal sample
+     * @param[in] purity is ratio between the number of sampled tumour cells, which are
+     *              represented in the mutation list, and that of the overall sampled
+     *              cells which contains normal cells too
+     * @param[in] with_pre_neoplastic is a Boolean flag to consider/avoid pre-neoplastic
+     *              mutations (default: true)
+     * @param[in] with_germinal is a Boolean flag to consider/avoid germinal mutations
+     *              (default: true)
+     * @param[in] base_name is the prefix of the filename (default: "chr_")
+     * @param[in] missed_SID_statistics is a Boolean flag that enable/disable statistics
+     *      about SIDs that never occurred in the chromosome reads
+     * @param[in] germinal_statistics is a Boolean flag that enable/disable statistics
+     *      about germinal mutations
+     * @param[in] progress_bar_stream is the output stream for the progress bar
+     *              (default: std::cout)
+     * @param[in] quiet is a Boolean flag to avoid progress bar and user messages
+     *              (default: false)
+     * @return the sample set statistics about the generated reads
+     */
+    template<typename SEQUENCER,
+             std::enable_if_t<std::is_base_of_v<CLONES::Sequencers::BasicSequencer, SEQUENCER>, bool> = true>
+    inline SampleSetStatistics operator()(SEQUENCER& sequencer, const PhylogeneticForest& forest,
+                                          const std::vector<GenomicRegion>& target_regions,
+                                          const double& coverage, const bool& produce_normal_sample,
+                                          const double purity, const bool& with_pre_neoplastic=true,
+                                          const bool& with_germinal=true, const std::string& base_name="chr_",
+                                          const bool& missed_SID_statistics=false,
+                                          const bool& germinal_statistics=false,
+                                          std::ostream& progress_bar_stream=std::cout,
+                                          const bool quiet=false)
+    {
+        const auto chromosome_ids = get_genome_chromosome_ids(forest.get_germline_mutations());
+
+        return operator()(sequencer, forest, target_regions, chromosome_ids, coverage, produce_normal_sample,
+                          purity, with_pre_neoplastic, with_germinal, base_name, missed_SID_statistics,
+                          germinal_statistics, progress_bar_stream, quiet);
+    }
+
 
     /**
      * @brief Generate simulated reads for a list of sample genome mutations
@@ -2361,11 +2816,54 @@ public:
                                           std::ostream& progress_bar_stream=std::cout,
                                           const bool quiet=false)
     {
-        const auto chromosome_ids = get_genome_chromosome_ids(forest.get_germline_mutations());
+        const auto target_regions = get_default_target_regions(forest);
 
-        return operator()(sequencer, forest, chromosome_ids, coverage, produce_normal_sample,
-                          purity, with_pre_neoplastic, with_germinal, base_name, missed_SID_statistics,
-                          germinal_statistics, progress_bar_stream, quiet);
+        return operator()(sequencer, forest, target_regions, coverage, produce_normal_sample,
+                          purity, with_pre_neoplastic, with_germinal, base_name,
+                          missed_SID_statistics, germinal_statistics, progress_bar_stream, quiet);
+    }
+
+    /**
+     * @brief Generate simulated reads for a list of sample genome mutations
+     *
+     * This method generates simulated reads for a list of sample genome mutations and,
+     * if requested, writes the corresponding SAM alignments. The number of simulated reads
+     * depends on the specified coverage.
+     *
+     * @tparam SEQUENCER is the sequencer model type
+     * @param[in,out] sequencer is the sequencer
+     * @param[in] forest is a phylogenetic forest
+     * @param[in] target_regions are the regions targeted by sequencing
+     * @param[in] coverage is the aimed coverage
+     * @param[in] with_pre_neoplastic is a Boolean flag to consider/avoid pre-neoplastic
+     *              mutations (default: true)
+     * @param[in] with_germinal is a Boolean flag to consider/avoid germinal mutations
+     *              (default: true)
+     * @param[in] base_name is the prefix of the filename (default: "chr_")
+     * @param[in] missed_SID_statistics is a Boolean flag that enable/disable statistics
+     *      about SIDs that never occurred in the chromosome reads
+     * @param[in] germinal_statistics is a Boolean flag that enable/disable statistics
+     *      about germinal mutations
+     * @param[in] progress_bar_stream is the output stream for the progress bar
+     *              (default: std::cout)
+     * @param[in] quiet is a Boolean flag to avoid progress bar and user messages
+     *              (default: false)
+     * @return the sample set statistics about the generated reads
+     */
+    template<typename SEQUENCER,
+             std::enable_if_t<std::is_base_of_v<CLONES::Sequencers::BasicSequencer, SEQUENCER>, bool> = true>
+    inline SampleSetStatistics operator()(SEQUENCER& sequencer, const PhylogeneticForest& forest,
+                                          const std::vector<GenomicRegion>& target_regions,
+                                          const double& coverage, const bool& with_pre_neoplastic=true,
+                                          const bool& with_germinal=true, const std::string& base_name="chr_",
+                                          const bool& missed_SID_statistics=false,
+                                          const bool& germinal_statistics=false,
+                                          std::ostream& progress_bar_stream=std::cout,
+                                          const bool quiet=false)
+    {
+        return operator()(sequencer, forest, target_regions, coverage, false, 1.0, with_pre_neoplastic,
+                          with_germinal, base_name, missed_SID_statistics, germinal_statistics,
+                          progress_bar_stream, quiet);
     }
 
     /**
@@ -2404,9 +2902,56 @@ public:
                                           std::ostream& progress_bar_stream=std::cout,
                                           const bool quiet=false)
     {
-        return operator()(sequencer, forest, coverage, false, 1.0, with_pre_neoplastic, with_germinal,
+        const auto target_regions = get_default_target_regions(forest);
+
+        return operator()(sequencer, forest, target_regions, coverage, with_pre_neoplastic, with_germinal,
                           base_name, missed_SID_statistics, germinal_statistics, progress_bar_stream,
                           quiet);
+    }
+
+    /**
+     * @brief Generate simulated reads for a list of sample genome mutations
+     *
+     * This method generates simulated reads for a list of sample genome mutations and,
+     * if requested, writes the corresponding SAM alignments. The number of simulated reads
+     * depends on the specified coverage.
+     *
+     * @tparam SEQUENCER is the sequencer model type
+     * @param[in,out] sequencer is the sequencer
+     * @param[in] forest is a phylogenetic forest
+     * @param[in] target_regions are the regions targeted by sequencing
+     * @param[in] coverage is the aimed coverage
+     * @param[in] purity is the aimed sample purity
+     * @param[in] with_pre_neoplastic is a Boolean flag to consider/avoid pre-neoplastic
+     *              mutations (default: true)
+     * @param[in] with_germinal is a Boolean flag to consider/avoid germinal mutations
+     *              (default: true)
+     * @param[in] base_name is the prefix of the filename (default: "chr_")
+     * @param[in] missed_SID_statistics is a Boolean flag that enable/disable statistics
+     *      about SIDs that never occurred in the chromosome reads
+     * @param[in] germinal_statistics is a Boolean flag that enable/disable statistics
+     *      about germinal mutations
+     * @param[in] progress_bar_stream is the output stream for the progress bar
+     *              (default: std::cout)
+     * @param[in] quiet is a Boolean flag to avoid progress bar and user messages
+     *              (default: false)
+     * @return the sample set statistics about the generated reads
+     */
+    template<typename SEQUENCER,
+             std::enable_if_t<std::is_base_of_v<CLONES::Sequencers::BasicSequencer, SEQUENCER>, bool> = true>
+    inline SampleSetStatistics operator()(SEQUENCER& sequencer, const PhylogeneticForest& forest,
+                                          const std::vector<GenomicRegion>& target_regions,
+                                          const double& coverage, const double& purity,
+                                          const bool& with_pre_neoplastic=true,
+                                          const bool& with_germinal=true, const std::string& base_name="chr_",
+                                          const bool& missed_SID_statistics=false,
+                                          const bool& germinal_statistics=false,
+                                          std::ostream& progress_bar_stream=std::cout,
+                                          const bool quiet=false)
+    {
+        return operator()(sequencer, forest, target_regions, coverage, false, purity, with_pre_neoplastic,
+                          with_germinal, base_name, missed_SID_statistics, germinal_statistics,
+                          progress_bar_stream, quiet);
     }
 
     /**
@@ -2447,8 +2992,11 @@ public:
                                           std::ostream& progress_bar_stream=std::cout,
                                           const bool quiet=false)
     {
-        return operator()(sequencer, forest, coverage, false, purity, with_pre_neoplastic, with_germinal,
-                          base_name, missed_SID_statistics, germinal_statistics, progress_bar_stream, quiet);
+        const auto target_regions = get_default_target_regions(forest);
+
+        return operator()(sequencer, forest, target_regions, coverage, purity, with_pre_neoplastic,
+                          with_germinal, base_name, missed_SID_statistics, germinal_statistics,
+                          progress_bar_stream, quiet);
     }
 
     /**

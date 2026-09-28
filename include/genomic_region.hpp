@@ -2,8 +2,8 @@
  * @file genomic_region.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines genomic regions
- * @version 1.6
- * @date 2026-09-24
+ * @version 1.7
+ * @date 2026-09-28
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -516,6 +516,14 @@ public:
     }
 };
 
+/**
+ * @brief Compute the intersection of two regions
+ * 
+ * @param A is a genomic region
+ * @param B is a genomic region
+ * @return The genomic region contained in both `A` and `B`
+ */
+GenomicRegion intersect(const GenomicRegion& A, const GenomicRegion& B);
 
 /**
  * @brief Test whether two `GenomicRegion` objects are the same

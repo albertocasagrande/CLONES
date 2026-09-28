@@ -2,8 +2,8 @@
  * @file genomic_region.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements genomic region
- * @version 1.2
- * @date 2026-06-11
+ * @version 1.3
+ * @date 2026-09-28
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -133,6 +133,33 @@ bool GenomicRegion::strictly_contains(const SID& mutation) const
     const auto mutation_region = mutation.get_region();
 
     return strictly_contains(mutation_region);
+}
+
+GenomicRegion intersect(const GenomicRegion& A, const GenomicRegion& B)
+{
+    if (A.get_chromosome_id() != B.get_chromosome_id()) {
+        return GenomicRegion();
+    }
+
+    ChrPosition region_begin;
+    if (A.begins_after(B)) {
+        region_begin = A.begin();
+    } else {
+        region_begin = B.begin();
+    }
+
+    ChrPosition region_end;
+    if (A.ends_before(B)) {
+        region_end = A.end();
+    } else {
+        region_end = B.end();
+    }
+
+    if (region_begin>region_end) {
+        return GenomicRegion();
+    }
+
+    return GenomicRegion(A.get_chromosome_id(), region_end-region_begin);
 }
 
 }   // Mutations
