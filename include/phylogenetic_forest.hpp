@@ -2,8 +2,8 @@
  * @file phylogenetic_forest.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines classes and function for phylogenetic forests
- * @version 1.23
- * @date 2026-09-24
+ * @version 1.24
+ * @date 2026-10-05
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -768,6 +768,15 @@ get_leaf_mutation_tour(const PhylogeneticForest& forest,
     return get_mutation_tour(forest, chromosome_id, with_pre_neoplastic,
                              with_germinal, true);
 }
+
+/**
+ * @brief Stream the NHX representation of the phylogenetic forest
+ * 
+ * @param out is the output stream
+ * @param forest is the phylogenetic forest whose NHX representation
+ *    is requested
+ */
+void save_NHX(std::ostream& out, const PhylogeneticForest& forest);
 
 }   // Mutations
 

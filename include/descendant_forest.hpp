@@ -2,8 +2,8 @@
  * @file descendant_forest.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines classes and function for descendant forests
- * @version 1.14
- * @date 2026-07-16
+ * @version 1.15
+ * @date 2026-10-05
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -303,7 +303,7 @@ protected:
 
             const auto& cell = forest->cells.at(cell_id);
 
-            return cell.get_id() == cell.get_parent_id();
+            return !cell.has_parent();
         }
 
         /**
@@ -912,6 +912,15 @@ public:
         return forest;
     }
 };
+
+/**
+ * @brief Stream the NHX representation of the descendant forest
+ * 
+ * @param out is the output stream
+ * @param forest is the descendant forest whose NHX representation
+ *    is requested
+ */
+void save_NHX(std::ostream& out, const DescendantForest& forest);
 
 }   // Mutants
 

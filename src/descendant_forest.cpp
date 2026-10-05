@@ -2,8 +2,8 @@
  * @file descendant_forest.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements classes and function for descendant forests
- * @version 1.7
- * @date 2026-06-11
+ * @version 1.8
+ * @date 2026-10-05
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -408,6 +408,49 @@ void DescendantForest::clear()
     branches.clear();
     samples.clear();
     coming_from.clear();
+}
+
+void save_NHX(std::ostream& out, const DescendantForest::const_node& node)
+{
+    if (!node.is_leaf()) {
+        char sep{'('};
+
+        for (const auto child: node.children()) {
+            out << sep;
+            sep = ',';
+
+            save_NHX(out, child);
+        }
+
+        out << ")";
+    }
+
+    const Cell& cell=node;
+
+    Time elapsed_from_parent{(node.is_root()?0:
+                              cell.get_birth_time()-node.parent().get_birth_time())};
+
+    const auto& species_property = node.get_species_properties();
+
+    out << static_cast<uint32_t>(cell.get_id()) << ":" << elapsed_from_parent
+        << "[&&NHX:birth_time=" << cell.get_birth_time() << ":mutant='"
+        << species_property.get_mutant_name() << "':epistate='"
+        << species_property.get_epistate_name() << "':sample='";
+    
+    if (node.is_leaf()) {
+        out << node.get_sample().get_name();
+    }
+
+    out << "']";
+}
+
+void save_NHX(std::ostream& out, const DescendantForest& forest)
+{
+    for (const DescendantForest::const_node& root: forest.get_roots()) {
+        save_NHX(out, root);
+
+        out << ";" << std::endl;
+    }
 }
 
 }   // Mutants

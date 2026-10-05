@@ -2,8 +2,8 @@
  * @file phylogenetic_forest.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements classes and function for phylogenetic forests
- * @version 1.24
- * @date 2026-09-24
+ * @version 1.25
+ * @date 2026-10-05
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -387,6 +387,78 @@ get_mutation_tour(const PhylogeneticForest& forest,
 
     return get_mutation_tour(forest, chr_mutations, with_pre_neoplastic,
                              with_germinal, leaves_only);
+}
+
+void save_NHX(std::ostream& out, const PhylogeneticForest::const_node& node)
+{
+    if (!node.is_leaf()) {
+        char sep{'('};
+
+        for (const auto child: node.children()) {
+            out << sep;
+            sep = ',';
+
+            save_NHX(out, child);
+        }
+
+        out << ")";
+    }
+
+    const Mutants::Cell& cell=node;
+
+    Time elapsed_from_parent{(node.is_root()?0:
+                              cell.get_birth_time()-node.parent().get_birth_time())};
+
+    const auto& species_property = node.get_species_properties();
+
+    out << static_cast<uint32_t>(cell.get_id()) << ":" << elapsed_from_parent
+        << "[&&NHX:birth_time=" << cell.get_birth_time() << ":mutant='"
+        << species_property.get_mutant_name() << "':epistate='"
+        << species_property.get_epistate_name() << "':sample='";
+
+    if (node.is_leaf()) {
+        out << node.get_sample().get_name();
+    }
+
+    auto arising_mutations = node.arising_mutations();
+
+    out << "':arising_mutations='";
+    std::string sep = "";
+    for (auto it = arising_mutations.begin(); it != arising_mutations.end(); ++it) {
+        std::ostringstream oss;
+
+        switch (it.get_type()) {
+            case MutationList::SID_TURN:
+                oss << it.get_last_SID();
+                break;
+            case MutationList::CNA_TURN:
+                oss << it.get_last_CNA();
+                break;
+            case MutationList::WGD_TURN:
+                oss << "WGD";
+                break;
+        }
+
+        // NHX does not support "[]" in strings. We replaced them by "()"
+        std::string mutation{oss.str()};
+
+        std::replace(mutation.begin(), mutation.end(), '[', '(');
+        std::replace(mutation.begin(), mutation.end(), ']', ')');
+
+        out << sep << mutation;
+        sep = ",";
+    }
+
+    out << "']";
+}
+
+void save_NHX(std::ostream& out, const PhylogeneticForest& forest)
+{
+    for (const PhylogeneticForest::const_node& root: forest.get_roots()) {
+        save_NHX(out, root);
+
+        out << ";" << std::endl;
+    }
 }
 
 }   // Mutants
