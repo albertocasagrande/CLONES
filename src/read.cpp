@@ -2,8 +2,8 @@
  * @file read.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements sequencing reads
- * @version 1.5
- * @date 2026-02-06
+ * @version 1.6
+ * @date 2026-10-31
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -61,10 +61,10 @@ void Read::MutationIterator::set_current_mutation()
     }
 }
 
-Read::MutationIterator::MutationIterator(const std::map<GenomicPosition, std::shared_ptr<SID>>& germline,
-                            const std::map<GenomicPosition, std::shared_ptr<SID>>& passengers,
-                            const std::map<GenomicPosition, std::shared_ptr<SID>>::const_iterator& germline_it,
-                            const std::map<GenomicPosition, std::shared_ptr<SID>>::const_iterator& passenger_it):
+Read::MutationIterator::MutationIterator(const CLONES::map<GenomicPosition, std::shared_ptr<SID>>& germline,
+                            const CLONES::map<GenomicPosition, std::shared_ptr<SID>>& passengers,
+                            const CLONES::map<GenomicPosition, std::shared_ptr<SID>>::const_iterator& germline_it,
+                            const CLONES::map<GenomicPosition, std::shared_ptr<SID>>::const_iterator& passenger_it):
     passengers{&passengers}, germline{&germline},
     p_it{passenger_it}, g_it{germline_it},
     direction{Direction::FORWARD},
@@ -83,8 +83,8 @@ Read::MutationIterator::MutationIterator():
 {}
 
 Read::MutationIterator
-Read::MutationIterator::lower_bound(const std::map<GenomicPosition, std::shared_ptr<SID>>& germline,
-                                    const std::map<GenomicPosition, std::shared_ptr<SID>>& passengers,
+Read::MutationIterator::lower_bound(const CLONES::map<GenomicPosition, std::shared_ptr<SID>>& germline,
+                                    const CLONES::map<GenomicPosition, std::shared_ptr<SID>>& passengers,
                                     const GenomicPosition& genomic_position)
 {
     auto g_it = germline.lower_bound(genomic_position);
@@ -422,8 +422,8 @@ void update_alignment(std::vector<MatchingType>& alignment,
 }
 
 Read::Read(const std::string& reference,
-           const std::map<GenomicPosition, std::shared_ptr<SID>>& germline,
-           const std::map<GenomicPosition, std::shared_ptr<SID>>& passengers,
+           const CLONES::map<GenomicPosition, std::shared_ptr<SID>>& germline,
+           const CLONES::map<GenomicPosition, std::shared_ptr<SID>>& passengers,
            const GenomicPosition& genomic_position,
            const size_t& read_size):
     genomic_position{genomic_position}

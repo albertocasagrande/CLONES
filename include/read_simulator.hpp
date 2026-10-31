@@ -2,8 +2,8 @@
  * @file read_simulator.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines classes to simulate sequencing
- * @version 1.24
- * @date 2026-02-06
+ * @version 1.25
+ * @date 2026-10-31
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -291,7 +291,7 @@ struct SIDData
  */
 class ChrSampleStatistics : public ChrCoverage
 {
-    std::map<SID, SIDData> SID_data;    //!< The SID data about the simulated reads
+    CLONES::map<SID, SIDData> SID_data;    //!< The SID data about the simulated reads
 
     /**
      * @brief Add the mutation of a chromosome to the statistics
@@ -338,7 +338,7 @@ public:
      *
      * @return a constant reference to the collected SID data
      */
-    inline const std::map<SID, SIDData>& get_data() const
+    inline const CLONES::map<SID, SIDData>& get_data() const
     {
         return SID_data;
     }
@@ -393,8 +393,8 @@ class SampleStatistics
 
     std::set<ChromosomeId> chr_ids;     //!< The identifiers of the chromosomes included in the statistics
 
-    std::map<SID, SIDData> SID_data;    //!< The SID data in the sample
-    std::map<GenomicPosition, BaseCoverage> locus_coverage;   //!< The coverage of any position hosting an SID
+    CLONES::map<SID, SIDData> SID_data;    //!< The SID data in the sample
+    CLONES::map<GenomicPosition, BaseCoverage> locus_coverage;   //!< The coverage of any position hosting an SID
 
     bool save_coverage; //!< A flag to enable/disable storage of coverage data
 
@@ -468,7 +468,7 @@ public:
      *
      * @return a constant reference to the SID data
      */
-    inline const std::map<SID, SIDData>& get_data() const
+    inline const CLONES::map<SID, SIDData>& get_data() const
     {
         return SID_data;
     }
@@ -487,7 +487,7 @@ public:
      * @return a constant reference to the coverage of the positions in which SIDs
      *      occur
      */
-    inline const std::map<GenomicPosition, BaseCoverage>& get_coverage() const
+    inline const CLONES::map<GenomicPosition, BaseCoverage>& get_coverage() const
     {
         return locus_coverage;
     }
@@ -1078,8 +1078,8 @@ private:
     void process_template(SEQUENCER& sequencer,
                           const CLONES::IO::FASTA::ChromosomeData<CLONES::IO::FASTA::Sequence>& chr_data,
                           const CLONES::Mutants::CellId& cell_id,
-                          const std::map<GenomicPosition, std::shared_ptr<SID>>& germline,
-                          const std::map<GenomicPosition, std::shared_ptr<SID>>& passengers,
+                          const CLONES::map<GenomicPosition, std::shared_ptr<SID>>& germline,
+                          const CLONES::map<GenomicPosition, std::shared_ptr<SID>>& passengers,
                           const ChrPosition& template_begin_pos,
                           const size_t& template_size, ChrSampleStatistics& chr_statistics,
                           std::ostream* SAM_stream, const std::string& sample_name="")

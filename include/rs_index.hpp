@@ -2,8 +2,8 @@
  * @file rs_index.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a class to compute the repeated substring index
- * @version 1.2
- * @date 2026-02-06
+ * @version 1.3
+ * @date 2026-10-31
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -907,7 +907,7 @@ public:
      *          but that are located outside the regions in `regions_to_avoid`
      */
     static RSIndex build_index(const std::filesystem::path& genome_fasta,
-                               const std::set<GenomicRegion>& regions_to_avoid,
+                               const CLONES::set<GenomicRegion>& regions_to_avoid,
                                const size_t max_unit_size,
                                const size_t max_stored_repetitions,
                                const int seed, UI::ProgressBar* progress_bar=nullptr);

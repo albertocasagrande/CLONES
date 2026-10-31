@@ -2,8 +2,8 @@
  * @file sbs_signature.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines SBS signature
- * @version 1.2
- * @date 2026-02-06
+ * @version 1.3
+ * @date 2026-10-31
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -32,10 +32,10 @@
 #define __CLONES_SBS_SIGNATURE__
 
 #include <string>
-#include <functional> // std::less
 #include <iostream>
 #include <sstream>
 
+#include "ordered_containers.hpp"
 #include "sbs_context.hpp"
 #include "genomic_sequence.hpp"
 #include "mutation.hpp"
@@ -175,18 +175,18 @@ public:
 
 }   // Mutations
 
+template<>
+struct order<Mutations::SBSType>
+{
+    bool operator()(const Mutations::SBSType &lhs,
+                    const Mutations::SBSType &rhs) const;
+};
+
 }   // CLONES
 
 
 namespace std
 {
-
-template<>
-struct less<CLONES::Mutations::SBSType>
-{
-    bool operator()(const CLONES::Mutations::SBSType &lhs,
-                    const CLONES::Mutations::SBSType &rhs) const;
-};
 
 /**
  * @brief Stream the SBS type in a stream

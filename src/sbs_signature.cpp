@@ -2,8 +2,8 @@
  * @file sbs_signature.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements SBS signature
- * @version 1.3
- * @date 2026-02-06
+ * @version 1.4
+ * @date 2026-10-31
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -156,13 +156,9 @@ SBSType::SBSType(const std::string& type)
 
 }  // Mutations
 
-}  // CLONES
 
-namespace std
-{
-
-bool less<CLONES::Mutations::SBSType>::operator()(const CLONES::Mutations::SBSType &lhs,
-                                                         const CLONES::Mutations::SBSType &rhs) const
+bool order<CLONES::Mutations::SBSType>::operator()(const CLONES::Mutations::SBSType &lhs,
+                                                   const CLONES::Mutations::SBSType &rhs) const
 {
     const auto& lhs_code = lhs.get_context().get_code();
     const auto& rhs_code = rhs.get_context().get_code();
@@ -170,6 +166,12 @@ bool less<CLONES::Mutations::SBSType>::operator()(const CLONES::Mutations::SBSTy
     return ((lhs_code < rhs_code) ||
             ((lhs_code == rhs_code) && (lhs.get_replace_base()<rhs.get_replace_base())));
 }
+
+
+}  // CLONES
+
+namespace std
+{
 
 std::ostream& operator<<(std::ostream& out, const CLONES::Mutations::SBSType& type)
 {

@@ -2,8 +2,8 @@
  * @file id_signature.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines indel signature
- * @version 1.1
- * @date 2026-02-06
+ * @version 1.2
+ * @date 2026-10-31
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -36,6 +36,7 @@
 #include <iostream>
 #include <sstream>
 
+#include "ordered_containers.hpp"
 #include "mutation.hpp"
 #include "signature.hpp"
 
@@ -194,18 +195,19 @@ private:
 
 }   // Mutations
 
+
+template<>
+struct order<CLONES::Mutations::IDType>
+{
+    bool operator()(const CLONES::Mutations::IDType &lhs,
+                    const CLONES::Mutations::IDType &rhs) const;
+};
+
 }   // CLONES
 
 
 namespace std
 {
-
-template<>
-struct less<CLONES::Mutations::IDType>
-{
-    bool operator()(const CLONES::Mutations::IDType &lhs,
-                    const CLONES::Mutations::IDType &rhs) const;
-};
 
 /**
  * @brief Stream the SBS type in a stream

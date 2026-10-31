@@ -2,8 +2,8 @@
  * @file genomic_region.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines genomic region
- * @version 1.3
- * @date 2026-02-06
+ * @version 1.4
+ * @date 2026-10-31
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -518,13 +518,9 @@ public:
 
 }   // Mutations
 
-}   // CLONES
-
-namespace std
-{
 
 template<>
-struct less<CLONES::Mutations::GenomicRegion>
+struct order<CLONES::Mutations::GenomicRegion>
 {
     inline bool operator()(const CLONES::Mutations::GenomicRegion &lhs,
                            const CLONES::Mutations::GenomicRegion &rhs) const
@@ -537,6 +533,11 @@ struct less<CLONES::Mutations::GenomicRegion>
                     && (lhs.size()<rhs.size())));
     }
 };
+
+}   // CLONES
+
+namespace std
+{
 
 /**
  * @brief Write a genomic region in a output stream

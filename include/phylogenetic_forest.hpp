@@ -2,8 +2,8 @@
  * @file phylogenetic_forest.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines classes and function for phylogenetic forests
- * @version 1.8
- * @date 2026-03-13
+ * @version 1.9
+ * @date 2026-10-31
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -58,8 +58,8 @@ class PhylogeneticForest : public Mutants::DescendantsForest
 
     std::map<Mutants::CellId, CellMutationsPtr> leaves_mutations;   //!< The mutations of each cells represented as leaves in the forest
     std::map<Mutants::CellId, MutationList> novel_mutations;        //!< The mutations introduces by each cell in the forest
-    std::map<SID, CellIdSet> SID_first_cells;                       //!< A map associating each SID to the first cells in which it occurred
-    std::map<CNA, CellIdSet> CNA_first_cells;      //!< A map associating each CNA to the first cells in which it occurred
+    CLONES::map<SID, CellIdSet> SID_first_cells;                       //!< A map associating each SID to the first cells in which it occurred
+    CLONES::map<CNA, CellIdSet> CNA_first_cells;      //!< A map associating each CNA to the first cells in which it occurred
 
     std::shared_ptr<GenomeMutations> germline_mutations; //!< The germline mutations
 
@@ -266,7 +266,7 @@ public:
      * @return a constant reference to a map associating each SID in the phylogenetic
      *         forest to the identifier of the first cell in which the SID occurred
      */
-    inline const std::map<SID, std::set<Mutants::CellId>>& get_mutation_first_cells() const
+    inline const CLONES::map<SID, std::set<Mutants::CellId>>& get_mutation_first_cells() const
     {
         return SID_first_cells;
     }
@@ -277,7 +277,7 @@ public:
      * @return a constant reference to a map associating each CNA in the phylogenetic
      *         forest to the identifier of the first cell in which the CNA occurred
      */
-    inline const std::map<CNA, std::set<Mutants::CellId>>& get_CNA_first_cells() const
+    inline const CLONES::map<CNA, std::set<Mutants::CellId>>& get_CNA_first_cells() const
     {
         return CNA_first_cells;
     }

@@ -2,8 +2,8 @@
  * @file sid.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines SNV, Insertion, and Deletion mutations
- * @version 1.3
- * @date 2026-02-06
+ * @version 1.4
+ * @date 2026-10-31
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -250,17 +250,17 @@ struct SID : public Mutation
 
 }   // Mutations
 
-}   // CLONES
-
-namespace std
-{
-
 template<>
-struct less<CLONES::Mutations::SID>
+struct order<CLONES::Mutations::SID>
 {
     bool operator()(const CLONES::Mutations::SID &lhs,
                     const CLONES::Mutations::SID &rhs) const;
 };
+
+}   // CLONES
+
+namespace std
+{
 
 /**
  * @brief Test if two SIDs are the same

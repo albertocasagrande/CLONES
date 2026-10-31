@@ -2,8 +2,8 @@
  * @file id_signature.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements SBS signature
- * @version 1.2
- * @date 2026-02-06
+ * @version 1.3
+ * @date 2026-10-31
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -126,13 +126,9 @@ IDType::IDType(const std::string& type):
 
 }  // Mutations
 
-}  // CLONES
 
-namespace std
-{
-
-bool less<CLONES::Mutations::IDType>::operator()(const CLONES::Mutations::IDType &lhs,
-                                                const CLONES::Mutations::IDType &rhs) const
+bool order<CLONES::Mutations::IDType>::operator()(const CLONES::Mutations::IDType &lhs,
+                                                  const CLONES::Mutations::IDType &rhs) const
 {
     using namespace CLONES::Mutations;
 
@@ -166,6 +162,10 @@ bool less<CLONES::Mutations::IDType>::operator()(const CLONES::Mutations::IDType
             || (lhs.ftype == Type::HETEROPOLYMER && rhs.ftype == Type::MICROHOMOLOGY);
 }
 
+}  // CLONES
+
+namespace std
+{
 
 std::ostream& operator<<(std::ostream& out, const CLONES::Mutations::IDType& type)
 {

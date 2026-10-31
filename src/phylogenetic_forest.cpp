@@ -2,8 +2,8 @@
  * @file phylogenetic_forest.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements classes and function for phylogenetic forests
- * @version 1.11
- * @date 2026-03-13
+ * @version 1.12
+ * @date 2026-10-31
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -118,11 +118,11 @@ std::vector<PhylogeneticForest::node> PhylogeneticForest::get_roots()
 }
 
 template<typename MUTATION>
-std::map<MUTATION, std::set<Mutants::CellId>>
-filter_by_cells_in(const std::map<MUTATION, std::set<Mutants::CellId>>& mutation_map,
+CLONES::map<MUTATION, std::set<Mutants::CellId>>
+filter_by_cells_in(const CLONES::map<MUTATION, std::set<Mutants::CellId>>& mutation_map,
                    const Mutants::DescendantsForest& forest)
 {
-    std::map<MUTATION, std::set<Mutants::CellId>> filtered_map;
+    CLONES::map<MUTATION, std::set<Mutants::CellId>> filtered_map;
 
     for (const auto& [mutation, cell_ids]: mutation_map) {
         auto& in_forest = filtered_map[mutation];

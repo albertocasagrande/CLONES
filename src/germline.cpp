@@ -2,8 +2,8 @@
  * @file germline.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements the functions to generate and load germline mutations
- * @version 1.7
- * @date 2026-03-13
+ * @version 1.8
+ * @date 2026-10-31
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -94,7 +94,7 @@ size_t GermlineMutations::get_mutations_in(const ChromosomeMutations& chr_mutati
  *          from any position in `positions_to_avoid`
  */
 bool is_context_free_from(const GenomicPosition& genomic_position,
-                          const std::set<GenomicPosition>& positions_to_avoid)
+                          const CLONES::set<GenomicPosition>& positions_to_avoid)
 {
     auto found = positions_to_avoid.lower_bound(genomic_position);
 
@@ -121,7 +121,7 @@ bool is_context_free_from(const GenomicPosition& genomic_position,
 }
 
 inline
-std::set<GenomicPosition>
+CLONES::set<GenomicPosition>
 get_mutation_position_set(const DriverStorage& driver_storage)
 {
     auto SID_pos_list = driver_storage.get_mutation_positions();

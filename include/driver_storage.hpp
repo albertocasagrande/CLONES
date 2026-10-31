@@ -2,8 +2,8 @@
  * @file driver_storage.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines class to load and store driver mutations
- * @version 1.3
- * @date 2026-02-06
+ * @version 1.4
+ * @date 2026-10-31
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -81,7 +81,7 @@ public:
      *
      * @return a map from the known driver mutations to their codes
      */
-    std::map<SID, std::string> get_reverse_map() const;
+    CLONES::map<SID, std::string> get_reverse_map() const;
 
     /**
      * @brief Get the SNV positions

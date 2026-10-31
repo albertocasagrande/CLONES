@@ -2,8 +2,8 @@
  * @file build_context_index.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Builds the context index
- * @version 1.2
- * @date 2026-02-06
+ * @version 1.3
+ * @date 2026-10-31
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -59,7 +59,7 @@ class ContextIndexBuilder : public BasicExecutable
         using namespace CLONES::Mutations;
 
         std::list<GenomicRegion> chr_regions;
-        std::set<GenomicRegion> regions_to_avoid;
+        CLONES::set<GenomicRegion> regions_to_avoid;
 
         if (driver_mutations_filename!="") {
             auto driver_storage = DriverStorage::load(driver_mutations_filename);
