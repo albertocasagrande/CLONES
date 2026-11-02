@@ -455,11 +455,9 @@ class MutationsSimulator : public BasicExecutable
 
         if (coverage>0) {
             if (paired_read) {
-                double q = (insert_size_stddev*insert_size_stddev)/insert_size_mean;
-                double p = 1-q;
-                uint32_t t = static_cast<uint32_t>(insert_size_mean/p);
-
                 std::binomial_distribution<uint32_t> insert_size_dist(t,p);
+                std::normal_distribution<double> insert_size_dist(insert_size_mean,
+                                                                  insert_size_stddev);
                 read_simulator = ReadSimulator<>(seq_output_directory, ref_genome_filename, read_size,
                                                  insert_size_dist, read_simulator_output_mode, true,
                                                  "r", seed);

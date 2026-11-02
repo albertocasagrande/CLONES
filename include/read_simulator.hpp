@@ -908,7 +908,7 @@ public:
     ReadType read_type;     //!< The type of the produced reads
 
     size_t read_size;       //!< The produced-read size
-    std::binomial_distribution<uint32_t> insert_size;     //!< The paired-read insert size distribution
+    std::normal_distribution<double> insert_size_dist;     //!< The paired-read insert size distribution
 
     bool write_SAM;         //!< A Boolean flag to write SAM files
 
@@ -1187,11 +1187,17 @@ private:
                                  const size_t& total_steps, size_t& steps,
                                  RACES::UI::ProgressBar& progress_bar, std::ostream* SAM_stream)
     {
-        auto insert_size_mean = insert_size.p()*insert_size.t();
-        auto insert_size_stddev = (1-insert_size.p())*insert_size_mean;
-        auto threshold_template_size = ((read_type==ReadType::PAIRED_READ)
-                                          ?2*read_size+insert_size_mean-insert_size_stddev:
-                                          read_size);
+        size_t threshold_template_size;
+        
+        if (read_type==ReadType::PAIRED_READ) {
+            const auto delta = insert_size_dist.mean()
+                                -(insert_size_dist.stddev()*insert_size_dist.stddev());
+
+            threshold_template_size = static_cast<size_t>(std::max(static_cast<double>(read_size), 
+                                                                   2*read_size+delta));
+        } else {
+            threshold_template_size = read_size;
+        }
 
         if (fragment.size() >= threshold_template_size && sample_simulation_data.missing_templates > 0) {
             const double hit_probability = static_cast<double>(fragment.size())/
@@ -1218,8 +1224,15 @@ private:
             while (simulated_templates < num_of_frag_templates) {
                 auto begin_pos = dist(random_generator);
 
-                auto template_size = ((read_type==ReadType::PAIRED_READ)
-                                        ?2*read_size+insert_size(random_generator):read_size);
+                size_t template_size;
+                if (read_type==ReadType::PAIRED_READ) {
+                    const auto insert_size = insert_size_dist(random_generator);
+
+                    template_size = static_cast<size_t>(std::max(static_cast<double>(read_size), 
+                                                                 2*read_size+insert_size));
+                } else {
+                    template_size = read_size;
+                }
 
                 if (begin_pos+template_size<=fragment.end()+1) {
 
@@ -1576,10 +1589,11 @@ private:
     ReadSimulator(const std::filesystem::path& output_directory,
                   const std::filesystem::path& ref_genome_filename,
                   const ReadType read_type, const size_t& read_size,
-                  const std::binomial_distribution<uint32_t>& insert_size_distribution,
+                  const std::normal_distribution<double>& insert_size_distribution,
                   const Mode mode, const bool save_coverage,
                   const std::string& template_name_prefix, const int& seed):
-        read_type(read_type), read_size(read_size), insert_size(insert_size_distribution),
+        read_type(read_type), read_size(read_size),
+        insert_size_dist(insert_size_distribution),
         write_SAM(false), save_coverage(save_coverage), random_generator(seed),
         output_directory(output_directory), ref_genome_filename(ref_genome_filename),
         num_of_reads(0), hamming_distance_threshold(30),
@@ -1665,7 +1679,7 @@ public:
      */
     ReadSimulator():
         read_type(ReadType::SINGLE_READ), read_size(0),
-        insert_size(std::binomial_distribution<uint32_t>(0,0)), write_SAM(false),
+        insert_size_dist{}, write_SAM(false),
         save_coverage(false), random_generator(), output_directory(""), ref_genome_filename(""),
         num_of_reads(0), hamming_distance_threshold(30), template_name_prefix("r")
     {}
@@ -1687,7 +1701,7 @@ public:
                   const bool& save_coverage=false,
                   const std::string& template_name_prefix="r", const int& seed=0):
         ReadSimulator(output_directory, ref_genome_filename, ReadType::SINGLE_READ, read_size,
-                      std::binomial_distribution<uint32_t>(0, 0), mode, save_coverage,
+                      std::normal_distribution<double>(0, 0), mode, save_coverage,
                       template_name_prefix, seed)
     {}
 
@@ -1706,11 +1720,12 @@ public:
     ReadSimulator(const std::filesystem::path& output_directory,
                   const std::filesystem::path& ref_genome_filename,
                   const size_t& read_size,
-                  const std::binomial_distribution<uint32_t>& insert_size, const Mode mode=Mode::CREATE,
+                  const std::normal_distribution<double>& insert_size_distribution,
+                  const Mode mode=Mode::CREATE,
                   const bool& save_coverage=false,
                   const std::string& template_name_prefix="r", const int& seed=0):
         ReadSimulator(output_directory, ref_genome_filename, ReadType::PAIRED_READ, read_size,
-                      insert_size, mode, save_coverage, template_name_prefix, seed)
+                      insert_size_distribution, mode, save_coverage, template_name_prefix, seed)
     {}
 
     /**
