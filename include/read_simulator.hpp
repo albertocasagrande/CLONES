@@ -2,8 +2,8 @@
  * @file read_simulator.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines classes to simulate sequencing
- * @version 1.35
- * @date 2026-09-24
+ * @version 1.36
+ * @date 2026-11-12
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -53,6 +53,8 @@
 
 #include "progress_bar.hpp"
 #include "variables.hpp"
+
+#include "distributions.hpp"
 
 #include "utils.hpp"
 #include "error.hpp"
@@ -1219,7 +1221,7 @@ public:
     ReadType read_type;     //!< The type of the produced reads
 
     size_t read_size;       //!< The produced-read size
-    std::binomial_distribution<uint32_t> insert_size;     //!< The paired-read insert size distribution
+    std::normal_distribution<double> insert_size_dist;     //!< The paired-read insert size distribution
 
     bool write_SAM;         //!< A Boolean flag to write SAM files
 
@@ -1266,22 +1268,22 @@ private:
     };
 
     /**
-     * @brief Get the template read data
+     * @brief Get the insert read data
      *
-     * @param[in] template_first_position is the template first position
-     * @param[in] template_size is the template size
+     * @param[in] insert_first_position is the insert first position
+     * @param[in] insert_size is the insert size
      * @return a vector containing a pair flag-first-base position for
-     *       each read in the template
+     *       each read in the insert
      */
     std::vector<std::pair<int, ChrPosition>>
-    get_template_read_data(const ChrPosition& template_first_position,
-                           const size_t& template_size)
+    get_insert_read_data(const ChrPosition& insert_first_position,
+                         const size_t& insert_size)
     {
         std::uniform_int_distribution<int> c_dist(0,1);
 
         bool rev_comp = c_dist(random_generator)==0;
 
-        std::vector<std::pair<int, ChrPosition>> template_read_data;
+        std::vector<std::pair<int, ChrPosition>> insert_read_data;
 
         if (read_type == ReadType::PAIRED_READ) {
             int first_flag = 0x1 | 0x2 | 0x20;
@@ -1294,12 +1296,12 @@ private:
                 first_flag |= 0x40;
                 second_flag |= 0x80;
             }
-            template_read_data.push_back({first_flag, template_first_position});
+            insert_read_data.push_back({first_flag, insert_first_position});
 
-            template_read_data.push_back({second_flag,
-                                          template_first_position+template_size-read_size});
+            insert_read_data.push_back({second_flag,
+                                        insert_first_position+insert_size-read_size});
 
-            return template_read_data;
+            return insert_read_data;
         }
 
         int flag = 0;
@@ -1307,7 +1309,7 @@ private:
             flag = 0x10;
         }
 
-        return {{flag, template_first_position}};
+        return {{flag, insert_first_position}};
     }
 
     /**
@@ -1376,8 +1378,8 @@ private:
      *   corresponding germline SIDs to be inserted into the read
      * @param[in] somatic_mutations is a map from genomic positions to the corresponding
      *   somatic SIDs
-     * @param[in] template_begin_pos is the first position of the simulated template
-     * @param[in] template_size is the size of the template
+     * @param[in] insert_begin_pos is the first position of the simulated insert
+     * @param[in] insert_size is the size of the insert
      * @param[out] SAM_stream is a pointer to a SAM stream. If `SAM_stream` is
      *   different from `nullptr` and the hamming distance between the produced read
      *   and the reference fragment is below the threshold, the read alignments is
@@ -1391,19 +1393,19 @@ private:
                           const CLONES::Mutants::CellId& cell_id,
                           const CLONES::map<GenomicPosition, std::shared_ptr<SID>>& germline_mutations,
                           const CLONES::map<GenomicPosition, std::shared_ptr<SID>>& somatic_mutations,
-                          const ChrPosition& template_begin_pos, const size_t& template_size,
+                          const ChrPosition& insert_begin_pos, const size_t& insert_size,
                           std::ostream* SAM_stream, const std::string& sample_name="")
     {
-        const auto template_read_data = get_template_read_data(template_begin_pos, template_size);
+        const auto insert_read_data = get_insert_read_data(insert_begin_pos, insert_size);
 
-        const size_t template_id = num_of_reads/template_read_data.size();
+        const size_t template_id = num_of_reads/insert_read_data.size();
         const std::string template_name = get_template_name(chr_data.chr_id, template_id);
         GenomeFragment read[2];
         std::string qual[2];
         size_t hamming_dist[2];
         size_t over_threshold{0};
-        for (size_t i=0; i<template_read_data.size(); ++i) {
-            const auto& read_first_position = template_read_data[i].second;
+        for (size_t i=0; i<insert_read_data.size(); ++i) {
+            const auto& read_first_position = insert_read_data[i].second;
 
             const GenomicPosition genomic_position{chr_data.chr_id, read_first_position};
 
@@ -1422,11 +1424,11 @@ private:
 
 
         if (SAM_stream != nullptr) {
-            for (size_t i=0; i<template_read_data.size(); ++i) {
+            for (size_t i=0; i<insert_read_data.size(); ++i) {
                 if (hamming_dist[i] < hamming_distance_threshold) {
                     const auto& genomic_position = read[i].get_genomic_position();
 
-                    int flag = template_read_data[i].first;
+                    int flag = insert_read_data[i].first;
 
                     const auto mapq = 33 + 60;
 
@@ -1446,7 +1448,7 @@ private:
                         *SAM_stream << '\t' << '='               // RNEXT
                                     << '\t' << paired_pos        // PNEXT
                                     << '\t' << (i==0?"":"-")
-                                    << template_size;            // TLEN
+                                    << insert_size;            // TLEN
                     } else {
                         *SAM_stream << '\t' << '*'   // RNEXT
                                     << '\t' << '0'   // PNEXT
@@ -1500,13 +1502,14 @@ private:
                                  const size_t& total_steps, size_t& steps,
                                  CLONES::UI::ProgressBar& progress_bar, std::ostream* SAM_stream)
     {
-        auto insert_size_mean = insert_size.p()*insert_size.t();
-        auto insert_size_stddev = (1-insert_size.p())*insert_size_mean;
-        auto threshold_template_size = ((read_type==ReadType::PAIRED_READ)
-                                          ?2*read_size+insert_size_mean-insert_size_stddev:
-                                          read_size);
+        size_t threshold_insert_size;
+        if (read_type==ReadType::SINGLE_READ || read_size>=insert_size_dist.mean()) {
+            threshold_insert_size = read_size;
+        } else {
+            threshold_insert_size = static_cast<size_t>(insert_size_dist.mean());
+        }
 
-        if (fragment.size() >= threshold_template_size && sample_simulation_data.missing_templates > 0) {
+        if (fragment.size() >= threshold_insert_size && sample_simulation_data.missing_templates > 0) {
             const double hit_probability = static_cast<double>(fragment.size())/
                                         sample_simulation_data.non_covered_allelic_size;
             std::binomial_distribution<size_t> b_dist(sample_simulation_data.missing_templates,
@@ -1530,20 +1533,24 @@ private:
             while (simulated_templates < num_of_frag_templates) {
                 auto begin_pos = dist(random_generator);
 
-                auto template_size = ((read_type==ReadType::PAIRED_READ)
-                                        ?2*read_size+insert_size(random_generator):read_size);
+                size_t insert_size;
+                if (read_type==ReadType::PAIRED_READ) {
+                    insert_size = std::round(insert_size_dist(random_generator));
+                } else {
+                    insert_size = read_size;
+                }
 
-                if (begin_pos+template_size<=fragment.end()+1) {
+                if (read_size<=insert_size && begin_pos+insert_size<=fragment.end()+1) {
                     if (germline_fragment != nullptr) {
                         process_template(sequencer, chr_statistics, chr_data, cell_id,
                                          germline_fragment->get_mutations(), somatic_mutations,
-                                         begin_pos, template_size, SAM_stream, sample_name);
+                                         begin_pos, insert_size, SAM_stream, sample_name);
                     } else {
                         CLONES::map<GenomicPosition, std::shared_ptr<SID>> germline_mutations;
 
                         process_template(sequencer, chr_statistics, chr_data, cell_id,
                                          germline_mutations, somatic_mutations,
-                                         begin_pos, template_size, SAM_stream, sample_name);
+                                         begin_pos, insert_size, SAM_stream, sample_name);
                     }
 
                     num_of_reads += ((read_type == ReadType::PAIRED_READ)?2:1);
@@ -2063,10 +2070,10 @@ private:
     ReadSimulator(const std::filesystem::path& output_directory,
                   const std::filesystem::path& ref_genome_filename,
                   const ReadType read_type, const size_t& read_size,
-                  const std::binomial_distribution<uint32_t>& insert_size_distribution,
+                  const std::normal_distribution<double>& insert_size_distribution,
                   const Mode mode, const bool save_coverage,
                   const std::string& template_name_prefix, const int& seed):
-        read_type(read_type), read_size(read_size), insert_size(insert_size_distribution),
+        read_type(read_type), read_size{read_size}, insert_size_dist{},
         write_SAM(false), save_coverage(save_coverage), random_generator(seed),
         output_directory(output_directory), ref_genome_filename(ref_genome_filename),
         num_of_reads(0), hamming_distance_threshold(30),
@@ -2108,6 +2115,18 @@ private:
         if (c != EOF && c != '>') {
             throw Error<std::domain_error>("\"" + to_string(ref_genome_filename)
                                             + "\" is not a FASTA file.");
+        }
+
+        try {
+            insert_size_dist = fit_left_truncated_normal(insert_size_distribution.mean(),
+                                                         insert_size_distribution.stddev(),
+                                                         static_cast<double>(read_size));
+        } catch (std::invalid_argument& e) {
+            
+            throw CLONES::Error<std::domain_error>("The aimed insert size mean must "
+                                                   "be greater than the read size "
+                                                   "or, when the standard deviation "
+                                                   "is null, equal it.");
         }
     }
 
@@ -2152,7 +2171,7 @@ public:
      */
     ReadSimulator():
         read_type(ReadType::SINGLE_READ), read_size(0),
-        insert_size(std::binomial_distribution<uint32_t>(0,0)), write_SAM(false),
+        insert_size_dist{}, write_SAM(false),
         save_coverage(false), random_generator(), output_directory(""), ref_genome_filename(""),
         num_of_reads(0), hamming_distance_threshold(30), template_name_prefix("r")
     {}
@@ -2174,7 +2193,7 @@ public:
                   const bool& save_coverage=false,
                   const std::string& template_name_prefix="r", const int& seed=0):
         ReadSimulator(output_directory, ref_genome_filename, ReadType::SINGLE_READ, read_size,
-                      std::binomial_distribution<uint32_t>(0, 0), mode, save_coverage,
+                      std::normal_distribution<double>(read_size, 0), mode, save_coverage,
                       template_name_prefix, seed)
     {}
 
@@ -2193,11 +2212,12 @@ public:
     ReadSimulator(const std::filesystem::path& output_directory,
                   const std::filesystem::path& ref_genome_filename,
                   const size_t& read_size,
-                  const std::binomial_distribution<uint32_t>& insert_size_distribution,
+                  const std::normal_distribution<double>& insert_size_distribution,
                   const Mode mode=Mode::CREATE, const bool& save_coverage=false,
                   const std::string& template_name_prefix="r", const int& seed=0):
-        ReadSimulator(output_directory, ref_genome_filename, ReadType::PAIRED_READ, read_size,
-                      insert_size_distribution, mode, save_coverage, template_name_prefix, seed)
+        ReadSimulator{output_directory, ref_genome_filename, ReadType::PAIRED_READ,
+                      read_size, insert_size_distribution, mode, save_coverage,
+                      template_name_prefix, seed}
     {}
 
     /**

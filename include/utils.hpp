@@ -2,8 +2,8 @@
  * @file utils.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines utility functions
- * @version 1.6
- * @date 2026-07-26
+ * @version 1.7
+ * @date 2026-11-12
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -39,8 +39,17 @@
 #include <ostream>
 #include <limits>
 
+#include <cmath>
+#include <stdexcept>
+#include <concepts>
+#include <cstddef>
+#include <random>
+#include <type_traits>
+
 #include<regex>
 #include<clocale>
+
+#include "error.hpp"
 
 /**
  * @brief Build a std::regex
@@ -122,11 +131,132 @@ inline static TYPE ceil_div(const TYPE& x, const TYPE& y)
  * @param[in] prefix is the prefix of the path basename
  * @param[in] parent_dir is the parent directory of the resulting path
  * @return a path that does not exists, whose parent directory
- *      is `parent_dir`, and whose basename prefix is `prefix`
+ *      is @p parent_dir, and whose basename prefix is @p prefix
  */
 std::filesystem::path
 get_a_temporary_path(const std::string& prefix="CLONES_tmp_",
                      const std::filesystem::path parent_dir=std::filesystem::temp_directory_path());
+
+/**
+ * @brief Finds a root of a continuous function using Brent's method.
+ *
+ * Searches for a zero of @p func in the interval [@p low, @p high]. The
+ * function values at the endpoints must have opposite signs (or be zero).
+ * At each step the method tries inverse quadratic interpolation or the
+ * secant method, and falls back to bisection whenever the interpolated
+ * point is not acceptable. Hence, it keeps the robustness of the
+ * bisection algorithm while usually converging superlinearly.
+ *
+ * The iteration stops when \f$ |f(b)| < tol \f$, when the bracketing
+ * interval is narrower than about @p tol, or after @p max_iter iterations.
+ *
+ * @tparam FUNC type of the callable object.
+ * @tparam FUNC_DOMAIN type of the function domain.
+ * @tparam FUNC_CODOMAIN type of the function codomain (default `double`).
+ * @param func function whose root is sought.
+ * @param low lower endpoint of the interval.
+ * @param high upper endpoint of the interval.
+ * @param max_iter maximum number of iterations (default 100).
+ * @param tol tolerance on the function value and on the interval
+ *            width (default 1e-12).
+ * @return an approximation of the root in [@p low, @p high].
+ * @throw std::runtime_error if \f$ f(low) \cdot f(high) > 0 \f$, i.e. if a
+ *        root is not guaranteed to lie in the interval.
+ */
+template <typename FUNC, typename FUNC_DOMAIN, typename FUNC_CODOMAIN=double>
+requires std::invocable<FUNC, FUNC_DOMAIN> &&
+         std::same_as<std::invoke_result_t<FUNC, FUNC_DOMAIN>, FUNC_CODOMAIN>
+FUNC_DOMAIN brent_root(FUNC func, FUNC_DOMAIN low, FUNC_DOMAIN high,
+                       const size_t max_iter = 100,
+                       const FUNC_CODOMAIN tol = 1e-12)
+{
+    // b is the current estimate, a the previous one, and [b, c] (or [c, b])
+    // always brackets the root
+    auto a = low, b = high;
+    auto f_a = func(a), f_b = func(b);
+
+    if (f_a * f_b > 0) {
+        throw std::runtime_error("The root is not in the interval ["
+                                 + std::to_string(low) + ","
+                                 + std::to_string(high) + "]");
+    }
+
+    auto c = a;
+    auto f_c = f_a;
+    auto step = b - a, prev_step = step;
+
+    for (size_t i = 0; i < max_iter; ++i) {
+        if (f_b * f_c > 0) {
+            c = a;
+            f_c = f_a;
+            step = prev_step = b - a;
+        }
+
+        // ensure that b is the best estimate so far
+        if (std::abs(f_c) < std::abs(f_b)) {
+            a = b;
+            b = c;
+            c = a;
+            f_a = f_b;
+            f_b = f_c;
+            f_c = f_a;
+        }
+
+        const FUNC_DOMAIN tol_b = 2 * std::numeric_limits<FUNC_DOMAIN>::epsilon()
+                                  * std::abs(b) + tol / 2;
+        const auto half_width = (c - b) / 2;
+
+        if (std::abs(half_width) <= tol_b || std::abs(f_b) < tol) {
+            return b;
+        }
+
+        if (std::abs(prev_step) >= tol_b && std::abs(f_a) > std::abs(f_b)) {
+            // try interpolation: the new step is p/q
+            const auto s = f_b / f_a;
+            FUNC_DOMAIN p, q;
+            if (a == c) {
+                // secant method
+                p = 2 * half_width * s;
+                q = 1 - s;
+            } else {
+                // inverse quadratic interpolation
+                const auto r_a = f_a / f_c;
+                const auto r_b = f_b / f_c;
+                p = s * (2 * half_width * r_a * (r_a - r_b) - (b - a) * (r_b - 1));
+                q = (r_a - 1) * (r_b - 1) * (s - 1);
+            }
+
+            if (p > 0) {
+                q = -q;
+            } else {
+                p = -p;
+            }
+
+            // accept the interpolation only if it falls inside the bracket
+            // and the steps are shrinking fast enough
+            if (2 * p < std::min(3 * half_width * q - std::abs(tol_b * q),
+                                 std::abs(prev_step * q))) {
+                prev_step = step;
+                step = p / q;
+            } else {
+                step = prev_step = half_width;
+            }
+        } else {
+            // fall back to bisection
+            step = prev_step = half_width;
+        }
+
+        a = b;
+        f_a = f_b;
+        if (std::abs(step) > tol_b) {
+            b += step;
+        } else {
+            b += (half_width > 0 ? tol_b : -tol_b);
+        }
+        f_b = func(b);
+    }
+    return b;
+}
 
 namespace std
 {

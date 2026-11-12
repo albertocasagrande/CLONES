@@ -92,6 +92,7 @@ set(CLONES_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/include/allele.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/context_index.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/csv_reader.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/descendant_forest.hpp
+                ${CMAKE_CURRENT_SOURCE_DIR}/include/distributions.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/driver_storage.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/ending_conditions.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/error.hpp
