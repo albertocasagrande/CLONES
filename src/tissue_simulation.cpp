@@ -2,8 +2,8 @@
  * @file simulation.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Define a tumour evolution simulation
- * @version 1.21
- * @date 2026-09-25
+ * @version 1.22
+ * @date 2026-11-13
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -32,6 +32,7 @@
 #include <list>
 #include <string>
 #include <limits>
+#include <cstdint>
 
 #include "tissue_simulation.hpp"
 #include "utils.hpp"
@@ -581,7 +582,7 @@ void TissueSimulation::handle_timed_event_queue(CellEvent& candidate_event)
                 break;
             default:
                 throw Error<std::runtime_error>("Unsupported timed event "
-                                                + std::to_string(static_cast<uint>(timed_event.type))
+                                                + std::to_string(static_cast<uint16_t>(timed_event.type))
                                                 + ".");
         }
     }

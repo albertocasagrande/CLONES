@@ -2,8 +2,8 @@
  * @file tissue.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Define tissue class
- * @version 1.13
- * @date 2026-07-14
+ * @version 1.14
+ * @date 2026-11-13
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -29,6 +29,7 @@
  */
 
 #include <random>
+#include <cstdint>
 
 #include "tissue.hpp"
 #include "mutant_properties.hpp"
@@ -190,7 +191,7 @@ const Species& Tissue::get_species(const SpeciesId& species_id) const
     const auto pos_it = id_pos.find(species_id);
     if (pos_it == id_pos.end()) {
         throw Error<std::out_of_range>("Species identifier \""
-                                       + std::to_string(static_cast<uint>(species_id))
+                                       + std::to_string(static_cast<uint16_t>(species_id))
                                        + "\" is unknown.");
     }
 
@@ -202,7 +203,7 @@ Species& Tissue::get_species(const SpeciesId& species_id)
     const auto pos_it = id_pos.find(species_id);
     if (pos_it == id_pos.end()) {
         throw Error<std::out_of_range>("Species identifier \""
-                                       + std::to_string(static_cast<uint>(species_id))
+                                       + std::to_string(static_cast<uint16_t>(species_id))
                                        + "\" is unknown.");
     }
 
@@ -262,11 +263,11 @@ const CellInTissue& Tissue::place_cell(const CellId& id, const SpeciesId& specie
         const auto size_sizes = size();
 
         oss << "Position " << position << " does not belong to the "
-            << static_cast<uint>(size_sizes[0]) << "x"
-            << static_cast<uint>(size_sizes[1]);
+            << static_cast<uint16_t>(size_sizes[0]) << "x"
+            << static_cast<uint16_t>(size_sizes[1]);
 
         if (size_sizes.size()>2) {
-            oss << "x" << static_cast<uint>(size_sizes[2]);
+            oss << "x" << static_cast<uint16_t>(size_sizes[2]);
         }
 
         oss << "-tissue.";

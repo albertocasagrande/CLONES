@@ -2,8 +2,8 @@
  * @file event_wrapper.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implement a simulation event wrapper
- * @version 1.3
- * @date 2026-06-11
+ * @version 1.4
+ * @date 2026-11-13
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -27,6 +27,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
+#include <cstdint>
 
 #include "event_wrapper.hpp"
 
@@ -89,7 +91,7 @@ bool operator==(const CLONES::Mutants::Evolutions::TissueSimulationEventWrapper&
             }
         default:
             throw CLONES::Error<std::runtime_error>("Unsupported event type "
-                                                   + std::to_string(static_cast<uint>(lhs.type))
+                                                   + std::to_string(static_cast<uint16_t>(lhs.type))
                                                    + ".");
     }
 }

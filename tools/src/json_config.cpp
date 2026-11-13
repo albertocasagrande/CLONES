@@ -2,8 +2,8 @@
  * @file json_config.cpp
  * @author Alberto Casagrande (alberto.casagrande@units.it)
  * @brief Implements classes and function for reading JSON configurations
- * @version 1.4
- * @date 2026-06-20
+ * @version 1.5
+ * @date 2026-11-13
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -27,6 +27,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
+#include <cstdint>
 
 #include "json_config.hpp"
 
@@ -158,7 +160,7 @@ ConfigReader::add_CNA(std::list<CLONES::Mutations::CNA>& CNAs,
             break;
         default:
             {
-                const uint CNA_type_code = static_cast<uint>(get_CNA_type(CNA_json));
+                const uint8_t CNA_type_code = static_cast<uint8_t>(get_CNA_type(CNA_json));
                 throw Error<std::runtime_error>("Unsupported CNA type "
                                                 + std::to_string(CNA_type_code) + ".");
             }

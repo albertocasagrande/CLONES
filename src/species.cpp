@@ -2,8 +2,8 @@
  * @file species.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements species representation methods
- * @version 1.7
- * @date 2026-08-11
+ * @version 1.8
+ * @date 2026-11-13
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -29,6 +29,7 @@
  */
 
 #include <random>
+#include <cstdint>
 
 #include "species.hpp"
 
@@ -128,7 +129,7 @@ size_t Species::num_of_cells_available_for(const CellEventType& event_type) cons
             return cells.size();
         default:
             throw Error<std::runtime_error>("Unsupported event type "
-                                            + std::to_string(static_cast<uint>(event_type))
+                                            + std::to_string(static_cast<uint16_t>(event_type))
                                             + ".");
     }
 }

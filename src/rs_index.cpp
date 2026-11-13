@@ -2,8 +2,8 @@
  * @file rs_index.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements a class to compute the repeated substring index
- * @version 1.7
- * @date 2026-09-24
+ * @version 1.8
+ * @date 2026-11-13
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -27,6 +27,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
+#include <cstdint>
 
 #include "rs_index.hpp"
 
@@ -536,7 +538,7 @@ size_t RSIndex::count_available_for(const IDType& id_type) const
             break;
         default:
             throw Error<std::runtime_error>("Unsupported indel type "
-                                            + std::to_string(static_cast<uint>(id_type.ftype)) + ".");
+                                            + std::to_string(static_cast<uint16_t>(id_type.ftype)) + ".");
     }
 
     size_t total_size{0};
@@ -565,7 +567,7 @@ RSIndex::select(const IDType& id_type, const bool remove)
             break;
         default:
             throw Error<std::runtime_error>("Unsupported indel type "
-                                            + std::to_string(static_cast<uint>(id_type.ftype))
+                                            + std::to_string(static_cast<uint16_t>(id_type.ftype))
                                             + ".");
     }
 

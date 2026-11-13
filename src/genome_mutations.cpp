@@ -2,8 +2,8 @@
  * @file genome_mutations.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements genome and chromosome data structures
- * @version 1.25
- * @date 2026-07-10
+ * @version 1.26
+ * @date 2026-11-13
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -31,6 +31,7 @@
 #include <sstream>
 #include <cassert>
 #include <exception>
+#include <cstdint>
 
 #include "genome_mutations.hpp"
 
@@ -326,7 +327,7 @@ bool ChromosomeMutations::apply_contained(const MutationList& mutation_list)
                 break;
             default:
                 throw Error<std::runtime_error>("Unsupported mutation type "
-                                                + std::to_string(static_cast<uint>(list_it.get_type()))
+                                                + std::to_string(static_cast<uint16_t>(list_it.get_type()))
                                                 + ".");
         }
     }
@@ -346,7 +347,7 @@ bool ChromosomeMutations::apply_CNA(CNA& cna)
                                  cna.nature);
         default:
             throw Error<std::runtime_error>("Unsupported CNA type "
-                                            + std::to_string(static_cast<uint>(cna.type))
+                                            + std::to_string(static_cast<uint16_t>(cna.type))
                                             + ".");
     }
 }
@@ -776,7 +777,7 @@ bool GenomeMutations::apply_to_reference(const MutationList& mutation_list)
                 break;
             default:
                 throw Error<std::runtime_error>("Unsupported mutation type "
-                                                + std::to_string(static_cast<uint>(list_it.get_type()))
+                                                + std::to_string(static_cast<uint16_t>(list_it.get_type()))
                                                 + ".");
         }
     }
@@ -806,7 +807,7 @@ bool GenomeMutations::apply(const MutationList& mutation_list)
                 break;
             default:
                 throw Error<std::runtime_error>("Unsupported mutation type "
-                                                + std::to_string(static_cast<uint>(list_it.get_type()))
+                                                + std::to_string(static_cast<uint16_t>(list_it.get_type()))
                                                 + ".");
         }
     }
@@ -826,7 +827,7 @@ bool GenomeMutations::apply_CNA(CNA& cna)
                                  cna.nature);
         default:
             throw Error<std::runtime_error>("Unsupported CNA type "
-                                            + std::to_string(static_cast<uint>(cna.type))
+                                            + std::to_string(static_cast<uint16_t>(cna.type))
                                             + ".");
     }
 }

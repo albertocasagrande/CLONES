@@ -2,8 +2,8 @@
  * @file sbs_context.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements SBS contexts and extended context automata
- * @version 1.4
- * @date 2026-07-14
+ * @version 1.5
+ * @date 2026-11-13
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -30,6 +30,7 @@
 
 #include <sstream>
 #include <cstring>
+#include <cstdint>
 
 #include "sbs_context.hpp"
 
@@ -57,7 +58,7 @@ char decode_base(const uint8_t& code)
             return 'A';
         default:
             throw Error<std::runtime_error>("Unknown code \""
-                                            + std::to_string(static_cast<uint>(code))
+                                            + std::to_string(static_cast<uint16_t>(code))
                                             + "\".");
     }
 }

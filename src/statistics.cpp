@@ -2,8 +2,8 @@
  * @file statistics.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Define simulation statistics
- * @version 1.3
- * @date 2026-06-11
+ * @version 1.4
+ * @date 2026-11-13
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -29,6 +29,7 @@
  */
 
 #include <cassert>
+#include <cstdint>
 
 #include "statistics.hpp"
 #include "tissue.hpp"
@@ -220,7 +221,7 @@ void TissueStatistics::record_event(const CellEvent& event, const Time &time)
             break;
         default:
             Error<std::runtime_error>("Unsupported event type "
-                                      + std::to_string(static_cast<uint>(event.type))
+                                      + std::to_string(static_cast<uint16_t>(event.type))
                                       + ".");
     }
 }

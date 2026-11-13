@@ -2,8 +2,8 @@
  * @file mutations_sim.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Main file for the CLONES mutations simulator
- * @version 1.9
- * @date 2026-06-21
+ * @version 1.10
+ * @date 2026-11-13
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -33,6 +33,7 @@
 #include <filesystem>
 #include <random>
 #include <regex>
+#include <cstdint>
 
 #include <boost/program_options.hpp>
 
@@ -68,7 +69,7 @@ boost::lexical_cast<std::string, CLONES::Mutations::SequencingSimulations::ReadS
         case ReadSimulator<>::Mode::UPDATE:
             return "update";
         default:
-            throw Error<std::runtime_error>("Unknown mode " + std::to_string(static_cast<uint>(mode)) + ".");
+            throw Error<std::runtime_error>("Unknown mode " + std::to_string(static_cast<uint16_t>(mode)) + ".");
     }
 }
 

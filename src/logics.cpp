@@ -2,8 +2,8 @@
  * @file logics.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implement a logic about the simulation
- * @version 1.5
- * @date 2026-07-14
+ * @version 1.6
+ * @date 2026-11-13
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -27,6 +27,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
+#include <cstdint>
 
 #include "logics.hpp"
 
@@ -84,7 +86,7 @@ std::ostream& operator<<(std::ostream& os, const Variable& variable)
             break;
         default:
             throw Error<std::runtime_error>("Unsupported variable type "
-                                            + std::to_string(static_cast<uint>(variable.get_type()))
+                                            + std::to_string(static_cast<uint16_t>(variable.get_type()))
                                             + ".");
     }
 
@@ -146,7 +148,7 @@ std::ostream& operator<<(std::ostream& os, const Expression& expression)
             break;
         default:
             throw Error<std::runtime_error>("Unsupported expression type "
-                                            + std::to_string(static_cast<uint>(expression.type))
+                                            + std::to_string(static_cast<uint16_t>(expression.type))
                                             + ".");
     }
 
@@ -179,7 +181,7 @@ std::ostream& operator<<(std::ostream& os, const Relation& relation)
             break;
         default:
             throw Error<std::runtime_error>("Unsupported relation type "
-                                            + std::to_string(static_cast<uint>(relation.type))
+                                            + std::to_string(static_cast<uint16_t>(relation.type))
                                             + ".");
     }
     os << relation.rhs;

@@ -2,8 +2,8 @@
  * @file species.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines species representation
- * @version 1.9
- * @date 2026-08-11
+ * @version 1.10
+ * @date 2026-11-13
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -316,7 +316,7 @@ public:
                 return true;
             default:
                 throw Error<std::runtime_error>("Unsupported event type "
-                                               + std::to_string(static_cast<uint>(event_type))
+                                               + std::to_string(static_cast<uint16_t>(event_type))
                                                + ".");
         }
     }
@@ -358,7 +358,7 @@ public:
                 return choose_a_cell(generator, cells);
             default:
                 throw Error<std::runtime_error>("Unsupported event type "
-                                               + std::to_string(static_cast<uint>(event_type))
+                                               + std::to_string(static_cast<uint16_t>(event_type))
                                                + ".");
         }
     }

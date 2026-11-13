@@ -2,8 +2,8 @@
  * @file mutation_list.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements a class to represent mutation lists
- * @version 1.3
- * @date 2026-06-11
+ * @version 1.4
+ * @date 2026-11-13
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -28,6 +28,7 @@
  * SOFTWARE.
  */
 
+#include <cstdint>
 #include <sstream>
 
 #include "mutation_list.hpp"
@@ -184,7 +185,7 @@ MutationList::MutationList(const std::list<MutationSpec<SID>>& SIDs,
                     std::ostringstream oss;
 
                     oss << "Unsupported driver mutation type "
-                        << static_cast<uint>(*order_it) << ".";
+                        << static_cast<uint16_t>(*order_it) << ".";
                     throw Error<std::domain_error>(oss.str());
                 }
         }
