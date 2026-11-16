@@ -1221,7 +1221,8 @@ public:
     ReadType read_type;     //!< The type of the produced reads
 
     size_t read_size;       //!< The produced-read size
-    std::normal_distribution<double> insert_size_dist;     //!< The paired-read insert size distribution
+    double insert_size_mean;    //!< The aimed insert size mean
+    CLONES::left_truncated_normal_distribution<double> insert_size_dist;   //!< The insert size distribution
 
     bool write_SAM;         //!< A Boolean flag to write SAM files
 
@@ -1503,10 +1504,10 @@ private:
                                  CLONES::UI::ProgressBar& progress_bar, std::ostream* SAM_stream)
     {
         size_t threshold_insert_size;
-        if (read_type==ReadType::SINGLE_READ || read_size>=insert_size_dist.mean()) {
+        if (read_type==ReadType::SINGLE_READ || read_size>=insert_size_mean) {
             threshold_insert_size = read_size;
         } else {
-            threshold_insert_size = static_cast<size_t>(insert_size_dist.mean());
+            threshold_insert_size = static_cast<size_t>(insert_size_mean);
         }
 
         if (fragment.size() >= threshold_insert_size && sample_simulation_data.missing_templates > 0) {
@@ -1533,14 +1534,15 @@ private:
             while (simulated_templates < num_of_frag_templates) {
                 auto begin_pos = dist(random_generator);
 
+                // insert_size_dist only samples values not smaller than read_size
                 size_t insert_size;
                 if (read_type==ReadType::PAIRED_READ) {
-                    insert_size = std::round(insert_size_dist(random_generator));
+                    insert_size = static_cast<size_t>(std::round(insert_size_dist(random_generator)));
                 } else {
                     insert_size = read_size;
                 }
 
-                if (read_size<=insert_size && begin_pos+insert_size<=fragment.end()+1) {
+                if (begin_pos+insert_size<=fragment.end()+1) {
                     if (germline_fragment != nullptr) {
                         process_template(sequencer, chr_statistics, chr_data, cell_id,
                                          germline_fragment->get_mutations(), somatic_mutations,
@@ -2073,7 +2075,8 @@ private:
                   const std::normal_distribution<double>& insert_size_distribution,
                   const Mode mode, const bool save_coverage,
                   const std::string& template_name_prefix, const int& seed):
-        read_type(read_type), read_size{read_size}, insert_size_dist{},
+        read_type(read_type), read_size{read_size},
+        insert_size_mean{insert_size_distribution.mean()}, insert_size_dist{},
         write_SAM(false), save_coverage(save_coverage), random_generator(seed),
         output_directory(output_directory), ref_genome_filename(ref_genome_filename),
         num_of_reads(0), hamming_distance_threshold(30),
@@ -2118,15 +2121,16 @@ private:
         }
 
         try {
-            insert_size_dist = fit_left_truncated_normal(insert_size_distribution.mean(),
-                                                         insert_size_distribution.stddev(),
-                                                         static_cast<double>(read_size));
+            const auto cut = static_cast<double>(read_size);
+            const auto fitted = fit_left_truncated_normal(insert_size_distribution.mean(),
+                                                          insert_size_distribution.stddev(),
+                                                          cut);
+
+            insert_size_dist = left_truncated_normal_distribution<double>(fitted, cut);
         } catch (std::invalid_argument& e) {
-            
-            throw CLONES::Error<std::domain_error>("The aimed insert size mean must "
-                                                   "be greater than the read size "
-                                                   "or, when the standard deviation "
-                                                   "is null, equal it.");
+            throw CLONES::Error<std::domain_error>(std::string("Invalid insert size "
+                                                               "distribution: ")
+                                                   + e.what());
         }
     }
 
@@ -2171,7 +2175,7 @@ public:
      */
     ReadSimulator():
         read_type(ReadType::SINGLE_READ), read_size(0),
-        insert_size_dist{}, write_SAM(false),
+        insert_size_mean(0), insert_size_dist{}, write_SAM(false),
         save_coverage(false), random_generator(), output_directory(""), ref_genome_filename(""),
         num_of_reads(0), hamming_distance_threshold(30), template_name_prefix("r")
     {}

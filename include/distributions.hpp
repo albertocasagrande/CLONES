@@ -2,8 +2,8 @@
  * @file distributions.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines functions about probability distributions
- * @version 1.0
- * @date 2026-11-12
+ * @version 1.1
+ * @date 2026-11-16
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -105,6 +105,11 @@ template<typename T>
 std::normal_distribution<T>
 fit_left_truncated_normal(const T mean, const T stddev, const T cut)
 {
+    if (stddev < 0) {
+        throw CLONES::Error<std::invalid_argument>("The standard deviation "
+                                                   "must be non-negative.");
+    }
+
     // A distribution left-truncated at cut only takes values greater than
     // cut, so its mean must be greater than cut too
     if (mean < cut || (mean == cut && stddev > 0)) {
@@ -112,6 +117,12 @@ fit_left_truncated_normal(const T mean, const T stddev, const T cut)
                                                    "greater than the cut or, "
                                                    "when the standard deviation "
                                                    "is null, equal it.");
+    }
+
+    // If the standard deviation is 0 and mean >= cut, then
+    // the aimed distribution is N(mean, 0)
+    if (stddev == 0) {
+        return std::normal_distribution<T>(mean, stddev);
     }
 
     // For X ~ N(mu, sigma^2) truncated to X > cut, with
@@ -129,6 +140,13 @@ fit_left_truncated_normal(const T mean, const T stddev, const T cut)
     // as the only root of ratio(alpha) - target_ratio, provided that
     // 0 < target_ratio < 1.
     const T target_ratio = stddev / (mean - cut);
+
+    // ratio(alpha) < 1 for every alpha, so no root exists
+    if (target_ratio >= 1) {
+        throw CLONES::Error<std::invalid_argument>("The aimed standard deviation must be "
+                                                   "smaller than the difference between "
+                                                   "the aimed mean and the cut.");
+    }
 
     // eq(alpha) = ratio(alpha) - target_ratio. The guards below deal with
     // the loss of precision of 1 - norm_cdf(alpha) for large alpha.
@@ -165,8 +183,17 @@ fit_left_truncated_normal(const T mean, const T stddev, const T cut)
         return (std::sqrt(term) / diff) - target_ratio;
     };
 
+    constexpr T alpha_min = -10;
+
+    // eq is increasing: if it is non-negative at alpha_min, the root lies below
+    // alpha_min, i.e., the cut is more than 10 sigma below mu and truncation is
+    // numerically irrelevant
+    if (eq(alpha_min)>=0) {
+        return std::normal_distribution<T>(mean, stddev);
+    }
+
     // Numerically search for alpha in the safe interval [-10.0, 8.0]
-    const auto alpha = brent_root(eq, -10.0, 8.0);
+    const auto alpha = brent_root(eq, alpha_min, 8.0);
 
     // Compute the final parameters: sigma from E[X] - cut = sigma * (lambda - alpha)
     // and mu from the definition of alpha
@@ -179,6 +206,146 @@ fit_left_truncated_normal(const T mean, const T stddev, const T cut)
 
     return std::normal_distribution(mu, sigma);
 }
+
+/**
+ * @brief A left-truncated normal distribution
+ *
+ * This class samples \f$ X \sim N(\mu, \sigma^2) \f$ conditioned on
+ * \f$ X \geq cut \f$. Let \f$ \alpha = (cut - \mu)/\sigma \f$ be the
+ * standardized cut. When \f$ \alpha < 0 \f$, samples are produced by
+ * rejecting the standard normal samples below \f$ \alpha \f$ (acceptance
+ * probability \f$ \geq 1/2 \f$). Otherwise, the exponential-proposal
+ * rejection method of Robert (1995) is used (acceptance probability
+ * \f$ \gtrsim 0.76 \f$). Hence, sampling is efficient for any cut.
+ *
+ * C. P. Robert. "Simulation of truncated normal variables". Statistics
+ * and Computing 5, 121–125 (1995).
+ *
+ * @tparam T is the floating-point type
+ */
+template<typename T = double>
+class left_truncated_normal_distribution
+{
+    T mu;       //!< The mean of the non-truncated normal distribution
+    T sigma;    //!< The standard deviation of the non-truncated normal distribution
+    T cut;      //!< The truncation value
+
+    T alpha;    //!< The standardized cut, i.e., \f$ (cut - \mu)/\sigma \f$
+    T lambda;   //!< The optimal rate of the exponential proposal when \f$ \alpha \geq 0 \f$
+
+public:
+    using result_type = T;
+
+    /**
+     * @brief A constructor
+     *
+     * @param[in] mu is the mean of the non-truncated normal distribution
+     * @param[in] sigma is the standard deviation of the non-truncated normal
+     *      distribution
+     * @param[in] cut is the truncation value
+     * @throw std::invalid_argument if @p sigma is negative or if @p sigma
+     *      is null and @p mu is smaller than @p cut
+     */
+    explicit left_truncated_normal_distribution(const T mu = 0, const T sigma = 0,
+                                                const T cut = 0):
+        mu{mu}, sigma{sigma}, cut{cut},
+        alpha{sigma > 0 ? (cut - mu) / sigma : 0},
+        lambda{(alpha + std::sqrt(alpha * alpha + 4)) / 2}
+    {
+        if (sigma < 0) {
+            throw CLONES::Error<std::invalid_argument>("The standard deviation "
+                                                       "must be non-negative.");
+        }
+
+        if (sigma == 0 && mu < cut) {
+            throw CLONES::Error<std::invalid_argument>("When the standard deviation "
+                                                       "is null, the mean must not "
+                                                       "be smaller than the cut.");
+        }
+    }
+
+    /**
+     * @brief Build the left-truncated normal distribution of a normal distribution
+     *
+     * @param[in] normal_distribution is a normal distribution
+     * @param[in] cut is the truncation value
+     */
+    left_truncated_normal_distribution(const std::normal_distribution<T>& normal_distribution,
+                                       const T cut):
+        left_truncated_normal_distribution{normal_distribution.mean(),
+                                           normal_distribution.stddev(), cut}
+    {}
+
+    /**
+     * @brief Sample a value
+     *
+     * @tparam RANDOM_GENERATOR is the type of the random generator
+     * @param[in, out] generator is a random generator
+     * @return a value sampled according to the distribution. It is
+     *      always greater than or equal to the cut
+     */
+    template<typename RANDOM_GENERATOR>
+    T operator()(RANDOM_GENERATOR& generator) const
+    {
+        if (sigma == 0) {
+            return mu;
+        }
+
+        // naive rejection: the acceptance probability is at least 1/2
+        if (alpha < 0) {
+            std::normal_distribution<T> std_normal;
+            T z;
+            do {
+                z = std_normal(generator);
+            } while (z < alpha);
+
+            // max() guards against rounding errors in mu + sigma * z
+            return std::max(cut, mu + sigma * z);
+        }
+
+        // exponential proposal z = alpha + E, E ~ Exp(lambda), accepted
+        // with probability exp(-(z - lambda)^2 / 2)
+        std::exponential_distribution<T> exp_dist(lambda);
+        std::uniform_real_distribution<T> uniform_dist(0, 1);
+        while (true) {
+            const T z = alpha + exp_dist(generator);
+            const T d = z - lambda;
+            if (uniform_dist(generator) <= std::exp(-d * d / 2)) {
+                return std::max(cut, mu + sigma * z);
+            }
+        }
+    }
+
+    /**
+     * @brief Get the mean of the non-truncated normal distribution
+     *
+     * @return the mean of the non-truncated normal distribution
+     */
+    inline T get_mu() const
+    {
+        return mu;
+    }
+
+    /**
+     * @brief Get the standard deviation of the non-truncated normal distribution
+     *
+     * @return the standard deviation of the non-truncated normal distribution
+     */
+    inline T get_sigma() const
+    {
+        return sigma;
+    }
+
+    /**
+     * @brief Get the truncation value
+     *
+     * @return the truncation value
+     */
+    inline T get_cut() const
+    {
+        return cut;
+    }
+};
 
 } // CLONES
 
