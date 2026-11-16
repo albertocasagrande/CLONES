@@ -2,8 +2,8 @@
  * @file mutations_sim.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Main file for the CLONES mutations simulator
- * @version 1.10
- * @date 2026-11-13
+ * @version 1.11
+ * @date 2026-11-16
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -702,9 +702,9 @@ public:
              "simulated read size")
             ("insert-size-mean,i", po::value<double>(&insert_size_mean),
              "insert size mean (enable paired-read)")
-            ("insert-size-stddev,d", po::value<double>(&insert_size_stddev),
+            ("insert-size-stddev,t", po::value<double>(&insert_size_stddev),
              "insert size standard deviation")
-            ("sequencer-error-rate,s", po::value<double>(&sequencer_error_rate),
+            ("sequencer-error-rate,e", po::value<double>(&sequencer_error_rate),
              "sequencer error rate per base")
             ("write-SAM,w", "write the simulated read SAM files")
         ;
@@ -790,7 +790,7 @@ public:
                                           ReadSimulator<>::Mode::CREATE);
         }
 
-        paired_read = vm.count("insert-mean-size")>0;
+        paired_read = vm.count("insert-size-mean")>0;
 
         epigenetic_FACS = vm.count("epigenetic-FACS")>0;
         write_SAM = vm.count("write-SAM")>0;
