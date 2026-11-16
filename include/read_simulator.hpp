@@ -1525,16 +1525,17 @@ private:
 
             const auto& somatic_mutations = fragment.get_mutations();
 
-            auto first_possible_begin = fragment.begin();
-            auto last_possible_begin = static_cast<ChrPosition>(fragment.end())
-                                            -read_size+1;
+            const ChrPosition first_possible_begin = fragment.begin();
 
-            std::uniform_int_distribution<ChrPosition> dist(first_possible_begin, last_possible_begin);
             size_t simulated_templates = 0;
             while (simulated_templates < num_of_frag_templates) {
-                auto begin_pos = dist(random_generator);
-
-                // insert_size_dist only samples values not smaller than read_size
+                // The insert size is sampled first and resampled when it does
+                // not fit the fragment. Then, the insert begin is uniformly
+                // sampled among the positions at which the insert fits the
+                // fragment. Sampling the begin first, and then discarding the
+                // inserts exceeding the fragment end, would penalize long
+                // inserts and bias the insert size distribution downward.
+                // insert_size_dist only samples values not smaller than read_size.
                 size_t insert_size;
                 if (read_type==ReadType::PAIRED_READ) {
                     insert_size = static_cast<size_t>(std::round(insert_size_dist(random_generator)));
@@ -1542,7 +1543,13 @@ private:
                     insert_size = read_size;
                 }
 
-                if (begin_pos+insert_size<=fragment.end()+1) {
+                if (insert_size<=fragment.size()) {
+                    const ChrPosition last_possible_begin = fragment.end()-insert_size+1;
+
+                    std::uniform_int_distribution<ChrPosition> begin_dist(first_possible_begin,
+                                                                          last_possible_begin);
+                    const auto begin_pos = begin_dist(random_generator);
+
                     if (germline_fragment != nullptr) {
                         process_template(sequencer, chr_statistics, chr_data, cell_id,
                                          germline_fragment->get_mutations(), somatic_mutations,
