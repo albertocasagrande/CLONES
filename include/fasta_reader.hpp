@@ -2,8 +2,8 @@
  * @file fasta_reader.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a FASTA file reader and support structures
- * @version 1.8
- * @date 2026-07-14
+ * @version 1.9
+ * @date 2026-11-17
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -124,8 +124,13 @@ protected:
         size_t counter{0};
         int c = fasta_stream.get();
         while (c != EOF && c != '>') {
-            std::string line;
-            std::getline(fasta_stream, line);
+            // skip the rest of the line. If the line is empty, `c` is its
+            // end-of-line and calling `getline()` would skip the next line,
+            // which may be the header of the next sequence
+            if (c != '\n') {
+                std::string line;
+                std::getline(fasta_stream, line);
+            }
 
             if ((counter = (counter+1)%1000) == 0) {
                 // let time elapse in progress bar

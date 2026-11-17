@@ -2,8 +2,8 @@
  * @file fasta_reader.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Testing CLONES::IO::FASTA::Reader class
- * @version 1.2
- * @date 2026-06-11
+ * @version 1.3
+ * @date 2026-11-17
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -36,6 +36,11 @@
 #include <fstream>
 
 #include "fasta_chr_reader.hpp"
+#include "utils.hpp"
+
+#include <vector>
+#include <string>
+#include <filesystem>
 
 #include "error.hpp"
 
@@ -246,3 +251,37 @@ BOOST_AUTO_TEST_CASE(chr_nucleotides_reader)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_CASE(chromosome_after_skipped_sequence)
+{
+    using namespace CLONES::IO::FASTA;
+
+    // a non-chromosome sequence whose last line is empty precedes a
+    // chromosome: skipping the former must not skip the latter's header
+    const auto path = get_a_temporary_path();
+    {
+        std::ofstream os(path);
+        os << ">1 dna:chromosome chromosome:GRCh38:1:1:8:1 REF\n"
+           << "ACGTACGT\n"
+           << ">Not a chromosome\n"
+           << "ACGT\n"
+           << "\n"
+           << ">2 dna:chromosome chromosome:GRCh38:2:1:4:1 REF\n"
+           << "TTGG\n";
+    }
+
+    std::vector<std::string> sequences;
+    {
+        Reader<ChromosomeData<Sequence>> reader(path);
+        ChromosomeData<Sequence> chr;
+        while (reader.read(chr)) {
+            sequences.push_back(chr.nucleotides);
+        }
+    }
+
+    std::filesystem::remove(path);
+
+    BOOST_REQUIRE_EQUAL(sequences.size(), 2);
+    BOOST_CHECK_EQUAL(sequences[0], "ACGTACGT");
+    BOOST_CHECK_EQUAL(sequences[1], "TTGG");
+}
