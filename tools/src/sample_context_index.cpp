@@ -2,8 +2,8 @@
  * @file sample_context_index.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief The main source file for context index sampler
- * @version 1.3
- * @date 2026-07-14
+ * @version 1.4
+ * @date 2026-11-17
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -32,10 +32,16 @@
 #include <string>
 #include <filesystem>
 #include <random>
+#include <limits>
+#include <cstdint>
+#include <cstdlib>
+#include <system_error>
 
 #include <boost/program_options.hpp>
 
 #include "context_index.hpp"
+#include "progress_bar.hpp"
+#include "utils.hpp"
 
 
 class ContextSampler
@@ -44,9 +50,10 @@ class ContextSampler
     boost::program_options::options_description visible_options;
     boost::program_options::positional_options_description positional_options;
 
-    std::string context_index_filename;
-    std::string output_filename;
-    uint32_t sampling_ratio;
+    std::filesystem::path context_index_filename;
+    std::filesystem::path output_filename;
+    uint64_t sampling_ratio;
+    int seed;
     size_t bytes_per_abs_position;
     bool quiet;
 
@@ -55,70 +62,91 @@ class ContextSampler
     {
         using namespace CLONES::Mutations;
 
-        CLONES::UI::ProgressBar* bar{nullptr};
+        ContextIndex<GENOME_WIDE_POSITION> context_index;
 
         {
-            ContextIndex<GENOME_WIDE_POSITION> context_index;
-
-            {
-                CLONES::Archive::Binary::In archive(context_index_filename);
-                if (quiet) {
-                    archive & context_index;
-                } else {
-                    archive.load(context_index, "context index");
-                }
+            CLONES::Archive::Binary::In archive(context_index_filename);
+            if (quiet) {
+                archive & context_index;
+            } else {
+                archive.load(context_index, "context index");
             }
+        }
 
-            if (!quiet) {
-                CLONES::UI::ProgressBar::hide_console_cursor();
+        {
+            // the progress bar hides the console cursor, when shown, and
+            // restores it on destruction, also when an exception is thrown
+            CLONES::UI::ProgressBar bar(std::cout, quiet);
 
-                bar = new CLONES::UI::ProgressBar(std::cout);
-                bar->set_message("Sampling context index");
-            }
+            bar.set_message("Sampling context index");
 
+            const auto ratio = static_cast<size_t>(sampling_ratio);
+
+            // each context keeps `size/ratio` of its `size` positions
             size_t total_removal{0}, removed{0};
-            for (auto& [context, positions] : context_index.get_context_positions()) {
-                total_removal += positions.size()*(sampling_ratio-1)/sampling_ratio;
+            for (const auto& [context, positions] : context_index.get_context_positions()) {
+                total_removal += positions.size() - positions.size()/ratio;
             }
 
-            std::mt19937_64 generator(0);
-            for (auto& [context, positions] : context_index.get_context_positions()) {
-                size_t aimed_size = positions.size()/sampling_ratio;
+            std::mt19937_64 generator(seed);
+            for (const auto& [context, positions] : context_index.get_context_positions()) {
+                const size_t aimed_size = positions.size()/ratio;
                 while (positions.size() > aimed_size) {
-                    std::uniform_int_distribution<> u_dist(0,positions.size()-1);
+                    std::uniform_int_distribution<size_t> u_dist(0, positions.size()-1);
 
                     context_index.extract(context, u_dist(generator));
                     ++removed;
 
-                    if (!quiet) {
-                        size_t percentage = 100*removed/total_removal;
-                        if (percentage<99 && percentage > bar->get_progress()) {
-                            bar->set_progress(percentage);
-                        }
+                    // `total_removal > 0` here, since a position has been removed
+                    const auto percentage = static_cast<uint8_t>(100*removed/total_removal);
+                    if (percentage<99 && percentage > bar.get_progress()) {
+                        bar.set_progress(percentage);
                     }
                 }
             }
 
-            CLONES::Archive::Binary::Out archive(output_filename);
+            bar.set_progress(100, "Done");
+        }
 
-            if (quiet) {
-                archive & context_index;
-            } else {
-                bar->set_progress(100, "Done");
+        // write a temporary file in the output directory and rename it, so
+        // that a failure does not leave a truncated or overwritten output
+        auto output_dir = output_filename.parent_path();
+        if (output_dir.empty()) {
+            output_dir = ".";
+        }
+        const auto tmp_path = get_a_temporary_path(output_filename.filename().string() + ".tmp_",
+                                                   output_dir);
 
-                delete bar;
+        try {
+            {
+                CLONES::Archive::Binary::Out archive(tmp_path);
 
-                CLONES::UI::ProgressBar::show_console_cursor();
-
-                archive.save(context_index, "sampled index");
-
-                std::cout << " Freeing memory..." << std::flush;
+                if (quiet) {
+                    archive & context_index;
+                } else {
+                    archive.save(context_index, "sampled index");
+                }
             }
+
+            std::filesystem::rename(tmp_path, output_filename);
+        } catch (...) {
+            std::error_code error;
+            std::filesystem::remove(tmp_path, error);
+
+            throw;
         }
 
         if (!quiet) {
-            std::cout << "done" << std::endl;
+            std::cout << " Freeing memory..." << std::flush;
         }
+    }
+
+    [[noreturn]] void print_error_and_exit(const std::string& message) const
+    {
+        std::cerr << message << std::endl << std::endl;
+        print_help(std::cerr);
+
+        std::exit(1);
     }
 
 public:
@@ -140,9 +168,12 @@ public:
         program_name(argv[0]), visible_options("Options")
     {
         namespace po = boost::program_options;
+        namespace fs = std::filesystem;
 
         visible_options.add_options()
             ("force-overwrite,f", "force overwriting output file")
+            ("seed,s", po::value<int>(&seed)->default_value(0),
+             "random generator seed")
 #if WITH_INDICATORS
             ("quiet,q", "disable output messages")
 #endif // WITH_INDICATORS
@@ -150,12 +181,12 @@ public:
 
         po::options_description hidden("Hidden options");
         hidden.add_options()
-            ("context index filename", po::value<std::string>(&context_index_filename),
+            ("context index filename", po::value<std::filesystem::path>(&context_index_filename),
             "the genome context index filename")
-            ("output filename", po::value<std::string>(&output_filename),
+            ("output filename", po::value<std::filesystem::path>(&output_filename),
             "the resulting genome context index filename")
-            ("sampling ratio", po::value<uint32_t>(&sampling_ratio),
-            "the genome context index filename")
+            ("sampling ratio", po::value<int64_t>(&sampling_ratio),
+            "the sampling ratio, i.e., one position every <sampling ratio> is kept")
         ;
 
         po::options_description generic;
@@ -170,36 +201,52 @@ public:
             po::command_line_parser parser{argc, argv};
             po::store(parser.options(generic).positional(positional_options).run(), vm);
             po::notify(vm);
-        } catch (boost::wrapexcept<boost::program_options::unknown_option> &except) {
-            std::cerr << except.what() << std::endl << std::endl;
-            print_help(std::cerr);
-            exit(1);
+        } catch (const po::error& except) {
+            print_error_and_exit(except.what());
         }
 
         if (vm.count("help")) {
             print_help(std::cout);
-            exit(0);
+            std::exit(0);
         }
+
+        quiet = vm.count("quiet")>0;
 
         if (!vm.count("context index filename")) {
-            std::cerr << "The context index filename is mandatory. "
-                      << "You can produce it by using `build_context_index`" << std::endl << std::endl;
-            print_help(std::cerr);
-            exit(1);
+            print_error_and_exit("The context index filename is mandatory. "
+                                 "You can produce it by using `build_context_index`.");
         }
 
-        if (!std::filesystem::exists(context_index_filename)) {
-            std::cerr << "\"" << context_index_filename << "\"  does not exists."
-                      << std::endl << std::endl;
-            print_help(std::cerr);
-            exit(1);
+        if (!fs::exists(context_index_filename)) {
+            print_error_and_exit("\"" + to_string(context_index_filename) + "\" does not exist.");
         }
 
-        if (!std::filesystem::is_regular_file(context_index_filename)) {
-            std::cerr << "\"" << context_index_filename << "\"  is not a regular file."
-                      << std::endl << std::endl;
-            print_help(std::cerr);
-            exit(1);
+        if (!fs::is_regular_file(context_index_filename)) {
+            print_error_and_exit("\"" + to_string(context_index_filename) + "\" is not a regular file.");
+        }
+
+        if (!vm.count("output filename")) {
+            print_error_and_exit("The output context index filename is mandatory.");
+        }
+
+        if (fs::exists(output_filename)) {
+            if (!vm.count("force-overwrite")) {
+                print_error_and_exit("The output file \"" + to_string(output_filename)
+                                     + "\" already exists. Use \"--force-overwrite\" "
+                                     "to overwrite it.");
+            }
+
+            if (!fs::is_regular_file(output_filename)) {
+                print_error_and_exit("\"" + to_string(output_filename) + "\" is not a regular file.");
+            }
+        }
+
+        if (!vm.count("sampling ratio")) {
+            print_error_and_exit("The sampling ratio is mandatory.");
+        }
+
+        if (sampling_ratio < 1 || sampling_ratio > std::numeric_limits<uint32_t>::max()) {
+            print_error_and_exit("The sampling ratio must be a positive integer.");
         }
 
         try {
@@ -208,51 +255,35 @@ public:
             CLONES::Archive::Binary::In archive(context_index_filename);
 
             bytes_per_abs_position = ContextIndex<>::read_bytes_per_absolute_position(archive);
-
         } catch (const std::exception& except) {
-            std::cerr << except.what() << std::endl << std::endl;
-            print_help(std::cerr);
-            exit(1);
-        }
-
-        quiet = vm.count("quiet")>0;
-
-        if (!vm.count("output filename")) {
-            std::cerr << "The output context index filename is mandatory." << std::endl << std::endl;
-            print_help(std::cerr);
-            exit(1);
-        }
-
-        if (std::filesystem::exists(output_filename) && !vm.count("force-overwrite")) {
-            std::cerr << "The output file \"" << output_filename << "\" already exists. "
-                    << "Use \"--force-overwrite\" to overwrite it." << std::endl<< std::endl;
-            print_help(std::cerr);
-            exit(1);
-        }
-
-        if (!vm.count("sampling ratio")) {
-            std::cerr << "The sampling ratio is mandatory." << std::endl << std::endl;
-            print_help(std::cerr);
-            exit(1);
+            print_error_and_exit(except.what());
         }
     }
 
     void run() const
     {
-        switch (bytes_per_abs_position) {
-            case 2:
-                sample_context_index<uint16_t>();
-                break;
-            case 4:
-                sample_context_index<uint32_t>();
-                break;
-            case 8:
-                sample_context_index<uint64_t>();
-                break;
-            default:
-                std::cerr << "Not supported bits per absolute position."
-                          << " Supported values are 2, 4, or 8." << std::endl;
-                exit(1);
+        try {
+            switch (bytes_per_abs_position) {
+                case 2:
+                    sample_context_index<uint16_t>();
+                    break;
+                case 4:
+                    sample_context_index<uint32_t>();
+                    break;
+                case 8:
+                    sample_context_index<uint64_t>();
+                    break;
+                default:
+                    print_error_and_exit("Unsupported bytes per absolute position ("
+                                         + std::to_string(bytes_per_abs_position)
+                                         + "). Supported values are 2, 4, or 8.");
+            }
+        } catch (const std::exception& except) {
+            print_error_and_exit(except.what());
+        }
+
+        if (!quiet) {
+            std::cout << "done" << std::endl;
         }
     }
 };
