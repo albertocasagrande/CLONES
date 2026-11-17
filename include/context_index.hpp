@@ -2,8 +2,8 @@
  * @file context_index.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements a class to build a context index
- * @version 1.4
- * @date 2026-09-24
+ * @version 1.5
+ * @date 2026-11-17
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -682,11 +682,26 @@ public:
     template<typename ARCHIVE, std::enable_if_t<std::is_base_of_v<Archive::Basic::In, ARCHIVE>, bool> = true>
     static size_t read_bytes_per_absolute_position(ARCHIVE& archive)
     {
+        const auto orig_pos = archive.tellg();
+
         uint8_t abs_pos_size;
+        try {
+            // the number of bytes per absolute position follows the header:
+            // reading the header also validates the archive format
+            ARCHIVE::read_header(archive, "CLONES Context Index", 0);
 
-        auto orig_pos = archive.tellg();
+            if (archive.size() - archive.tellg() < static_cast<std::streamoff>(sizeof(abs_pos_size))) {
+                throw Error<std::runtime_error>("The context index in "
+                                                + to_string(archive.filepath)
+                                                + " is truncated.");
+            }
 
-        archive & abs_pos_size;
+            archive & abs_pos_size;
+        } catch (...) {
+            archive.seekg(orig_pos);
+
+            throw;
+        }
 
         archive.seekg(orig_pos);
 

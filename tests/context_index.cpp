@@ -2,8 +2,8 @@
  * @file context_index.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Testing CLONES::Mutations::ContextIndex class
- * @version 1.2
- * @date 2026-09-24
+ * @version 1.3
+ * @date 2026-11-17
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -36,6 +36,8 @@
 #include <fstream>
 
 #include "context_index.hpp"
+#include "archive.hpp"
+#include "utils.hpp"
 
 #include "error.hpp"
 
@@ -201,3 +203,86 @@ BOOST_AUTO_TEST_CASE(context_index_remove_insert)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+template<typename GENOME_WIDE_POSITION>
+void test_read_bytes_per_absolute_position()
+{
+    using namespace CLONES;
+    using namespace CLONES::Mutations;
+    namespace fs = std::filesystem;
+
+    const auto index_path = get_a_temporary_path();
+
+    {
+        auto context_index = ContextIndex<GENOME_WIDE_POSITION>::build_index(FASTA_FILE);
+
+        Archive::Binary::Out archive(index_path);
+
+        archive & context_index;
+    }
+
+    {
+        Archive::Binary::In archive(index_path);
+
+        BOOST_CHECK_EQUAL(ContextIndex<>::read_bytes_per_absolute_position(archive),
+                          sizeof(GENOME_WIDE_POSITION));
+
+        // the archive position is restored, so the index can still be loaded
+        BOOST_CHECK_EQUAL(archive.tellg(), 0);
+
+        ContextIndex<GENOME_WIDE_POSITION> context_index;
+        BOOST_CHECK_NO_THROW(archive & context_index);
+    }
+
+    fs::remove(index_path);
+}
+
+BOOST_AUTO_TEST_CASE(context_index_bytes_per_absolute_position)
+{
+    test_read_bytes_per_absolute_position<uint16_t>();
+    test_read_bytes_per_absolute_position<uint32_t>();
+    test_read_bytes_per_absolute_position<uint64_t>();
+}
+
+BOOST_AUTO_TEST_CASE(context_index_bytes_per_absolute_position_invalid)
+{
+    using namespace CLONES;
+    using namespace CLONES::Mutations;
+    namespace fs = std::filesystem;
+
+    const auto path = get_a_temporary_path();
+
+    // not a CLONES archive
+    std::ofstream(path) << "x";
+    {
+        Archive::Binary::In archive(path);
+        BOOST_CHECK_THROW(ContextIndex<>::read_bytes_per_absolute_position(archive),
+                          std::exception);
+    }
+
+    // a CLONES archive of a different type
+    {
+        Archive::Binary::Out archive(path);
+        Archive::Binary::Out::write_header(archive, "CLONES Bucket", 0);
+        archive & static_cast<uint8_t>(4);
+    }
+    {
+        Archive::Binary::In archive(path);
+        BOOST_CHECK_THROW(ContextIndex<>::read_bytes_per_absolute_position(archive),
+                          std::exception);
+    }
+
+    // a context index header without the absolute position size
+    {
+        Archive::Binary::Out archive(path);
+        Archive::Binary::Out::write_header(archive, "CLONES Context Index", 0);
+    }
+    {
+        Archive::Binary::In archive(path);
+        BOOST_CHECK_THROW(ContextIndex<>::read_bytes_per_absolute_position(archive),
+                          CLONES::Error<std::runtime_error>);
+        BOOST_CHECK_EQUAL(archive.tellg(), 0);
+    }
+
+    fs::remove(path);
+}
