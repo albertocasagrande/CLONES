@@ -2,7 +2,7 @@
  * @file mutations_sim.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Main file for the CLONES mutations simulator
- * @version 1.13
+ * @version 1.14
  * @date 2026-11-17
  *
  * @copyright Copyright (c) 2023-2026
@@ -39,6 +39,7 @@
 #include <vector>
 #include <charconv>
 #include <cstdint>
+#include <cctype>
 
 #include <boost/program_options.hpp>
 
@@ -49,6 +50,7 @@
 #include "context_index.hpp"
 #include "mutation_engine.hpp"
 #include "germline.hpp"
+#include "fasta_chr_reader.hpp"
 #include "read_simulator.hpp"
 #include "distributions.hpp"
 
@@ -255,6 +257,145 @@ class MutationsSimulator : public BasicExecutable
         return nlohmann::json::parse(simulation_stream);
     }
 
+    /**
+     * @brief Complete and validate the references of the driver SIDs
+     *
+     * This method fills the missing "ref" fields of the driver SNVs in the
+     * configuration by using the reference genome and checks that the
+     * "ref" fields of all the driver SIDs match the reference genome.
+     * It also rejects driver SNVs whose alternative base equals the
+     * reference one and driver indels lacking the "ref" field.
+     *
+     * @param[in, out] simulation_cfg is the mutations simulation configuration
+     */
+    void complete_driver_references(nlohmann::json& simulation_cfg) const
+    {
+        using namespace CLONES;
+        using namespace CLONES::Mutations;
+        using namespace CLONES::IO::FASTA;
+
+        if (!simulation_cfg.contains("mutant properties")
+                || !simulation_cfg["mutant properties"].is_array()) {
+            // `ConfigReader` reports the configuration errors
+            return;
+        }
+
+        // collect the driver SIDs per chromosome
+        std::map<ChromosomeId, std::list<nlohmann::json*>> chr_SIDs;
+        for (auto& mutant_json : simulation_cfg["mutant properties"]) {
+            if (!mutant_json.is_object() || !mutant_json.contains("driver mutations")
+                    || !mutant_json["driver mutations"].is_array()) {
+                continue;
+            }
+
+            for (auto& mutation_json : mutant_json["driver mutations"]) {
+                if (!mutation_json.is_object() || !mutation_json.contains("type")
+                        || !mutation_json.contains("chromosome")
+                        || !mutation_json.contains("position")) {
+                    continue;
+                }
+
+                const auto type = mutation_json["type"].template get<std::string>();
+                if (type != "SNV" && type != "indel") {
+                    continue;
+                }
+
+                if (type == "indel" && !mutation_json.contains("ref")) {
+                    throw Error<std::runtime_error>("The driver indel " + mutation_json.dump()
+                                                    + " lacks the \"ref\" field.");
+                }
+
+                const auto chr_name = mutation_json["chromosome"].template get<std::string>();
+                chr_SIDs[GenomicPosition::stochr(chr_name)].push_back(&mutation_json);
+            }
+        }
+
+        if (chr_SIDs.empty()) {
+            return;
+        }
+
+        auto to_upper = [](std::string sequence) {
+            for (auto& base : sequence) {
+                base = static_cast<char>(std::toupper(static_cast<unsigned char>(base)));
+            }
+
+            return sequence;
+        };
+
+        UI::ProgressBar progress_bar(std::cout, quiet);
+        progress_bar.set_message("Checking driver references");
+
+        ChromosomeData<Sequence> chr;
+        Reader<ChromosomeData<Sequence>> reader(ref_genome_filename);
+        while (!chr_SIDs.empty() && reader.read(chr, progress_bar)) {
+            auto found = chr_SIDs.find(chr.chr_id);
+            if (found == chr_SIDs.end()) {
+                continue;
+            }
+
+            for (auto* mutation_json : found->second) {
+                const auto position = (*mutation_json)["position"].template get<ChrPosition>();
+                const auto description = mutation_json->dump();
+
+                // genomic positions are 1-based
+                if (position < 1 || position > chr.nucleotides.size()) {
+                    throw Error<std::runtime_error>("The driver mutation " + description
+                                                    + " lays outside the reference chromosome.");
+                }
+
+                if (!mutation_json->contains("ref")) {
+                    // only driver SNVs may lack the "ref" field
+                    const auto ref_base = to_upper(chr.nucleotides.substr(position-1, 1));
+                    if (ref_base.find_first_not_of("ACGT") != std::string::npos) {
+                        throw Error<std::runtime_error>("The reference base of the driver SNV "
+                                                        + description + " is unknown (\""
+                                                        + ref_base + "\").");
+                    }
+
+                    (*mutation_json)["ref"] = ref_base;
+                } else {
+                    const auto ref = to_upper((*mutation_json)["ref"].template get<std::string>());
+
+                    // "-" and "" stand for an empty reference sequence (i.e., an insertion)
+                    if (ref != "-" && ref != "") {
+                        const auto genome_ref = to_upper(chr.nucleotides.substr(position-1,
+                                                                                ref.size()));
+                        if (ref != genome_ref) {
+                            throw Error<std::runtime_error>("The reference of the driver mutation "
+                                                            + description + " does not match the "
+                                                            + "reference genome (\"" + genome_ref
+                                                            + "\").");
+                        }
+
+                        // store the reference in upper case as the filled ones
+                        (*mutation_json)["ref"] = ref;
+                    }
+                }
+
+                const auto type = (*mutation_json)["type"].template get<std::string>();
+                if (type == "SNV" && mutation_json->contains("alt")) {
+                    const auto ref = to_upper((*mutation_json)["ref"].template get<std::string>());
+                    const auto alt = to_upper((*mutation_json)["alt"].template get<std::string>());
+
+                    if (ref == alt) {
+                        throw Error<std::runtime_error>("The driver SNV " + mutation_json->dump()
+                                                        + " does not change the reference base.");
+                    }
+
+                    (*mutation_json)["alt"] = alt;
+                }
+            }
+
+            chr_SIDs.erase(found);
+        }
+
+        if (!chr_SIDs.empty()) {
+            throw Error<std::runtime_error>("The reference genome lacks chromosome "
+                                            + GenomicPosition::chrtos(chr_SIDs.begin()->first)
+                                            + ", which contains some driver mutations.");
+        }
+    }
+
     void process_statistics(const CLONES::Mutations::PhylogeneticForest& forest) const
     {
         using namespace CLONES;
@@ -439,6 +580,8 @@ class MutationsSimulator : public BasicExecutable
             throw Error<std::runtime_error>("The passengers simulation configuration "
                                             "must contain an \"exposures\" field");
         }
+
+        complete_driver_references(simulation_cfg);
 
         if (!quiet) {
             if (simulation_cfg.contains("sample regions")) {
