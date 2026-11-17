@@ -2,8 +2,8 @@
  * @file build_context_index.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Builds the context index
- * @version 1.4
- * @date 2026-09-24
+ * @version 1.5
+ * @date 2026-11-17
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -32,6 +32,7 @@
 #include <string>
 #include <filesystem>
 #include <algorithm>
+#include <system_error>
 
 #include <boost/program_options.hpp>
 
@@ -40,20 +41,59 @@
 #include "genome_mutations.hpp"
 #include "context_index.hpp"
 #include "driver_storage.hpp"
+#include "utils.hpp"
 
 #include "progress_bar.hpp"
 
 class ContextIndexBuilder : public BasicExecutable
 {
-    std::string output_filename;
-    std::string genome_fasta_filename;
-    std::string driver_mutations_filename;
+    std::filesystem::path output_filename;
+    std::filesystem::path genome_fasta_filename;
+    std::filesystem::path driver_mutations_filename;
     size_t sampling_rate;
-    uint8_t byte_per_abs_position;
+    unsigned int bytes_per_abs_position;
     bool quiet;
 
+    /**
+     * @brief Save an index in the output file
+     *
+     * The index is written in a temporary file in the output directory,
+     * which then replaces the output file. So, a failure neither leaves
+     * a truncated output file nor overwrites an existing one.
+     */
+    template<typename INDEX>
+    void save(const INDEX& index) const
+    {
+        auto output_dir = output_filename.parent_path();
+        if (output_dir.empty()) {
+            output_dir = ".";
+        }
+
+        const auto tmp_path = get_a_temporary_path(output_filename.filename().string() + ".tmp_",
+                                                   output_dir);
+
+        try {
+            {
+                CLONES::Archive::Binary::Out archive(tmp_path);
+
+                if (quiet) {
+                    archive & index;
+                } else {
+                    archive.save(index, "context index");
+                }
+            }
+
+            std::filesystem::rename(tmp_path, output_filename);
+        } catch (...) {
+            std::error_code error;
+            std::filesystem::remove(tmp_path, error);
+
+            throw;
+        }
+    }
+
     template<typename GENOME_WIDE_POSITION>
-    std::list<CLONES::Mutations::GenomicRegion> build_and_save_context_index() const
+    void build_and_save_context_index() const
     {
         using namespace CLONES;
         using namespace CLONES::Mutations;
@@ -61,7 +101,7 @@ class ContextIndexBuilder : public BasicExecutable
         std::list<GenomicRegion> chr_regions;
         CLONES::set<GenomicRegion> regions_to_avoid;
 
-        if (driver_mutations_filename!="") {
+        if (!driver_mutations_filename.empty()) {
             auto driver_storage = DriverStorage::load(driver_mutations_filename);
 
             for (const auto& [name, mutation_entry] : driver_storage.get_code2mutation_map()) {
@@ -76,27 +116,25 @@ class ContextIndexBuilder : public BasicExecutable
 
             Index context_index;
 
-            if (quiet) {
-                context_index = Index::build_index(genome_fasta_filename, regions_to_avoid, sampling_rate);
-            } else {
-                UI::ProgressBar::hide_console_cursor();
+            {
+                // the progress bar hides the console cursor, when shown,
+                // and restores it on destruction
+                UI::ProgressBar progress_bar(std::cout, quiet);
 
-                UI::ProgressBar progress_bar(std::cout);
-
-                context_index = Index::build_index(genome_fasta_filename, regions_to_avoid, sampling_rate, &progress_bar);
+                context_index = Index::build_index(genome_fasta_filename, regions_to_avoid,
+                                                   sampling_rate, &progress_bar);
             }
 
             chr_regions = context_index.get_chromosome_regions();
 
-            if (chr_regions.size() > 0) {
-                Archive::Binary::Out archive(output_filename);
-
-                if (quiet) {
-                    archive & context_index;
-                } else {
-                    archive.save(context_index, "context index");
-                }
+            if (chr_regions.size()==0) {
+                throw Error<std::runtime_error>("No chromosome has been processed: no "
+                                                "sequence in \""
+                                                + to_string(genome_fasta_filename)
+                                                + "\" has been recognised as a chromosome.");
             }
+
+            save(context_index);
 
             if (!quiet) {
                 std::cout << " Cleaning memory..." << std::flush;
@@ -104,24 +142,15 @@ class ContextIndexBuilder : public BasicExecutable
         }
 
         if (!quiet) {
-            UI::ProgressBar::show_console_cursor();
-
             std::cout << "done" << std::endl;
 
-            if (chr_regions.size()==0) {
-                std::cout << " No chromosome processed. Try to select the proper "
-                          << "sequence name decoder by using \"-s\"" << std::endl;
-            } else {
-                std::cout << " Processed:" << std::endl;
-                for (const auto& chr_region: chr_regions) {
-                    std::cout << "  - Chromosome "
-                                << GenomicPosition::chrtos(chr_region.get_chromosome_id())
-                                << " (size: " << chr_region.size() << " bps)" << std::endl;
-                }
+            std::cout << " Processed:" << std::endl;
+            for (const auto& chr_region: chr_regions) {
+                std::cout << "  - Chromosome "
+                            << GenomicPosition::chrtos(chr_region.get_chromosome_id())
+                            << " (size: " << chr_region.size() << " bps)" << std::endl;
             }
         }
-
-        return chr_regions;
     }
 
 public:
@@ -130,16 +159,17 @@ public:
         BasicExecutable(argv[0], {{"generic", "Options"}})
     {
         namespace po = boost::program_options;
+        namespace fs = std::filesystem;
 
         visible_options.at("generic").add_options()
-            ("driver-mutations,d", po::value<std::string>(&driver_mutations_filename),
+            ("driver-mutations,d", po::value<std::filesystem::path>(&driver_mutations_filename),
              "the driver mutations file")
-            ("output-filename,o", po::value<std::string>(&output_filename),
+            ("output-filename,o", po::value<std::filesystem::path>(&output_filename),
              "output filename")
             ("sampling-rate,s", po::value<size_t>(&sampling_rate)->default_value(1),
              "context sampling rate (to sample contexts and reduce index memory and space requirements)")
             ("force-overwrite,f", "force overwriting output file")
-            ("bytes-per-pos,b", po::value<uint8_t>(&byte_per_abs_position)->default_value(4),
+            ("bytes-per-pos,b", po::value<unsigned int>(&bytes_per_abs_position)->default_value(4),
              "bytes per absolute position (2, 4, or 8)")
 #if WITH_INDICATORS
             ("quiet,q", "disable output messages")
@@ -147,7 +177,7 @@ public:
             ("help,h", "get the help");
 
         hidden_options.add_options()
-            ("genome file", po::value<std::string>(&genome_fasta_filename),
+            ("genome file", po::value<std::filesystem::path>(&genome_fasta_filename),
             "the path to the genome in FASTA file format")
         ;
 
@@ -164,54 +194,78 @@ public:
             po::command_line_parser parser{argc, argv};
             po::store(parser.options(program_options).positional(positional_options).run(), vm);
             po::notify(vm);
-        } catch (boost::wrapexcept<boost::program_options::unknown_option> &except) {
-            std::cerr << except.what() << std::endl<< std::endl;
-            print_help_and_exit(1);
+        } catch (const po::error& except) {
+            print_help_and_exit(except.what(), 1);
         }
 
         if (vm.count("help")) {
             print_help_and_exit(0);
         }
 
-        quiet = vm.count("quit")>0;
+        quiet = vm.count("quiet")>0;
 
         if (!vm.count("genome file")) {
             print_help_and_exit("Missing genome FASTA filename.", 1);
         }
 
-        if (!vm.count("output-filename")) {
-            output_filename = std::filesystem::path(genome_fasta_filename + ".cif").filename();
+        if (!fs::is_regular_file(genome_fasta_filename)) {
+            print_help_and_exit("\"" + to_string(genome_fasta_filename)
+                                + "\" is not an existing regular file.", 1);
         }
 
-        if (vm.count("sampling-rate") && sampling_rate==0) {
+        if (!driver_mutations_filename.empty() && !fs::is_regular_file(driver_mutations_filename)) {
+            print_help_and_exit("\"" + to_string(driver_mutations_filename)
+                                + "\" is not an existing regular file.", 1);
+        }
+
+        if (!vm.count("output-filename")) {
+            output_filename = fs::path(to_string(genome_fasta_filename) + ".cif").filename();
+        }
+
+        if (sampling_rate==0) {
             print_help_and_exit("The sampling rate must be positive.", 1);
         }
 
-        if (std::ifstream(output_filename).good() && !vm.count("force-overwrite")) {
-            const auto msg = "The output file \"" + output_filename + "\" already exists. "
-                             + "Use \"--force-overwrite\" to overwrite it.";
+        if (bytes_per_abs_position!=2 && bytes_per_abs_position!=4
+                && bytes_per_abs_position!=8) {
+            print_help_and_exit("Unsupported bytes per absolute position ("
+                                + std::to_string(bytes_per_abs_position)
+                                + "). Supported values are 2, 4, and 8.", 1);
+        }
 
-            print_help_and_exit(msg, 1);
+        if (fs::exists(output_filename)) {
+            if (!vm.count("force-overwrite")) {
+                print_help_and_exit("The output file \"" + to_string(output_filename)
+                                    + "\" already exists. Use \"--force-overwrite\" "
+                                    "to overwrite it.", 1);
+            }
+
+            if (!fs::is_regular_file(output_filename)) {
+                print_help_and_exit("\"" + to_string(output_filename)
+                                    + "\" is not a regular file.", 1);
+            }
         }
     }
 
-    std::list<CLONES::Mutations::GenomicRegion> run() const
+    void run() const
     {
-        using namespace CLONES::IO::FASTA;
-
-        switch (byte_per_abs_position) {
-            case 2:
-                return build_and_save_context_index<uint16_t>();
-            case 4:
-                return build_and_save_context_index<uint32_t>();
-            case 8:
-                return build_and_save_context_index<uint64_t>();
-            default:
-                std::cerr << "Unsupported bits per absolute position."
-                        << " Supported values are 1, 2, 4, or 8." << std::endl<< std::endl;
-
-                print_help_and_exit(1);
-                exit(1);
+        try {
+            switch (bytes_per_abs_position) {
+                case 2:
+                    build_and_save_context_index<uint16_t>();
+                    break;
+                case 4:
+                    build_and_save_context_index<uint32_t>();
+                    break;
+                case 8:
+                    build_and_save_context_index<uint64_t>();
+                    break;
+                default:
+                    // already excluded by the constructor
+                    print_help_and_exit("Unsupported bytes per absolute position.", 1);
+            }
+        } catch (const std::exception& except) {
+            print_help_and_exit(except.what(), 1);
         }
     }
 };

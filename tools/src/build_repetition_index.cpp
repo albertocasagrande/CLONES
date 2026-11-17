@@ -2,8 +2,8 @@
  * @file build_repetition_index.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Builds the repetition index
- * @version 1.4
- * @date 2026-09-24
+ * @version 1.5
+ * @date 2026-11-17
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -32,37 +32,75 @@
 #include <string>
 #include <filesystem>
 #include <algorithm>
+#include <system_error>
 
 #include <boost/program_options.hpp>
 
 #include "common.hpp"
 
 #include "genome_mutations.hpp"
-#include "context_index.hpp"
+#include "rs_index.hpp"
 #include "driver_storage.hpp"
+#include "utils.hpp"
 
 #include "progress_bar.hpp"
 
 class RepetitionIndexBuilder: public BasicExecutable
 {
-    std::string output_filename;
-    std::string genome_fasta_filename;
-    std::string driver_mutations_filename;
+    std::filesystem::path output_filename;
+    std::filesystem::path genome_fasta_filename;
+    std::filesystem::path driver_mutations_filename;
     size_t max_rep_per_type;
     size_t max_unit_size;
-    uint8_t rep_type_size;
+    int seed;
     bool quiet;
 
-    template<typename GENOME_WIDE_POSITION>
+    /**
+     * @brief Save an index in the output file
+     *
+     * The index is written in a temporary file in the output directory,
+     * which then replaces the output file. So, a failure neither leaves
+     * a truncated output file nor overwrites an existing one.
+     */
+    template<typename INDEX>
+    void save(const INDEX& index) const
+    {
+        auto output_dir = output_filename.parent_path();
+        if (output_dir.empty()) {
+            output_dir = ".";
+        }
+
+        const auto tmp_path = get_a_temporary_path(output_filename.filename().string() + ".tmp_",
+                                                   output_dir);
+
+        try {
+            {
+                CLONES::Archive::Binary::Out archive(tmp_path);
+
+                if (quiet) {
+                    archive & index;
+                } else {
+                    archive.save(index, "repetition index");
+                }
+            }
+
+            std::filesystem::rename(tmp_path, output_filename);
+        } catch (...) {
+            std::error_code error;
+            std::filesystem::remove(tmp_path, error);
+
+            throw;
+        }
+    }
+
     void build_and_save_rs_index() const
     {
         using namespace CLONES;
         using namespace CLONES::Mutations;
 
-        std::list<GenomicRegion> chr_regions;
         CLONES::set<GenomicRegion> regions_to_avoid;
 
-        if (driver_mutations_filename!="") {
+        if (!driver_mutations_filename.empty()) {
             auto driver_storage = DriverStorage::load(driver_mutations_filename);
 
             for (const auto& [name, mutation_entry] : driver_storage.get_code2mutation_map()) {
@@ -75,28 +113,25 @@ class RepetitionIndexBuilder: public BasicExecutable
         {
             RSIndex rs_index;
 
-            if (quiet) {
-                rs_index = RSIndex::build_index(genome_fasta_filename, regions_to_avoid,
-                                                max_unit_size, max_rep_per_type, 0);
-            } else {
-                UI::ProgressBar::hide_console_cursor();
-
-                UI::ProgressBar progress_bar(std::cout);
+            {
+                // the progress bar hides the console cursor, when shown,
+                // and restores it on destruction
+                UI::ProgressBar progress_bar(std::cout, quiet);
 
                 rs_index = RSIndex::build_index(genome_fasta_filename, regions_to_avoid, max_unit_size,
-                                                max_rep_per_type, 0, &progress_bar);
+                                                max_rep_per_type, seed, &progress_bar);
             }
 
-            Archive::Binary::Out archive(output_filename);
+            save(rs_index);
 
-            if (quiet) {
-                archive & rs_index;
-            } else {
-                archive.save(rs_index, "repetition index");
+            if (!quiet) {
                 std::cout << " Cleaning memory..." << std::flush;
             }
         }
-        std::cout << "done" << std::endl;
+
+        if (!quiet) {
+            std::cout << "done" << std::endl;
+        }
     }
 
 public:
@@ -105,26 +140,27 @@ public:
         BasicExecutable(argv[0], {{"generic", "Options"}})
     {
         namespace po = boost::program_options;
+        namespace fs = std::filesystem;
 
         visible_options.at("generic").add_options()
-            ("driver-mutations,d", po::value<std::string>(&driver_mutations_filename),
+            ("driver-mutations,d", po::value<std::filesystem::path>(&driver_mutations_filename),
              "the driver mutations file")
-            ("output-filename,o", po::value<std::string>(&output_filename),
+            ("output-filename,o", po::value<std::filesystem::path>(&output_filename),
              "output filename")
             ("reps-per-type,r", po::value<size_t>(&max_rep_per_type)->default_value(500000),
              "maximum number of stored repetitions per type")
             ("max-motif-size,s", po::value<size_t>(&max_unit_size)->default_value(50),
              "maximum size of the repeated motif")
+            ("seed", po::value<int>(&seed)->default_value(0),
+             "random generator seed for selecting the stored repetitions")
             ("force-overwrite,f", "force overwriting output file")
-            ("rep-type-bytes,b", po::value<uint8_t>(&rep_type_size)->default_value(4),
-             "size of the repetition type (one among 1, 2, 4, or 8)")
 #if WITH_INDICATORS
             ("quiet,q", "disable output messages")
 #endif // WITH_INDICATORS
             ("help,h", "get the help");
 
         hidden_options.add_options()
-            ("genome file", po::value<std::string>(&genome_fasta_filename),
+            ("genome file", po::value<std::filesystem::path>(&genome_fasta_filename),
             "the path to the genome in FASTA file format")
         ;
 
@@ -141,67 +177,62 @@ public:
             po::command_line_parser parser{argc, argv};
             po::store(parser.options(program_options).positional(positional_options).run(), vm);
             po::notify(vm);
-        } catch (boost::wrapexcept<boost::program_options::unknown_option> &except) {
-            std::cerr << except.what() << std::endl<< std::endl;
-            print_help_and_exit(1);
+        } catch (const po::error& except) {
+            print_help_and_exit(except.what(), 1);
         }
 
         if (vm.count("help")) {
             print_help_and_exit(0);
         }
 
-        quiet = vm.count("quit")>0;
+        quiet = vm.count("quiet")>0;
 
         if (!vm.count("genome file")) {
             print_help_and_exit("Missing genome FASTA filename.", 1);
         }
 
-        if (!vm.count("output-filename")) {
-            output_filename = std::filesystem::path(genome_fasta_filename + ".rsif").filename();
+        if (!fs::is_regular_file(genome_fasta_filename)) {
+            print_help_and_exit("\"" + to_string(genome_fasta_filename)
+                                + "\" is not an existing regular file.", 1);
         }
 
-        std::set<size_t> admitted_rep_type_size{1,2,4,8};
+        if (!driver_mutations_filename.empty() && !fs::is_regular_file(driver_mutations_filename)) {
+            print_help_and_exit("\"" + to_string(driver_mutations_filename)
+                                + "\" is not an existing regular file.", 1);
+        }
 
-        if (admitted_rep_type_size.count(rep_type_size)==0) {
-            print_help_and_exit("The size of repetition type must be among 1, 2, 4, and 8.", 1);
+        if (!vm.count("output-filename")) {
+            output_filename = fs::path(to_string(genome_fasta_filename) + ".rsif").filename();
         }
 
         if (max_unit_size<1 || max_unit_size > 255) {
             print_help_and_exit("The maximum motif size must lay in the interval [1, 255].", 1);
         }
 
-        if (max_rep_per_type<=0) {
+        if (max_rep_per_type==0) {
             print_help_and_exit("The maximum stored repetitions per type must be a positive value.", 1);
         }
 
-        if (std::ifstream(output_filename).good() && !vm.count("force-overwrite")) {
-            const auto msg = "The output file \"" + output_filename + "\" already exists. "
-                             + "Use \"--force-overwrite\" to overwrite it.";
+        if (fs::exists(output_filename)) {
+            if (!vm.count("force-overwrite")) {
+                print_help_and_exit("The output file \"" + to_string(output_filename)
+                                    + "\" already exists. Use \"--force-overwrite\" "
+                                    "to overwrite it.", 1);
+            }
 
-            print_help_and_exit(msg, 1);
+            if (!fs::is_regular_file(output_filename)) {
+                print_help_and_exit("\"" + to_string(output_filename)
+                                    + "\" is not a regular file.", 1);
+            }
         }
     }
 
     void run() const
     {
-        switch (rep_type_size) {
-            case 1:
-                build_and_save_rs_index<uint8_t>();
-                return;
-            case 2:
-                build_and_save_rs_index<uint16_t>();
-                return;
-            case 4:
-                build_and_save_rs_index<uint32_t>();
-                return;
-            case 8:
-                build_and_save_rs_index<uint64_t>();
-                return;
-            default:
-                std::cerr << "Unsupported bits per absolute position."
-                        << " Supported values are 1, 2, 4, or 8." << std::endl<< std::endl;
-
-                print_help_and_exit(1);
+        try {
+            build_and_save_rs_index();
+        } catch (const std::exception& except) {
+            print_help_and_exit(except.what(), 1);
         }
     }
 };
