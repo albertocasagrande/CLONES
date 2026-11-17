@@ -2,8 +2,8 @@
  * @file tissue_sampler.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Main file for the CLONES tool that sample tissues
- * @version 1.3
- * @date 2026-06-21
+ * @version 1.4
+ * @date 2026-11-17
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -29,8 +29,11 @@
  */
 
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <filesystem>
+#include <list>
+#include <set>
 
 #include <boost/program_options.hpp>
 
@@ -46,25 +49,57 @@ class TissueSampler : public BasicExecutable
 
     bool quiet;
 
-    void perform_sampling(const nlohmann::json& sampling_cfg, const bool quiet=false) const
+    nlohmann::json load_sampling_config() const
+    {
+        using namespace CLONES;
+
+        std::ifstream config_stream(config);
+        if (!config_stream) {
+            throw Error<std::runtime_error>("Cannot open \"" + to_string(config)
+                                            + "\" for reading.");
+        }
+
+        auto sampling_cfg = nlohmann::json::parse(config_stream);
+
+        if (!sampling_cfg.is_array()) {
+            throw Error<std::runtime_error>("The sampling configuration does not "
+                                            "consist in an array.");
+        }
+
+        return sampling_cfg;
+    }
+
+    void perform_sampling(const nlohmann::json& sampling_cfg) const
     {
         using namespace CLONES;
         using namespace CLONES::Mutants;
         using namespace CLONES::Mutants::Evolutions;
 
-        if (!sampling_cfg.is_array()) {
-            throw Error<std::runtime_error>("The sampling configuration does not "
-                                            "consist in an array");
+        // parse all the sample specifications before loading the
+        // (possibly large) simulation, so that errors are reported early
+        std::list<SampleSpecification> sample_specs;
+        for (const auto& sample_specs_json : sampling_cfg) {
+            sample_specs.push_back(ConfigReader::get_sample_specification(sample_specs_json));
         }
-
-        BinaryLogger::CellReader reader(species_directory);
 
         auto simulation = load_species_simulation(snapshot_path, quiet);
 
-        for (const auto& sample_specs_json : sampling_cfg) {
-            const auto sample_specs = ConfigReader::get_sample_specification(sample_specs_json);
+        // `sample_tissue()` saves a snapshot per sample: reject any
+        // already used name before sampling, so that a failure does not
+        // leave a partially sampled simulation
+        std::set<std::string> used_names;
+        for (const auto& sample : simulation.get_tissue_samples()) {
+            used_names.insert(sample.get_name());
+        }
+        for (const auto& sample_spec : sample_specs) {
+            if (!used_names.insert(sample_spec.get_name()).second) {
+                throw Error<std::runtime_error>("Sample name \"" + sample_spec.get_name()
+                                                + "\" has been already used.");
+            }
+        }
 
-            simulation.sample_tissue(sample_specs);
+        for (const auto& sample_spec : sample_specs) {
+            simulation.sample_tissue(sample_spec);
         }
 
         simulation.make_snapshot<CLONES::UI::ProgressBar>(nullptr);
@@ -75,11 +110,9 @@ public:
         BasicExecutable(argv[0], {{"options", "Options"}})
     {
         namespace po = boost::program_options;
-
-        (void)argc;
+        namespace fs = std::filesystem;
 
         visible_options.at("options").add_options()
-            ("preserve-tissue,p","perform a non-destructive sampling")
             ("quiet,q", "avoid output messages")
             ("help,h", "get the help")
         ;
@@ -87,8 +120,8 @@ public:
         hidden_options.add_options()
             ("species simulation", po::value<std::filesystem::path>(&species_directory),
             "the species simulation directory")
-            ("sampling-config", po::value<std::filesystem::path>(&config),
-            "the sampling simulation config")
+            ("sampling configuration", po::value<std::filesystem::path>(&config),
+            "the sampling configuration file")
         ;
 
         po::options_description program_options;
@@ -98,14 +131,14 @@ public:
         program_options.add(hidden_options);
 
         positional_options.add("species simulation", 1);
-        positional_options.add("sampling-config", 1);
+        positional_options.add("sampling configuration", 1);
 
         po::variables_map vm;
         try {
             po::command_line_parser parser{argc, argv};
             po::store(parser.options(program_options).positional(positional_options).run(), vm);
             po::notify(vm);
-        } catch (boost::wrapexcept<boost::program_options::unknown_option> &except) {
+        } catch (const po::error& except) {
             print_help_and_exit(except.what(), 1);
         }
 
@@ -113,27 +146,36 @@ public:
             print_help_and_exit(0);
         }
 
-        if (!vm.count("simulation")) {
-            print_help_and_exit("Missing simulation snapshot!", 1);
-        }
-
-        snapshot_path = get_last_snapshot_path(species_directory, "simulation");
-
-        if (!vm.count("sampling-config")) {
-            print_help_and_exit("Missing passenger configuration file!", 1);
-        }
-
         quiet = (vm.count("quiet")>0);
+
+        if (!vm.count("species simulation")) {
+            print_help_and_exit("The species simulation directory is mandatory. "
+                                "You can produce it by using `species_sim`.", 1);
+        }
+
+        if (!vm.count("sampling configuration")) {
+            print_help_and_exit("The sampling configuration file is mandatory.", 1);
+        }
+
+        if (!fs::is_regular_file(config)) {
+            print_help_and_exit("\"" + to_string(config) + "\" is not an existing "
+                                "regular file.", 1);
+        }
+
+        try {
+            snapshot_path = get_last_snapshot_path(species_directory, "species simulation");
+        } catch (const std::exception& except) {
+            print_help_and_exit(except.what(), 1);
+        }
     }
 
     void run() const
     {
         try {
-            std::ifstream config_stream(config);
-            nlohmann::json simulation_cfg = nlohmann::json::parse(config_stream);
+            const auto sampling_cfg = load_sampling_config();
 
-            perform_sampling(simulation_cfg,quiet);
-        } catch (const std::runtime_error& ex) {
+            perform_sampling(sampling_cfg);
+        } catch (const std::exception& ex) {
             print_help_and_exit(ex.what(), 1);
         }
     }
@@ -147,4 +189,3 @@ int main(int argc, char* argv[])
 
     return 0;
 }
-
