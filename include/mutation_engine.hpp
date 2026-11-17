@@ -2,8 +2,8 @@
  * @file mutation_engine.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a class to place mutations on a descendant forest
- * @version 1.42
- * @date 2026-07-17
+ * @version 1.43
+ * @date 2026-11-17
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -545,7 +545,11 @@ class MutationEngine
      */
     inline size_t count_available(const SBSType& SBS_type) const
     {
-        return context_index[SBS_type.get_context()].size();
+        // `select_SID()` also selects loci in the reverse complement context
+        const auto& context = SBS_type.get_context();
+
+        return context_index[context].size()
+                + context_index[context.get_reverse_complement()].size();
     }
 
     /**
@@ -619,8 +623,36 @@ class MutationEngine
         // get the signature
         auto& signature = get_signatures<MUTATION_TYPE>().at(signature_name);
 
-        // while some of the requested mutations have not been set
         size_t new_mutations{0};
+
+        // test whether some mutation type that the signature can produce
+        // still has available loci
+        auto some_type_available = [&]() {
+            const auto& domain = signature.domain();
+            const auto probabilities = signature.probabilities();
+
+            for (size_t i=0; i<domain.size(); ++i) {
+                if (probabilities[i] > 0 && count_available(domain[i]) > 0) {
+                    return true;
+                }
+            }
+
+            return false;
+        };
+
+        auto not_placed_error = [&](const std::string& reason) {
+            return Error<std::runtime_error>("Only " + std::to_string(new_mutations)
+                                             + " out of " + std::to_string(num_of_mutations)
+                                             + " mutations of signature \"" + signature_name
+                                             + "\" have been placed: " + reason);
+        };
+
+        // a bound on consecutive failed placements to avoid endless loops
+        // when no selectable locus can be mutated
+        constexpr size_t max_consecutive_failures = 100000;
+        size_t consecutive_failures{0};
+
+        // while some of the requested mutations have not been set
         while (new_mutations < num_of_mutations) {
             // randomly pick a mutation type according to the current signature
             const auto mutation_type = signature.choose(generator);
@@ -638,12 +670,19 @@ class MutationEngine
                     // if the mutation has been successfully applied,
                     // then increase the number of new mutations
                     ++new_mutations;
+                    consecutive_failures = 0;
 
                     if (node != nullptr) {
                         node->add_new_mutation(sid);
                     }
+                } else if (++consecutive_failures >= max_consecutive_failures) {
+                    throw not_placed_error("too many consecutive placements failed.");
                 }
             } else {
+                if (!some_type_available()) {
+                    throw not_placed_error("no more loci are available for its mutation types.");
+                }
+
                 std::ostringstream oss;
                 if constexpr(std::is_base_of_v<SBSType, MUTATION_TYPE>) {
                     oss << "No mutations for context \"" << mutation_type
