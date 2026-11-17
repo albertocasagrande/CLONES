@@ -2,8 +2,8 @@
  * @file descendants_builder.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Main file for the CLONES descendant forest builder
- * @version 1.3
- * @date 2026-06-21
+ * @version 1.4
+ * @date 2026-11-17
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -31,6 +31,7 @@
 #include <iostream>
 #include <string>
 #include <filesystem>
+#include <cstdlib>
 
 #include <boost/program_options.hpp>
 
@@ -53,8 +54,6 @@ public:
     {
         namespace po = boost::program_options;
 
-        (void)argc;
-
         visible_options.at("options").add_options()
             ("help,h", "get the help");
 
@@ -76,7 +75,7 @@ public:
             po::command_line_parser parser{argc, argv};
             po::store(parser.options(program_options).positional(positional_options).run(), vm);
             po::notify(vm);
-        } catch (boost::wrapexcept<boost::program_options::unknown_option> &except) {
+        } catch (const po::error& except) {
             print_help_and_exit(except.what(), 1);
         }
 
@@ -85,7 +84,8 @@ public:
         }
 
         if (!vm.count("species simulation")) {
-            print_help_and_exit("Missing species simulation directory!", 1);
+            print_help_and_exit("The species simulation directory is mandatory. "
+                                "You can produce it by using `species_sim`.", 1);
         }
 
         snapshot_path = get_last_snapshot_path(species_directory, "species simulation");
@@ -99,10 +99,19 @@ public:
             auto species_simulation = load_species_simulation(snapshot_path, true);
             DescendantForest forest(species_simulation);
 
-            CLONES::Mutants::IO::phyloXMLStream os;
+            {
+                CLONES::Mutants::IO::phyloXMLStream os;
 
-            os << forest;
-        } catch (const std::runtime_error& ex) {
+                os << forest;
+            }
+
+            std::cout.flush();
+            if (!std::cout) {
+                std::cerr << "Error writing the descendant forest." << std::endl;
+
+                std::exit(1);
+            }
+        } catch (const std::exception& ex) {
             print_help_and_exit(ex.what(), 1);
         }
     }

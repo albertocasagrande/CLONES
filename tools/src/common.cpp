@@ -2,8 +2,8 @@
  * @file common.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements auxiliary classes and functions for executables
- * @version 1.2
- * @date 2026-06-21
+ * @version 1.3
+ * @date 2026-11-17
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -75,19 +75,18 @@ BasicExecutable::get_last_snapshot_path(const std::string& simulation_dir,
                                         const std::string& parameter_name)
 {
     if (!std::filesystem::exists(simulation_dir)) {
-        print_help_and_exit("\"" + simulation_dir + "\" does not exists", 1);
+        print_help_and_exit("\"" + simulation_dir + "\" does not exist.", 1);
     }
 
     if (!std::filesystem::is_directory(simulation_dir)) {
-        print_help_and_exit("The \"" + parameter_name + "\" parameter must be a directory", 1);
+        print_help_and_exit("The \"" + parameter_name + "\" parameter must be a directory. \""
+                            + simulation_dir + "\" is not a directory.", 1);
     }
 
     try {
         return CLONES::Mutants::Evolutions::BinaryLogger::find_last_snapshot_in(simulation_dir);
     } catch (const std::exception &except) {
         print_help_and_exit(except.what(), 1);
-
-        exit(1);
     }
 }
 

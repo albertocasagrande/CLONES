@@ -2,8 +2,8 @@
  * @file common.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines auxiliary classes and functions for executables
- * @version 1.1
- * @date 2026-02-06
+ * @version 1.2
+ * @date 2026-11-17
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -55,14 +55,14 @@ public:
      * @param message is the message to print before the help message
      * @param err_code is the exit code
      */
-    void print_help_and_exit(const std::string& message, const int& err_code) const;
+    [[noreturn]] void print_help_and_exit(const std::string& message, const int& err_code) const;
 
     /**
      * @brief Print the program help message and exit
      *
      * @param err_code is the exit code
      */
-    void print_help_and_exit(const int& err_code) const;
+    [[noreturn]] void print_help_and_exit(const int& err_code) const;
 
     /**
      * @brief Construct a new BasicExecutable object

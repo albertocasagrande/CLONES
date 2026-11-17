@@ -2,7 +2,7 @@
  * @file binary_logger.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements a binary simulation logger
- * @version 1.8
+ * @version 1.9
  * @date 2026-11-17
  *
  * @copyright Copyright (c) 2023-2026
@@ -171,6 +171,11 @@ BinaryLogger::CellReader::CellReader(const std::filesystem::path& directory):
 
     // if no cell was saved
     if (!fs::exists(info_path)) {
+        if (fs::exists(get_cell_archive_path(directory, 1))) {
+            throw Error<std::runtime_error>("Missing cell file information \""
+                                            + to_string(info_path) + "\".");
+        }
+
         return;
     }
 

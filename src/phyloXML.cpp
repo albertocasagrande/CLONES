@@ -2,8 +2,8 @@
  * @file phyloXML.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements phyloXML stream
- * @version 1.4
- * @date 2026-07-14
+ * @version 1.5
+ * @date 2026-11-17
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -52,6 +52,9 @@ phyloXMLStream::phyloXMLStream(std::ostream& os, const std::string& indentation_
        << "<phyloxml xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "
        << "xsi:schemaLocation=\"http://www.phyloxml.org http://www.phyloxml.org/1.10/phyloxml.xsd\" "
        << "xmlns=\"http://www.phyloxml.org\">" << std::endl;
+
+    // compute the indentation string of the initial level
+    change_indentation_level(indent_level);
 }
 
 void phyloXMLStream::change_indentation_level(const size_t level)
