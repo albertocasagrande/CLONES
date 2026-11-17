@@ -2,8 +2,8 @@
  * @file tissue_simulation.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Some archive tests
- * @version 1.0
- * @date 2026-06-19
+ * @version 1.1
+ * @date 2026-11-17
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -227,3 +227,37 @@ BOOST_AUTO_TEST_CASE(simulate)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_CASE(sample_names_survive_moves)
+{
+    using namespace CLONES;
+    using namespace CLONES::Mutants;
+    using namespace CLONES::Mutants::Evolutions;
+
+    TissueSimulation simulation;
+
+    simulation.set_tissue("Liver", {100, 100})
+              .add_mutant("A");
+    simulation.place_cell(simulation.tissue().get_species("A"), {50, 50});
+
+    const SampleSpecification spec("S", RectangleSet({40, 40}, {60, 60}));
+
+    BOOST_CHECK_NO_THROW(simulation.sample_tissue(spec));
+    BOOST_CHECK_THROW(simulation.sample_tissue(spec), Error<std::runtime_error>);
+
+    // the sample names must still be known after moving the simulation, as
+    // it happens when a simulation is loaded from a snapshot
+    TissueSimulation moved = std::move(simulation);
+
+    BOOST_CHECK_EQUAL(moved.get_tissue_samples().size(), 1);
+    BOOST_CHECK_THROW(moved.sample_tissue(spec), Error<std::runtime_error>);
+    BOOST_CHECK_EQUAL(moved.get_tissue_samples().size(), 1);
+
+    TissueSimulation assigned;
+    assigned = std::move(moved);
+
+    BOOST_CHECK_THROW(assigned.sample_tissue(spec), Error<std::runtime_error>);
+    BOOST_CHECK_EQUAL(assigned.get_tissue_samples().size(), 1);
+
+    std::filesystem::remove_all(assigned.get_logger().get_directory());
+}

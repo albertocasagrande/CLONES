@@ -2,8 +2,8 @@
  * @file simulation.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Define a tumour evolution simulation
- * @version 1.22
- * @date 2026-11-13
+ * @version 1.23
+ * @date 2026-11-17
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -30,6 +30,7 @@
 
 #include <set>
 #include <list>
+#include <iterator>
 #include <string>
 #include <limits>
 #include <cstdint>
@@ -147,6 +148,11 @@ TissueSimulation& TissueSimulation::operator=(TissueSimulation&& orig)
     std::swap(duplicate_internal_cells, orig.duplicate_internal_cells);
     std::swap(storage_enabled, orig.storage_enabled);
     std::swap(samples, orig.samples);
+
+    // swapping lists preserves the validity of their iterators: the
+    // `name2sample` iterators keep referring to the swapped samples
+    std::swap(name2sample, orig.name2sample);
+    std::swap(added_cells, orig.added_cells);
 
     std::swap(valid_directions, orig.valid_directions);
     std::swap(random_gen, orig.random_gen);
@@ -1211,7 +1217,7 @@ TissueSimulation::sample_tissue(const SampleSpecification& specification)
     }
 
     samples.push_back(sample);
-    name2sample[specification.get_name()]=(samples.end()--);
+    name2sample[specification.get_name()]=std::prev(samples.end());
 
     make_snapshot();
 
