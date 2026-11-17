@@ -2,8 +2,8 @@
  * @file mutations_sim.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Main file for the CLONES mutations simulator
- * @version 1.11
- * @date 2026-11-16
+ * @version 1.12
+ * @date 2026-11-17
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -29,10 +29,15 @@
  */
 
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include <string>
 #include <filesystem>
 #include <random>
-#include <regex>
+#include <map>
+#include <list>
+#include <vector>
+#include <charconv>
 #include <cstdint>
 
 #include <boost/program_options.hpp>
@@ -45,6 +50,7 @@
 #include "mutation_engine.hpp"
 #include "germline.hpp"
 #include "read_simulator.hpp"
+#include "distributions.hpp"
 
 #include "driver_storage.hpp"
 
@@ -53,58 +59,6 @@
 #include "json_config.hpp"
 
 #include "progress_bar.hpp"
-
-template<>
-std::string
-boost::lexical_cast<std::string, CLONES::Mutations::SequencingSimulations::ReadSimulator<>::Mode>(const CLONES::Mutations::SequencingSimulations::ReadSimulator<>::Mode& mode)
-{
-    using namespace CLONES;
-    using namespace CLONES::Mutations::SequencingSimulations;
-
-    switch (mode) {
-        case ReadSimulator<>::Mode::CREATE:
-            return "create";
-        case ReadSimulator<>::Mode::OVERWRITE:
-            return "overwrite";
-        case ReadSimulator<>::Mode::UPDATE:
-            return "update";
-        default:
-            throw Error<std::runtime_error>("Unknown mode " + std::to_string(static_cast<uint16_t>(mode)) + ".");
-    }
-}
-
-template<>
-CLONES::Mutations::SequencingSimulations::ReadSimulator<>::Mode
-boost::lexical_cast<CLONES::Mutations::SequencingSimulations::ReadSimulator<>::Mode, std::string>(const std::string& mode)
-{
-    std::string upper_token = mode;
-    for (auto& t_char: upper_token) {
-        t_char = toupper(t_char);
-    }
-
-    using namespace CLONES::Mutations::SequencingSimulations;
-
-    if (upper_token == "CREATE") {
-        return ReadSimulator<>::Mode::CREATE;
-    }
-
-    if (upper_token == "OVERWRITE") {
-        return ReadSimulator<>::Mode::OVERWRITE;
-    }
-
-    if (upper_token == "UPDATE") {
-        return ReadSimulator<>::Mode::UPDATE;
-    }
-
-    std::ostringstream oss;
-
-    oss << "Invalid ReadSimulator mode \"" << mode << "\". "
-        << "Supported \"create\", \"overwrite\", and \"append\".";
-
-    namespace po = boost::program_options;
-
-    throw po::validation_error(po::validation_error::kind_t::invalid_option_value, oss.str());
-}
 
 class MutationsSimulator : public BasicExecutable
 {
@@ -140,6 +94,63 @@ class MutationsSimulator : public BasicExecutable
     int seed;
     size_t bytes_per_abs_position;
     bool quiet;
+
+    static std::ifstream open_input_file(const std::filesystem::path& filename)
+    {
+        using namespace CLONES;
+
+        std::ifstream is(filename);
+        if (!is) {
+            throw Error<std::runtime_error>("Cannot open \"" + to_string(filename)
+                                            + "\" for reading.");
+        }
+
+        return is;
+    }
+
+    static std::ofstream open_output_file(const std::filesystem::path& filename)
+    {
+        using namespace CLONES;
+
+        std::ofstream os(filename);
+        if (!os) {
+            throw Error<std::runtime_error>("Cannot open \"" + to_string(filename)
+                                            + "\" for writing.");
+        }
+
+        return os;
+    }
+
+    /**
+     * @brief Parse an integer CSV field
+     *
+     * The whole field, except leading and trailing blanks, must be an
+     * integer representable by `INTEGER`.
+     */
+    template<typename INTEGER>
+    static INTEGER parse_integer_field(const std::string& field, const std::string& field_name,
+                                       const size_t& row_num)
+    {
+        using namespace CLONES;
+
+        const auto first = field.find_first_not_of(" \t\r");
+        const auto last = field.find_last_not_of(" \t\r");
+
+        INTEGER value{0};
+        if (first != std::string::npos) {
+            const char* begin = field.data()+first;
+            const char* end = field.data()+last+1;
+
+            const auto [ptr, ec] = std::from_chars(begin, end, value);
+            if (ec == std::errc() && ptr == end) {
+                return value;
+            }
+        }
+
+        throw Error<std::runtime_error>("Invalid " + field_name + " specification \""
+                                        + field + "\" in row number "
+                                        + std::to_string(row_num) + ".");
+    }
 
     std::list<CLONES::Mutants::Evolutions::TissueSample>
     get_samples(CLONES::Mutants::Evolutions::TissueSimulation& simulation, const nlohmann::json& simulation_cfg) const
@@ -200,9 +211,9 @@ class MutationsSimulator : public BasicExecutable
 
     template<typename MUTATION_TYPE>
     static std::map<std::string, CLONES::Mutations::Signature<MUTATION_TYPE>>
-    load_signatures(const std::string filename)
+    load_signatures(const std::filesystem::path& filename)
     {
-        std::ifstream is(filename);
+        auto is = open_input_file(filename);
 
         return CLONES::Mutations::Signature<MUTATION_TYPE>::read_from_stream(is);
     }
@@ -218,7 +229,7 @@ class MutationsSimulator : public BasicExecutable
     {
         if (quiet) {
             return engine.place_mutations(forest, num_of_pre_neoplastic_SNVs,
-                                          num_of_pre_neoplastic_IDs, 0,
+                                          num_of_pre_neoplastic_IDs, seed,
                                           pre_neoplastic_SNV_signature,
                                           pre_neoplastic_indel_signature);
         }
@@ -229,7 +240,7 @@ class MutationsSimulator : public BasicExecutable
 
         auto phylo_forest = engine.place_mutations(forest, num_of_pre_neoplastic_SNVs,
                                                    num_of_pre_neoplastic_IDs, progress_bar,
-                                                   0, pre_neoplastic_SNV_signature,
+                                                   seed, pre_neoplastic_SNV_signature,
                                                    pre_neoplastic_indel_signature);
 
         progress_bar.set_message("Mutations placed");
@@ -239,34 +250,44 @@ class MutationsSimulator : public BasicExecutable
 
     nlohmann::json get_simulation_json() const
     {
-        std::ifstream simulation_stream(simulation_filename);
+        auto simulation_stream = open_input_file(simulation_filename);
 
         return nlohmann::json::parse(simulation_stream);
     }
 
     void process_statistics(const CLONES::Mutations::PhylogeneticForest& forest) const
     {
+        using namespace CLONES;
         using namespace CLONES::UI;
         using namespace CLONES::Mutations;
 
-        if ((SIDs_csv_filename != "") || (CNAs_csv_filename != "")) {
+        if (SIDs_csv_filename.empty() && CNAs_csv_filename.empty()) {
+            return;
+        }
 
-            ProgressBar bar(std::cout);
+        ProgressBar bar(std::cout, quiet);
 
-            MutationStatistics statistics;
+        MutationStatistics statistics;
 
-            statistics.record(forest, bar);
+        statistics.record(forest, bar);
 
-            if (SIDs_csv_filename != "") {
-                std::ofstream os(SIDs_csv_filename);
+        if (!SIDs_csv_filename.empty()) {
+            auto os = open_output_file(SIDs_csv_filename);
 
-                statistics.write_SIDs_table(os);
+            statistics.write_SIDs_table(os);
+
+            if (!os) {
+                throw Error<std::runtime_error>("Error writing \"" + SIDs_csv_filename + "\".");
             }
+        }
 
-            if (CNAs_csv_filename != "") {
-                std::ofstream os(CNAs_csv_filename);
+        if (!CNAs_csv_filename.empty()) {
+            auto os = open_output_file(CNAs_csv_filename);
 
-                statistics.write_CNAs_table(os);
+            statistics.write_CNAs_table(os);
+
+            if (!os) {
+                throw Error<std::runtime_error>("Error writing \"" + CNAs_csv_filename + "\".");
             }
         }
     }
@@ -303,7 +324,8 @@ class MutationsSimulator : public BasicExecutable
 
         if (row.size()<5) {
             throw Error<std::runtime_error>("The CNA CSV must contains at least 5 columns. "
-                                            + std::to_string(row.size()) + " found.");
+                                            + std::to_string(row.size()) + " found in row number "
+                                            + std::to_string(row_num) + ".");
         }
         ChromosomeId chr_id;
 
@@ -315,33 +337,19 @@ class MutationsSimulator : public BasicExecutable
                                             + std::to_string(row_num) + ".");
         }
 
-        uint32_t begin_pos;
-        try {
-            begin_pos = stoul(row.get_field(1));
-        } catch (std::invalid_argument const&) {
-            throw Error<std::runtime_error>("Unknown begin specification "
-                                            + row.get_field(1) + " in row number "
-                                            + std::to_string(row_num) + ".");
-        }
-
-        GenomicPosition pos(chr_id, begin_pos);
-
-        uint32_t end_pos;
-        try {
-            end_pos = stoul(row.get_field(2));
-        } catch (std::invalid_argument const&) {
-            throw Error<std::runtime_error>("Unknown end specification "
-                                           + row.get_field(2) + " in row number "
-                                           + std::to_string(row_num) + ".");
-        }
+        const auto begin_pos = parse_integer_field<ChrPosition>(row.get_field(1), "begin", row_num);
+        const auto end_pos = parse_integer_field<ChrPosition>(row.get_field(2), "end", row_num);
 
         if (begin_pos>end_pos) {
             throw Error<std::runtime_error>("The CNA begin (i.e., "
                                             + std::to_string(begin_pos)
                                             + ") lays after its end (i.e., "
                                             + std::to_string(end_pos)
-                                            + ").");
+                                            + ") in row number "
+                                            + std::to_string(row_num) + ".");
         }
+
+        GenomicPosition pos(chr_id, begin_pos);
 
         return {pos, end_pos+1-begin_pos};
     }
@@ -394,6 +402,29 @@ class MutationsSimulator : public BasicExecutable
         }
     };
 
+    /**
+     * @brief Build the read simulator
+     *
+     * The read simulator creates, or wipes when overwriting, the
+     * sequencing output directory. Hence, it must be built only when
+     * the reads are about to be simulated.
+     */
+    CLONES::Mutations::SequencingSimulations::ReadSimulator<> build_read_simulator() const
+    {
+        using namespace CLONES::Mutations::SequencingSimulations;
+
+        if (paired_read) {
+            std::normal_distribution<double> insert_size_dist(insert_size_mean,
+                                                              insert_size_stddev);
+            return ReadSimulator<>(seq_output_directory, ref_genome_filename, read_size,
+                                   insert_size_dist, read_simulator_output_mode, true,
+                                   "r", seed);
+        }
+
+        return ReadSimulator<>(seq_output_directory, ref_genome_filename, read_size,
+                               read_simulator_output_mode, true, "r", seed);
+    }
+
     template<typename GENOME_WIDE_POSITION>
     void run_abs_position() const
     {
@@ -404,15 +435,18 @@ class MutationsSimulator : public BasicExecutable
 
         nlohmann::json simulation_cfg = get_simulation_json();
 
+        if (!simulation_cfg.contains("exposures")) {
+            throw Error<std::runtime_error>("The passengers simulation configuration "
+                                            "must contain an \"exposures\" field");
+        }
+
         if (!quiet) {
-            if (simulation_cfg.contains("sample region")) {
-                std::cout << "Using \"sample region\" configuration field as sample region." << std::endl;
+            if (simulation_cfg.contains("sample regions")) {
+                std::cout << "Using \"sample regions\" configuration field as sample regions." << std::endl;
             } else {
                 std::cout << "Using pre-collected samples." << std::endl;
             }
         }
-
-        ReadSimulator<> read_simulator;
 
         Mutants::DescendantForest descendant_forest;
         MutationalProperties mutational_properties;
@@ -427,29 +461,11 @@ class MutationsSimulator : public BasicExecutable
             mutational_properties = ConfigReader::get_mutational_properties(simulation_cfg);
         }
 
-        if (coverage>0) {
-            if (paired_read) {
-                std::normal_distribution<double> insert_size_dist(insert_size_mean,
-                                                                  insert_size_stddev);
-                read_simulator = ReadSimulator<>(seq_output_directory, ref_genome_filename, read_size,
-                                                 insert_size_dist, read_simulator_output_mode, true,
-                                                 "r", seed);
-            } else {
-                read_simulator = ReadSimulator<>(seq_output_directory, ref_genome_filename, read_size,
-                                                 read_simulator_output_mode, true, "r", seed);
-            }
-        }
-
         auto SBS_signatures = load_signatures<SBSType>(SBS_filename);
         auto ID_signatures = load_signatures<IDType>(ID_filename);
 
         auto context_index = load_context_index<GENOME_WIDE_POSITION>(context_index_filename);
         auto rs_index = load_rs_index(rs_index_filename);
-
-        if (!simulation_cfg.contains("exposures")) {
-            throw Error<std::runtime_error>("The passengers simulation configuration "
-                                            "must contain a \"exposures\" field");
-        }
 
         auto num_of_alleles = get_number_of_alleles(context_index, simulation_cfg);
 
@@ -466,7 +482,7 @@ class MutationsSimulator : public BasicExecutable
         if (germline_csv_filename.size()==0) {
             germline = GermlineMutations::generate(ref_genome_filename, chromosome_regions, driver_storage,
                                                    num_of_alleles, germline_mutations_per_kbase,
-                                                   0, std::cout, false);
+                                                   seed, std::cout, quiet);
         } else {
             germline = GermlineMutations::load(germline_csv_filename, num_of_alleles, germline_subject);
         }
@@ -495,6 +511,8 @@ class MutationsSimulator : public BasicExecutable
         }
 
         if (coverage>0) {
+            auto read_simulator = build_read_simulator();
+
             read_simulator.enable_SAM_writing(write_SAM);
 
             CLONES::Sequencers::Illumina::BasicSequencer sequencer(sequencer_error_rate);
@@ -507,7 +525,7 @@ class MutationsSimulator : public BasicExecutable
         process_statistics(forest);
     }
 
-    void test_file_existence(boost::program_options::variables_map vm, const std::string& name,
+    void test_file_existence(const boost::program_options::variables_map& vm, const std::string& name,
                              const std::filesystem::path& file, const std::string& producer="") const
     {
         if (!vm.count(name)) {
@@ -527,21 +545,23 @@ class MutationsSimulator : public BasicExecutable
         }
     }
 
-    void validate(boost::program_options::variables_map vm) const
+    void validate(const boost::program_options::variables_map& vm) const
     {
         namespace fs = std::filesystem;
 
-        if (!vm.count("mutation file")) {
-            print_help_and_exit("The mutation file is mandatory", 1);
-        }
+        test_file_existence(vm, "mutation", simulation_filename);
 
         if (!vm.count("species simulation")) {
             print_help_and_exit("The species simulation directory is mandatory. "
-                                "You can produce it by using `mutants_sim`", 1);
+                                "You can produce it by using `mutants_sim`.", 1);
         }
 
         if (!fs::exists(species_directory)) {
-            print_help_and_exit("\"" + std::string(species_directory) + "\"  does not exist", 1);
+            print_help_and_exit("\"" + to_string(species_directory) + "\"  does not exist.", 1);
+        }
+
+        if (!fs::is_directory(species_directory)) {
+            print_help_and_exit("\"" + to_string(species_directory) + "\"  is not a directory.", 1);
         }
 
         test_file_existence(vm, "driver mutations", driver_mutations_filename);
@@ -550,14 +570,7 @@ class MutationsSimulator : public BasicExecutable
         test_file_existence(vm, "SBS signature", SBS_filename);
         test_file_existence(vm, "ID signature", ID_filename);
         test_file_existence(vm, "reference genome", ref_genome_filename);
-
-        if (vm.count("germline-file") > 1) {
-            print_help_and_exit("One germline file can be specified at most", 1);
-        }
-
-        if (vm.count("germline-subject") > 1) {
-            print_help_and_exit("One germline subject can be specified at most", 1);
-        }
+        test_file_existence(vm, "passenger CNAs", passenger_CNA_filename);
 
         if (vm.count("germline-file") != vm.count("germline-subject")) {
             if (vm.count("germline-file")>0) {
@@ -566,55 +579,65 @@ class MutationsSimulator : public BasicExecutable
                                     "VCF files.", 1);
             }
 
-            if (vm.count("germline-subject")>0) {
-                print_help_and_exit("A germline subject has been specified. Please, "
-                                    "specify a germline file.", 1);
-            }
+            print_help_and_exit("A germline subject has been specified. Please, "
+                                "specify a germline file.", 1);
         }
 
-        if (!vm.count("passenger CNAs file")) {
-            print_help_and_exit("The passenger CNA file is mandatory.", 1);
+        if (!SIDs_csv_filename.empty() && fs::exists(SIDs_csv_filename)) {
+            print_help_and_exit("\"" + SIDs_csv_filename + "\" already exists.", 1);
         }
 
-        if (!fs::exists(passenger_CNA_filename)) {
-            print_help_and_exit("\"" + std::string(passenger_CNA_filename)
-                                + "\"  does not exist", 1);
-        }
-
-        if (!fs::is_regular_file(passenger_CNA_filename)) {
-            print_help_and_exit("\"" + std::string(passenger_CNA_filename)
-                                + "\"  is not a regular file", 1);
-        }
-
-        if (vm.count("mutations-csv")>0 && fs::exists(SIDs_csv_filename)) {
-            print_help_and_exit("\"" + std::string(SIDs_csv_filename)
-                                + "\" already exists", 1);
-        }
-
-        if (vm.count("CNAs-csv")>0 && fs::exists(CNAs_csv_filename)) {
-            print_help_and_exit("\"" + std::string(CNAs_csv_filename)
-                                + "\" already exists", 1);
+        if (!CNAs_csv_filename.empty() && fs::exists(CNAs_csv_filename)) {
+            print_help_and_exit("\"" + CNAs_csv_filename + "\" already exists.", 1);
         }
 
         if (coverage<0) {
-            print_help_and_exit("coverage must be non-negative.", 1);
+            print_help_and_exit("The coverage must be non-negative.", 1);
         }
 
-        for (const auto sequencing_option : {"output-directory"}) {
-            if ((coverage>0) && (vm.count(sequencing_option)==0)) {
-                print_help_and_exit("\"--"+ std::string(sequencing_option)
-                                     + "\" is mandatory when coverage differs from 0.", 1);
+        if (purity<0 || purity>1) {
+            print_help_and_exit("The purity must be in the interval [0,1].", 1);
+        }
+
+        if (sequencer_error_rate<0 || sequencer_error_rate>1) {
+            print_help_and_exit("The sequencer error rate must be in the interval [0,1].", 1);
+        }
+
+        if (read_size==0) {
+            print_help_and_exit("The read size must be positive.", 1);
+        }
+
+        if (vm.count("insert-size-stddev")>0 && !paired_read) {
+            print_help_and_exit("\"--insert-size-stddev\" requires \"--insert-size-mean\".", 1);
+        }
+
+        if (paired_read) {
+            // check the insert size distribution feasibility before the
+            // (possibly long) mutation placement
+            try {
+                CLONES::fit_left_truncated_normal(insert_size_mean, insert_size_stddev,
+                                                  static_cast<double>(read_size));
+            } catch (const std::exception& e) {
+                print_help_and_exit("Invalid insert size distribution for read size "
+                                    + std::to_string(read_size) + ": " + e.what(), 1);
             }
         }
 
-        if ((coverage>0) && std::filesystem::exists(seq_output_directory)) {
-            if (vm.count("overwrite")==0) {
-                print_help_and_exit("The output directory \""+
-                                    std::string(seq_output_directory)+"\" already exists", 1);
+        if (coverage>0) {
+            if (vm.count("output-directory")==0) {
+                print_help_and_exit("\"--output-directory\" is mandatory when "
+                                    "coverage differs from 0.", 1);
             }
 
-            if (!fs::is_directory(seq_output_directory)) {
-                print_help_and_exit("\""+seq_output_directory+"\" is not a directory", 1);
+            if (fs::exists(seq_output_directory)) {
+                if (vm.count("overwrite")==0) {
+                    print_help_and_exit("The output directory \"" + seq_output_directory
+                                        + "\" already exists.", 1);
+                }
+
+                if (!fs::is_directory(seq_output_directory)) {
+                    print_help_and_exit("\"" + seq_output_directory + "\" is not a directory.", 1);
+                }
             }
         }
     }
@@ -634,23 +657,13 @@ public:
             const auto region = get_CNA_region(row, row_num);
 
             const auto major = row.get_field(3);
-            try {
-                if (major=="NA" || (stoi(major)>1)) {
-                    CNAs.emplace_back(region.get_initial_position(), region.size(), CNA::Type::AMPLIFICATION);
-                }
-            } catch (std::invalid_argument const&) {
-                throw Error<std::runtime_error>("Unknown major specification " + major
-                                                + " in row number " + std::to_string(row_num) + ".");
+            if (major=="NA" || parse_integer_field<int>(major, "major", row_num)>1) {
+                CNAs.emplace_back(region.get_initial_position(), region.size(), CNA::Type::AMPLIFICATION);
             }
 
             const auto minor = row.get_field(4);
-            try {
-                if (minor=="NA" || (stoi(minor)<1)) {
-                    CNAs.emplace_back(region.get_initial_position(), region.size(), CNA::Type::DELETION);
-                }
-            } catch (std::invalid_argument const&) {
-                throw Error<std::runtime_error>("Unknown minor specification " + major
-                                                + " in row number " + std::to_string(row_num) + ".");
+            if (minor=="NA" || parse_integer_field<int>(minor, "minor", row_num)<1) {
+                CNAs.emplace_back(region.get_initial_position(), region.size(), CNA::Type::DELETION);
             }
 
             ++row_num;
@@ -721,7 +734,7 @@ public:
         ;
 
         hidden_options.add_options()
-            ("mutation file", po::value<std::filesystem::path>(&simulation_filename),
+            ("mutation", po::value<std::filesystem::path>(&simulation_filename),
              "the name of the file describing the mutations simulation")
             ("species simulation", po::value<std::filesystem::path>(&species_directory),
              "the species simulation directory")
@@ -737,7 +750,7 @@ public:
              "the filename of the reference genome FASTA file")
             ("driver mutations",  po::value<std::filesystem::path>(&driver_mutations_filename),
              "the name of file containing the driver mutations")
-            ("passenger CNAs file", po::value<std::filesystem::path>(&passenger_CNA_filename),
+            ("passenger CNAs", po::value<std::filesystem::path>(&passenger_CNA_filename),
              "the filename of the passenger CNAs")
         ;
 
@@ -747,7 +760,7 @@ public:
         }
         program_options.add(hidden_options);
 
-        positional_options.add("mutation file", 1);
+        positional_options.add("mutation", 1);
         positional_options.add("species simulation", 1);
         positional_options.add("context index", 1);
         positional_options.add("repetition index", 1);
@@ -755,7 +768,7 @@ public:
         positional_options.add("ID signature", 1);
         positional_options.add("reference genome", 1);
         positional_options.add("driver mutations", 1);
-        positional_options.add("passenger CNAs file", 1);
+        positional_options.add("passenger CNAs", 1);
 
         po::variables_map vm;
 
@@ -763,7 +776,7 @@ public:
             po::command_line_parser parser{argc, argv};
             po::store(parser.options(program_options).positional(positional_options).run(), vm);
             po::notify(vm);
-        } catch (boost::wrapexcept<boost::program_options::unknown_option> &except) {
+        } catch (const po::error& except) {
             print_help_and_exit(except.what(), 1);
         }
 
@@ -773,27 +786,16 @@ public:
 
         quiet = vm.count("quiet")>0;
 
-        if (sequencer_error_rate<0 || sequencer_error_rate>1) {
-            using namespace CLONES;
-
-            throw Error<std::out_of_range>(("The sequencer error rate must be "
-                                            "in the interval [0,1]. Got ")
-                                           + std::to_string(sequencer_error_rate)
-                                           + ".");
-        }
-
-        {
-            using namespace CLONES::Mutations::SequencingSimulations;
-
-            read_simulator_output_mode = ((vm.count("overwrite")>0)?
-                                          ReadSimulator<>::Mode::OVERWRITE:
-                                          ReadSimulator<>::Mode::CREATE);
-        }
+        read_simulator_output_mode = ((vm.count("overwrite")>0)?
+                                      ReadSimulator<>::Mode::OVERWRITE:
+                                      ReadSimulator<>::Mode::CREATE);
 
         paired_read = vm.count("insert-size-mean")>0;
 
         epigenetic_FACS = vm.count("epigenetic-FACS")>0;
         write_SAM = vm.count("write-SAM")>0;
+
+        validate(vm);
 
         try {
             using namespace CLONES::Mutations;
@@ -802,13 +804,10 @@ public:
 
             bytes_per_abs_position = ContextIndex<>::read_bytes_per_absolute_position(archive);
 
+            snapshot_path = get_last_snapshot_path(species_directory, "species simulation");
         } catch (const std::exception& except) {
             print_help_and_exit(except.what(), 1);
         }
-
-        validate(vm);
-
-        snapshot_path = get_last_snapshot_path(species_directory, "species simulation");
     }
 
     void run() const
@@ -825,9 +824,9 @@ public:
                     run_abs_position<uint64_t>();
                     break;
                 default:
-                    std::cerr << "Unsupported bits per absolute position."
-                              << " Supported values are 2, 4, or 8." << std::endl;
-                    exit(1);
+                    print_help_and_exit("Unsupported bytes per absolute position ("
+                                        + std::to_string(bytes_per_abs_position)
+                                        + "). Supported values are 2, 4, or 8.", 1);
             }
         } catch (const std::exception& except) {
             print_help_and_exit(except.what(), 1);
