@@ -2,8 +2,8 @@
  * @file genome_mutations.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Testing CLONES::Mutations::GenomeMutations class
- * @version 1.3
- * @date 2026-06-11
+ * @version 1.4
+ * @date 2026-11-17
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -36,6 +36,16 @@
 #include <fstream>
 
 #include "genome_mutations.hpp"
+#include "germline.hpp"
+#include "driver_storage.hpp"
+#include "context_index.hpp"
+#include "fasta_chr_reader.hpp"
+#include "utils.hpp"
+
+#include <map>
+#include <string>
+#include <cctype>
+#include <filesystem>
 
 #include "error.hpp"
 
@@ -358,3 +368,75 @@ BOOST_AUTO_TEST_CASE(genome_remove_region)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_CASE(germline_SNVs_match_the_reference)
+{
+    using namespace CLONES::Mutations;
+    using namespace CLONES::IO::FASTA;
+
+    // the test FASTA file contains both soft-masked (lower-case) and
+    // unknown (N) bases
+    std::map<ChromosomeId, std::string> sequences;
+    {
+        ChromosomeData<Sequence> chr_seq;
+        Reader<ChromosomeData<Sequence>> reader(FASTA_FILE);
+        while (reader.read(chr_seq)) {
+            sequences[chr_seq.chr_id] = chr_seq.nucleotides;
+        }
+    }
+
+    auto chr_regions = ContextIndex<>::build_index(FASTA_FILE).get_chromosome_regions();
+
+    std::map<ChromosomeId, size_t> alleles_per_chromosome;
+    for (const auto& chr_region : chr_regions) {
+        alleles_per_chromosome[chr_region.get_chromosome_id()] = 2;
+    }
+
+    // a high rate makes many SNVs land on soft-masked bases
+    GenomeMutations germline;
+    BOOST_REQUIRE_NO_THROW(germline = GermlineMutations::generate(FASTA_FILE, chr_regions,
+                                                                  DriverStorage(),
+                                                                  alleles_per_chromosome,
+                                                                  100, 0, std::cout, true));
+
+    size_t num_of_SNVs{0};
+    for (const auto& [chr_id, chr_mutations] : germline.get_chromosomes()) {
+        const auto& sequence = sequences.at(chr_id);
+
+        for (const auto& [allele_id, allele] : chr_mutations.get_alleles()) {
+            for (const auto& [position, sid] : allele.get_mutations()) {
+                ++num_of_SNVs;
+
+                // genomic positions are 1-based
+                const char ref_base = static_cast<char>(std::toupper(sequence[position.position-1]));
+
+                BOOST_CHECK_EQUAL(sid->ref.front(), ref_base);
+                BOOST_CHECK(std::string("ACGT").find(sid->ref.front()) != std::string::npos);
+                BOOST_CHECK(sid->alt.front() != sid->ref.front());
+            }
+        }
+    }
+
+    BOOST_CHECK_GT(num_of_SNVs, 0);
+}
+
+BOOST_AUTO_TEST_CASE(driver_storage_tumour_type_spellings)
+{
+    using namespace CLONES::Mutations;
+
+    for (const std::string column : {"tumour_type", "tumor_type"}) {
+        const auto path = get_a_temporary_path();
+        {
+            std::ofstream os(path);
+            os << "chr\tfrom\tto\tref\talt\tmutation_type\t" << column
+               << "\tdriver_gene\tdriver_code\n"
+               << "1\t10\t10\tC\tT\tSNV\tTEST\tGENE\tGENE C10T\n";
+        }
+
+        BOOST_TEST_CONTEXT("column " << column) {
+            BOOST_CHECK_NO_THROW(DriverStorage::load(path));
+        }
+
+        std::filesystem::remove(path);
+    }
+}

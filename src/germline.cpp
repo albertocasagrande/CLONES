@@ -2,8 +2,8 @@
  * @file germline.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements the functions to generate and load germline mutations
- * @version 1.10
- * @date 2026-09-24
+ * @version 1.11
+ * @date 2026-11-17
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -35,6 +35,7 @@
 #include <iostream>
 #include <regex>
 #include <cctype>
+#include <algorithm>
 
 #include "csv_reader.hpp"
 #include "fasta_chr_reader.hpp"
@@ -69,11 +70,35 @@ SID GermlineMutations::get_candidate_germline_SNV(const Chromosome& chromosome,
 {
     const std::string& sequence = chromosome.nucleotides;
 
-    const uint8_t orig_base_pos = bases_pos.at(sequence[position]);
+    // genomic positions are 1-based, while `sequence` is 0-based. The
+    // reference may be soft-masked, i.e., it may contain lower-case bases.
+    const char ref_base = static_cast<char>(std::toupper(sequence[position-1]));
+
+    const uint8_t orig_base_pos = bases_pos.at(ref_base);
     const char alt_base = bases[(orig_base_pos+base_dist(rand_gen))%4];
 
-    return SID(chromosome.chr_id, position, sequence[position],
+    return SID(chromosome.chr_id, position, ref_base,
                alt_base, Mutation::GERMINAL);
+}
+
+/**
+ * @brief Check whether a base is an unambiguous nucleotide
+ *
+ * @param base is a base, possibly soft-masked (i.e., in lower case)
+ * @return `true` if and only if `base` is either A, C, G, or T
+ *      in either upper or lower case
+ */
+static inline bool is_unambiguous_base(const char base)
+{
+    switch (std::toupper(base)) {
+        case 'A':
+        case 'C':
+        case 'G':
+        case 'T':
+            return true;
+        default:
+            return false;
+    }
 }
 
 
@@ -158,13 +183,24 @@ GermlineMutations::generate(const std::filesystem::path& reference_fasta_filenam
         auto mutations_in_chr = generator.get_mutations_in(chr_mutations);
 
         if (chr_mutations.size()>2) {
-            std::uniform_int_distribution<ChrPosition> pos_dist(1, chr_mutations.size()-2);
+            // positions are 1-based: the first and the last chromosome
+            // positions are excluded, so that SNVs have a complete context
+            std::uniform_int_distribution<ChrPosition> pos_dist(2, chr_mutations.size()-1);
+
+            // bound the attempts to avoid endless loops in chromosomes having
+            // few positions available for germline SNVs (e.g., mostly unknown)
+            size_t remaining_attempts = std::max(static_cast<size_t>(1000),
+                                                 100*mutations_in_chr);
 
             size_t num_of_alleles = chr_mutations.get_alleles().size();
-            while (mutations_in_chr > 0) {
+            while (mutations_in_chr > 0 && remaining_attempts > 0) {
+                --remaining_attempts;
+
                 ChrPosition pos = pos_dist(generator.rand_gen);
-                if (chr_seq.nucleotides[pos-1]!='N' && chr_seq.nucleotides[pos]!='N'
-                        && chr_seq.nucleotides[pos+1]!='N') {
+                const auto& nucleotides = chr_seq.nucleotides;
+                if (is_unambiguous_base(nucleotides[pos-2])
+                        && is_unambiguous_base(nucleotides[pos-1])
+                        && is_unambiguous_base(nucleotides[pos])) {
 
                     auto snv = generator.get_candidate_germline_SNV(chr_seq, pos);
 
