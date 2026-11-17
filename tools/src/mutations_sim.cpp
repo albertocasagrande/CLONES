@@ -2,7 +2,7 @@
  * @file mutations_sim.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Main file for the CLONES mutations simulator
- * @version 1.12
+ * @version 1.13
  * @date 2026-11-17
  *
  * @copyright Copyright (c) 2023-2026
@@ -517,7 +517,13 @@ class MutationsSimulator : public BasicExecutable
 
             CLONES::Sequencers::Illumina::BasicSequencer sequencer(sequencer_error_rate);
 
-            const auto statistics = read_simulator(sequencer, forest, coverage, purity);
+            auto statistics = read_simulator(sequencer, forest, coverage, purity,
+                                             true, true, "chr_", false, false,
+                                             std::cout, quiet);
+
+            // VAF tables, coverage images, and SID histograms require all the
+            // samples to report the very same SIDs
+            statistics.canonize();
 
             saving_statistics_data_and_images(statistics);
         }
