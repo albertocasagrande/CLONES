@@ -2,8 +2,8 @@
  * @file progress_bar.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements a progress bar
- * @version 1.2
- * @date 2026-07-14
+ * @version 1.3
+ * @date 2026-11-17
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -41,7 +41,8 @@ ProgressBar::ProgressBar(std::ostream& out):
 {}
 
 ProgressBar::ProgressBar(std::ostream& out, const bool hide):
-    last_update(std::chrono::system_clock::now()), percentage(0), message(), updated(false)
+    last_update(std::chrono::system_clock::now()), percentage(0), message(), updated(false),
+    hidden(hide)
 #if WITH_INDICATORS
     , indicator(nullptr)
 #endif // WITH_INDICATORS
@@ -177,7 +178,11 @@ ProgressBar::~ProgressBar()
     }
 #endif  // WITH_INDICATORS
 
-    show_console_cursor();
+    // a hidden progress bar has not hidden the cursor: restoring it
+    // would print an escape sequence even in quiet mode
+    if (!hidden) {
+        show_console_cursor();
+    }
 }
 
 }  // UI

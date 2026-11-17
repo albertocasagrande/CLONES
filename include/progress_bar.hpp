@@ -2,8 +2,8 @@
  * @file progress_bar.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a progress bar
- * @version 1.2
- * @date 2026-07-14
+ * @version 1.3
+ * @date 2026-11-17
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -72,6 +72,7 @@ class ProgressBar
     std::string message;      //!< the progress bar message
 
     bool updated;             //!< the last percentage has been shown
+    bool hidden;              //!< the progress bar is hidden and the cursor untouched
 
 #if WITH_INDICATORS
     indicators::ProgressBar* indicator;  //!< the progress bar implementation
@@ -92,6 +93,10 @@ public:
      * @param hide is a hide/show flag
      */
     ProgressBar(std::ostream& out, const bool hide);
+
+    // the progress bar owns its indicator: copies would delete it twice
+    ProgressBar(const ProgressBar&) = delete;
+    ProgressBar& operator=(const ProgressBar&) = delete;
 
     /**
      * @brief Set a message in the progress bar
