@@ -2,8 +2,8 @@
  * @file bucket.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines bucket
- * @version 1.5
- * @date 2026-06-11
+ * @version 1.6
+ * @date 2026-11-17
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -661,27 +661,37 @@ public:
 
         size_t buff_values = buffer_size/sizeof(VALUE);
         if (buff_values >= size()) {
-            std::vector<VALUE> buffer(std::max(buff_values, size()));
+            // all the values fit the buffer: shuffle them in memory
+            std::vector<VALUE> buffer(size());
 
-            load_buffer(buffer, data_pos);
+            // use a local read position: `load_buffer()` updates it
+            std::streampos read_pos{data_pos};
+            load_buffer(buffer, read_pos);
+
+            std::shuffle(buffer.begin(), buffer.end(), random_generator);
 
             const auto shuffled_path(get_a_temporary_path("CLONES_shuffled_tmp", tmp_dir));
 
-            Binary::Out archive(shuffled_path);
-            Binary::Out::write_header(archive, "CLONES Bucket", 0);
+            {
+                Binary::Out archive(shuffled_path);
+                Binary::Out::write_header(archive, "CLONES Bucket", 0);
 
-            archive & num_of_values;
-            for (const auto& value: buffer) {
-                archive & value;
+                archive & num_of_values;
+                for (const auto& value: buffer) {
+                    archive & value;
+                }
             }
 
             std::filesystem::rename(shuffled_path, filepath);
 
+            init_bucket();
+
             return;
         }
 
-        // split buffer size between reader and writer
-        buffer_size /= 2;
+        // split buffer size between reader and writer, but always
+        // keep at least one value per buffer
+        buffer_size = std::max(buffer_size/2, sizeof(VALUE));
         buff_values = buffer_size/sizeof(VALUE);
 
         const auto chunk_paths = split_in_random_chunks(random_generator, buff_values,
@@ -707,6 +717,8 @@ public:
         }
 
         std::filesystem::rename(shuffled_path, filepath);
+
+        init_bucket();
     }
 
     /**

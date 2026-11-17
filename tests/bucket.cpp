@@ -2,8 +2,8 @@
  * @file bucket.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Bucket tests
- * @version 1.6
- * @date 2026-09-24
+ * @version 1.7
+ * @date 2026-11-17
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -124,26 +124,52 @@ void shuffle_bucket(CLONES::Archive::Bucket<TYPE>& bucket,
 
     std::mt19937_64 gen(0);
 
+    const auto file_size = fs::file_size(bucket.path());
+
     {
         BOOST_CHECK_NO_THROW(bucket.shuffle(gen, read_cache_size,
                                             fs::temp_directory_path()));
     }
 
-    {
-        Bucket<TYPE> bucket2(bucket.path(), DEFAULT_READ_CACHE_SIZE);
+    // the shuffled file contains exactly the same values
+    BOOST_CHECK_EQUAL(fs::file_size(bucket.path()), file_size);
+
+    // checks that `values` is a shuffled version of the fixture data, which
+    // were pushed in the order create_data(0), create_data(1), ...
+    auto check_shuffled = [&dataset](const auto& values) {
         CLONES::set<TYPE> local_dataset(dataset.begin(), dataset.end());
 
-        BOOST_CHECK(bucket2.size()==dataset.size());
-
-        for (const TYPE& data: bucket2) {
+        size_t index{0}, fixed_points{0};
+        for (const TYPE& data: values) {
             auto found = local_dataset.find(data);
-            BOOST_CHECK(found != dataset.end());
+            BOOST_CHECK(found != local_dataset.end());
 
             if (found != local_dataset.end()) {
                 local_dataset.erase(found);
             }
+
+            if (data == create_data<TYPE>(index)) {
+                ++fixed_points;
+            }
+            ++index;
         }
+        BOOST_CHECK_EQUAL(index, dataset.size());
         BOOST_CHECK(local_dataset.empty());
+
+        // a uniform random permutation has 1 fixed point on average
+        BOOST_CHECK_LT(fixed_points, 10);
+    };
+
+    // the shuffled object itself is still consistent
+    BOOST_CHECK_EQUAL(bucket.size(), dataset.size());
+    check_shuffled(bucket);
+
+    // reopening the bucket file gives the same values
+    {
+        Bucket<TYPE> bucket2(bucket.path(), DEFAULT_READ_CACHE_SIZE);
+
+        BOOST_CHECK_EQUAL(bucket2.size(), dataset.size());
+        check_shuffled(bucket2);
     }
 }
 
