@@ -55,7 +55,7 @@
             "passenger rates": [
                 { "epistate": "E1", "SNV": 3e-8},
                 { "epistate": "E2", "SNV": 6e-8},
-                { "epistate": "E3", "SNV": 6e-8},
+                { "epistate": "E3", "SNV": 6e-8}
             ]
         }
     ],
