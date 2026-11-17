@@ -2,7 +2,7 @@
  * @file bucket.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines bucket
- * @version 1.6
+ * @version 1.7
  * @date 2026-11-17
  *
  * @copyright Copyright (c) 2023-2026
@@ -35,6 +35,7 @@
 #include <random>
 #include <memory>
 #include <filesystem>
+#include <system_error>
 #include <numeric> // iota
 
 #include <algorithm> // shuffle
@@ -345,6 +346,25 @@ class Bucket
             file_size = data_pos;
         }
     }
+
+    /**
+     * @brief Get a temporary path for the shuffled bucket file
+     *
+     * The path is in the bucket file directory, so that the shuffled
+     * file can replace the bucket file by renaming.
+     *
+     * @return a temporary path in the bucket file directory
+     */
+    std::filesystem::path get_shuffled_path() const
+    {
+        auto parent_dir = filepath.parent_path();
+        if (parent_dir.empty()) {
+            parent_dir = ".";
+        }
+
+        return get_a_temporary_path(filepath.filename().string() + ".shuffled_",
+                                    parent_dir);
+    }
 protected:
     /**
      * @brief Get the position of values in bucket file
@@ -643,6 +663,13 @@ public:
      * this memory constraint, copies of the bucket values are
      * temporarily stored in a set of disk-based files.
      *
+     * The chunks are stored in a private directory, which is atomically
+     * created in @p tmp_dir and removed before returning, so concurrent
+     * shuffles can safely share @p tmp_dir. The shuffled values are
+     * written in a temporary file placed in the bucket file directory,
+     * which then replaces the bucket file. This avoids renaming files
+     * across file systems when @p tmp_dir is on a different device.
+     *
      * @tparam RANDOM_GENERATOR is a random number generator type
      * @param[in, out] random_generator is a random number generator
      * @param[in] buffer_size is the buffer size in bytes
@@ -659,64 +686,68 @@ public:
             return;
         }
 
-        size_t buff_values = buffer_size/sizeof(VALUE);
-        if (buff_values >= size()) {
-            // all the values fit the buffer: shuffle them in memory
-            std::vector<VALUE> buffer(size());
+        const auto shuffled_path = get_shuffled_path();
 
-            // use a local read position: `load_buffer()` updates it
-            std::streampos read_pos{data_pos};
-            load_buffer(buffer, read_pos);
+        try {
+            size_t buff_values = buffer_size/sizeof(VALUE);
+            if (buff_values >= size()) {
+                // all the values fit the buffer: shuffle them in memory
+                std::vector<VALUE> buffer(size());
 
-            std::shuffle(buffer.begin(), buffer.end(), random_generator);
+                // use a local read position: `load_buffer()` updates it
+                std::streampos read_pos{data_pos};
+                load_buffer(buffer, read_pos);
 
-            const auto shuffled_path(get_a_temporary_path("CLONES_shuffled_tmp", tmp_dir));
+                std::shuffle(buffer.begin(), buffer.end(), random_generator);
 
-            {
-                Binary::Out archive(shuffled_path);
-                Binary::Out::write_header(archive, "CLONES Bucket", 0);
+                {
+                    Binary::Out archive(shuffled_path);
+                    Binary::Out::write_header(archive, "CLONES Bucket", 0);
 
-                archive & num_of_values;
-                for (const auto& value: buffer) {
-                    archive & value;
+                    archive & num_of_values;
+                    for (const auto& value: buffer) {
+                        archive & value;
+                    }
+                }
+            } else {
+                // split buffer size between reader and writer, but always
+                // keep at least one value per buffer
+                buffer_size = std::max(buffer_size/2, sizeof(VALUE));
+                buff_values = buffer_size/sizeof(VALUE);
+
+                // a private directory for the chunks: it is removed, together
+                // with its content, when leaving this scope
+                const TemporaryDirectory chunk_dir("CLONES_shuffle_", tmp_dir);
+
+                const auto chunk_paths = split_in_random_chunks(random_generator, buff_values,
+                                                                "tmp_chunk", chunk_dir.path());
+
+                std::vector<VALUE> buffer(buff_values);
+
+                Bucket shuffled_bucket(shuffled_path, buffer_size);
+
+                for (const auto& chunk_path: chunk_paths) {
+                    const auto end_of_buffer = load_buffer(buffer, chunk_path);
+
+                    std::filesystem::remove(chunk_path);
+
+                    std::shuffle(buffer.begin(), end_of_buffer, random_generator);
+
+                    for (auto buffer_it=buffer.begin(); buffer_it != end_of_buffer; ++buffer_it) {
+                        shuffled_bucket.push_back(*buffer_it);
+                    }
+
+                    shuffled_bucket.flush();
                 }
             }
 
             std::filesystem::rename(shuffled_path, filepath);
+        } catch (...) {
+            std::error_code error;
+            std::filesystem::remove(shuffled_path, error);
 
-            init_bucket();
-
-            return;
+            throw;
         }
-
-        // split buffer size between reader and writer, but always
-        // keep at least one value per buffer
-        buffer_size = std::max(buffer_size/2, sizeof(VALUE));
-        buff_values = buffer_size/sizeof(VALUE);
-
-        const auto chunk_paths = split_in_random_chunks(random_generator, buff_values,
-                                                        "tmp_chunk", tmp_dir);
-
-        std::vector<VALUE> buffer(buff_values);
-
-        const auto shuffled_path(get_a_temporary_path("CLONES_shuffled_tmp", tmp_dir));
-        Bucket shuffled_bucket(shuffled_path, buffer_size);
-
-        for (const auto& chunk_path: chunk_paths) {
-            const auto end_of_buffer = load_buffer(buffer, chunk_path);
-
-            std::filesystem::remove(chunk_path);
-
-            std::shuffle(buffer.begin(), end_of_buffer, random_generator);
-
-            for (auto buffer_it=buffer.begin(); buffer_it != end_of_buffer; ++buffer_it) {
-                shuffled_bucket.push_back(*buffer_it);
-            }
-
-            shuffled_bucket.flush();
-        }
-
-        std::filesystem::rename(shuffled_path, filepath);
 
         init_bucket();
     }

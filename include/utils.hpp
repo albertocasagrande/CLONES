@@ -2,8 +2,8 @@
  * @file utils.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines utility functions
- * @version 1.7
- * @date 2026-11-12
+ * @version 1.8
+ * @date 2026-11-17
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -128,6 +128,12 @@ inline static TYPE ceil_div(const TYPE& x, const TYPE& y)
 /**
  * @brief Get the a temporary path
  *
+ * The basename of the returned path is @p prefix followed by a random
+ * 64-bit hexadecimal suffix, so that concurrent processes and threads
+ * get different paths with overwhelming probability. However, the
+ * returned path is not reserved: use `TemporaryDirectory` when an
+ * exclusive location is required.
+ *
  * @param[in] prefix is the prefix of the path basename
  * @param[in] parent_dir is the parent directory of the resulting path
  * @return a path that does not exists, whose parent directory
@@ -136,6 +142,51 @@ inline static TYPE ceil_div(const TYPE& x, const TYPE& y)
 std::filesystem::path
 get_a_temporary_path(const std::string& prefix="CLONES_tmp_",
                      const std::filesystem::path parent_dir=std::filesystem::temp_directory_path());
+
+/**
+ * @brief A temporary directory removed on destruction
+ *
+ * The directory is atomically created by the constructor, so it is
+ * exclusively owned by the object even when several processes or
+ * threads create temporary directories in the same parent directory
+ * at the same time. The destructor removes the directory together
+ * with its content.
+ */
+class TemporaryDirectory
+{
+    std::filesystem::path dir_path;     //!< The path of the directory
+public:
+    /**
+     * @brief Create a temporary directory
+     *
+     * @param[in] prefix is the prefix of the directory basename
+     * @param[in] parent_dir is the parent directory of the temporary directory
+     * @throw CLONES::Error<std::domain_error> if @p parent_dir is not an
+     *      existing directory
+     * @throw CLONES::Error<std::runtime_error> if the directory cannot be
+     *      created
+     */
+    explicit TemporaryDirectory(const std::string& prefix="CLONES_tmp_dir_",
+                                const std::filesystem::path& parent_dir=std::filesystem::temp_directory_path());
+
+    TemporaryDirectory(const TemporaryDirectory&) = delete;
+    TemporaryDirectory& operator=(const TemporaryDirectory&) = delete;
+
+    /**
+     * @brief Get the path of the temporary directory
+     *
+     * @return the path of the temporary directory
+     */
+    inline const std::filesystem::path& path() const
+    {
+        return dir_path;
+    }
+
+    /**
+     * @brief Destroy the temporary directory and its content
+     */
+    ~TemporaryDirectory();
+};
 
 /**
  * @brief Finds a root of a continuous function using Brent's method.

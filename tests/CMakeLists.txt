@@ -33,7 +33,9 @@ if(${Boost_unit_test_framework_FOUND})
 
     include_directories(${Boost_INCLUDE_DIRS})
     link_directories(${Boost_LIBRARY_DIRS})
-    set(TEST_LIBRARIES ${Boost_LIBRARIES} ${BUILD_LIB_TARGET} )
+    find_package(Threads REQUIRED)
+
+    set(TEST_LIBRARIES ${Boost_LIBRARIES} ${BUILD_LIB_TARGET} Threads::Threads)
 
     set(CLONES_TESTS archive fasta_reader context_index genome_mutations bucket index tissue_simulation union_map_proxy distributions)
 

@@ -2,7 +2,7 @@
  * @file bucket.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Bucket tests
- * @version 1.7
+ * @version 1.8
  * @date 2026-11-17
  *
  * @copyright Copyright (c) 2023-2026
@@ -36,6 +36,11 @@
 #include <functional>
 #include <random>
 #include <set>
+#include <fstream>
+#include <memory>
+#include <string>
+#include <thread>
+#include <vector>
 
 #include <boost/test/unit_test.hpp>
 #include <boost/mpl/list.hpp>
@@ -305,4 +310,83 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(shuffle_bucket_without_split_T, T, test_types, 
 {
     shuffle_bucket(this->bucket, this->dataset,
                    this->bucket.size()*sizeof(T));
+}
+
+BOOST_AUTO_TEST_CASE(temporary_directory)
+{
+    namespace fs = std::filesystem;
+
+    fs::path first_path, second_path;
+    {
+        const TemporaryDirectory first, second;
+
+        first_path = first.path();
+        second_path = second.path();
+
+        BOOST_CHECK(fs::is_directory(first_path));
+        BOOST_CHECK(fs::is_directory(second_path));
+        BOOST_CHECK(first_path != second_path);
+
+        std::ofstream(first_path / "a_file") << "some content";
+    }
+
+    // directories and their content are removed on destruction
+    BOOST_CHECK(!fs::exists(first_path));
+    BOOST_CHECK(!fs::exists(second_path));
+
+    BOOST_CHECK_THROW(TemporaryDirectory("prefix", "/a/non/existing/dir"),
+                      CLONES::Error<std::domain_error>);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(concurrent_shuffles_T, T, test_types)
+{
+    using namespace CLONES::Archive;
+    namespace fs = std::filesystem;
+
+    const size_t num_of_threads = 8;
+
+    // a temporary directory shared by all the shuffles
+    const TemporaryDirectory shared_tmp_dir;
+
+    std::vector<std::unique_ptr<BucketFixture<T>>> fixtures;
+    for (size_t i=0; i<num_of_threads; ++i) {
+        fixtures.push_back(std::make_unique<BucketFixture<T>>());
+    }
+
+    // `Boost.Test` assertions are not thread-safe: collect the outcomes
+    std::vector<std::string> errors(num_of_threads);
+    std::vector<std::thread> threads;
+    for (size_t i=0; i<num_of_threads; ++i) {
+        threads.emplace_back([&, i] {
+            try {
+                std::mt19937_64 gen(i);
+
+                fixtures[i]->bucket.shuffle(gen, DEFAULT_WRITE_CACHE_SIZE,
+                                            shared_tmp_dir.path());
+            } catch (const std::exception& e) {
+                errors[i] = e.what();
+            }
+        });
+    }
+
+    for (auto& thread: threads) {
+        thread.join();
+    }
+
+    for (size_t i=0; i<num_of_threads; ++i) {
+        BOOST_TEST_CONTEXT("thread " << i) {
+            BOOST_CHECK_EQUAL(errors[i], "");
+
+            auto& fixture = *(fixtures[i]);
+            Bucket<T> reloaded(fixture.bucket.path(), DEFAULT_READ_CACHE_SIZE);
+
+            BOOST_CHECK_EQUAL(reloaded.size(), fixture.dataset.size());
+
+            CLONES::set<T> values(reloaded.begin(), reloaded.end());
+            BOOST_CHECK(values == fixture.dataset);
+        }
+    }
+
+    // no temporary file is left behind
+    BOOST_CHECK(fs::is_empty(shared_tmp_dir.path()));
 }
