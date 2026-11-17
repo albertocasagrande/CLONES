@@ -2,8 +2,8 @@
  * @file driver_storage.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements class to load and store driver mutations
- * @version 1.4
- * @date 2026-09-24
+ * @version 1.5
+ * @date 2026-11-17
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -27,6 +27,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
+#include <algorithm>
 
 #include "driver_storage.hpp"
 
@@ -77,7 +79,15 @@ DriverStorage DriverStorage::load(const std::filesystem::path& filename)
     const size_t ref_col = csv_reader.get_column_position("ref");
     const size_t type_col = csv_reader.get_column_position("mutation_type");
     const size_t code_col = csv_reader.get_column_position("driver_code");
-    const size_t ttype_col = csv_reader.get_column_position("tumour_type");
+    // accept both the British and the American spelling of the tumour type
+    // column: the latter is used by the driver files in `examples`
+    const auto& header = csv_reader.get_header();
+    const bool american_spelling = std::find(header.begin(), header.end(),
+                                             "tumour_type") == header.end()
+                                    && std::find(header.begin(), header.end(),
+                                                 "tumor_type") != header.end();
+    const size_t ttype_col = csv_reader.get_column_position(american_spelling ? "tumor_type"
+                                                                              : "tumour_type");
 
     for (const auto& row : csv_reader) {
         const auto type = row.get_field(type_col);
