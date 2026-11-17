@@ -2,8 +2,8 @@
  * @file warning.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implement the default warning function
- * @version 1.1
- * @date 2026-02-06
+ * @version 1.2
+ * @date 2026-11-17
  *
  * @copyright Copyright (c) 2025
  *
@@ -29,6 +29,10 @@
  */
 
 #include <iostream>
+#include <mutex>
+#include <set>
+#include <string>
+#include <utility>
 
 #include "warning.hpp"
 
@@ -37,6 +41,18 @@ namespace CLONES
 
 void warning(const WarningType type, const std::string message)
 {
+    // the same warning may be raised many times: report it only once
+    static std::mutex reported_mutex;
+    static std::set<std::pair<WarningType, std::string>> reported;
+
+    {
+        std::lock_guard<std::mutex> lock(reported_mutex);
+
+        if (!reported.emplace(type, message).second) {
+            return;
+        }
+    }
+
     std::cerr << "Warning: " << message;
     switch(type) {
         case WarningType::NO_MUT_FOR_CONTEXT:
