@@ -2,7 +2,7 @@
  * @file json_config.cpp
  * @author Alberto Casagrande (alberto.casagrande@units.it)
  * @brief Implements classes and function for reading JSON configurations
- * @version 1.6
+ * @version 1.7
  * @date 2026-11-17
  *
  * @copyright Copyright (c) 2023-2026
@@ -151,8 +151,10 @@ ConfigReader::add_CNA(std::list<CLONES::Mutations::CNA>& CNAs,
 
     switch (get_CNA_type(CNA_json)) {
         case CNA::Type::AMPLIFICATION:
+            // the amplified region is copied into a new allele
             CNAs.push_back(CNA::new_amplification(genomic_position, length,
-                                                  allele, 0, Mutation::DRIVER));
+                                                  allele, RANDOM_ALLELE,
+                                                  Mutation::DRIVER));
             break;
         case CNA::Type::DELETION:
             CNAs.push_back(CNA::new_deletion(genomic_position, length, allele,
