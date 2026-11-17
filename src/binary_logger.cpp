@@ -2,8 +2,8 @@
  * @file binary_logger.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements a binary simulation logger
- * @version 1.7
- * @date 2026-08-25
+ * @version 1.8
+ * @date 2026-11-17
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -157,24 +157,42 @@ inline std::streampos compute_bytes_per_cell()
 }
 
 BinaryLogger::CellReader::CellReader(const std::filesystem::path& directory):
-    directory(directory), bytes_per_cell(1), number_of_cells(0), cell_archive_id(0),
-    cell_archive(get_cell_archive_path(directory, 0))
+    directory(directory), cells_per_archive(0), bytes_per_cell(compute_bytes_per_cell()),
+    last_file_number(0), number_of_cells(0), cell_archive_id(0), cell_archive()
 {
-    std::ifstream cell_file(BinaryLogger::get_cell_file_info_path(directory),
-                            std::fstream::in);
-    cell_file >> cells_per_archive >> last_file_number;
+    namespace fs = std::filesystem;
+
+    if (!fs::is_directory(directory)) {
+        throw Error<std::runtime_error>("The simulation directory \"" + to_string(directory)
+                                        + "\" does not exist.");
+    }
+
+    const auto info_path = BinaryLogger::get_cell_file_info_path(directory);
 
     // if no cell was saved
-    if (cell_archive.size()==0) {
+    if (!fs::exists(info_path)) {
         return;
     }
 
-    bytes_per_cell = compute_bytes_per_cell();
+    std::ifstream cell_file(info_path, std::fstream::in);
+    if (!(cell_file >> cells_per_archive >> last_file_number) || cells_per_archive == 0) {
+        throw Error<std::runtime_error>("Wrong cell file information in \""
+                                        + to_string(info_path) + "\".");
+    }
 
-    {   // compute the total number of cells
+    // cell files are numbered from 1: 0 means that no cell file was created
+    if (last_file_number == 0) {
+        return;
+    }
+
+    {   // compute the total number of cells: all files except the last are full
         const auto filename = get_cell_archive_path(directory, last_file_number);
 
-        const auto lastfile_bytes = Archive::Binary::In(filename).size();
+        if (!fs::is_regular_file(filename)) {
+            throw Error<std::runtime_error>("Missing cell file \"" + to_string(filename) + "\".");
+        }
+
+        const auto lastfile_bytes = fs::file_size(filename);
 
         number_of_cells = static_cast<uint64_t>(lastfile_bytes/bytes_per_cell)
                             + cells_per_archive * (last_file_number-1);
@@ -183,26 +201,23 @@ BinaryLogger::CellReader::CellReader(const std::filesystem::path& directory):
 
 Cell BinaryLogger::CellReader::operator[](const CellId& cell_id)
 {
-    if (cell_id >= number_of_cells) {
-        throw Error<std::out_of_range>("The cell has not been created.");
+    if (cell_id < Cell::first_tumour_cell_id()
+            || cell_id - Cell::first_tumour_cell_id() >= number_of_cells) {
+        throw Error<std::out_of_range>("The cell " + std::to_string(cell_id)
+                                       + " has not been created.");
     }
 
-    uint16_t aimed_id = static_cast<uint16_t>(cell_id / cells_per_archive);
+    const auto file_number = get_cell_file_number(cell_id);
 
-    if (!cell_archive.is_open() || cell_archive_id!=aimed_id) {
-        if (cell_archive_id!=aimed_id) {
-            cell_archive.close();
-        }
-
-        auto filename = get_cell_archive_path(directory, last_file_number);
-
-        cell_archive.open(filename);
-        cell_archive_id = aimed_id;
+    if (cell_archive == nullptr || cell_archive_id != file_number) {
+        cell_archive = std::make_unique<Archive::Binary::In>(get_cell_archive_path(directory,
+                                                                                   file_number));
+        cell_archive_id = file_number;
     }
 
-    cell_archive.seekg(get_cell_pos(cell_id));
+    cell_archive->seekg(get_cell_pos(cell_id));
 
-    auto cell = Cell::load(cell_archive);
+    auto cell = Cell::load(*cell_archive);
 
     if (cell.get_id()!=cell_id) {
         std::ostringstream oss;
@@ -240,7 +255,10 @@ void BinaryLogger::rotate_cell_file()
 void BinaryLogger::record_cell(const CellInTissue& cell)
 {
     if (!cell_archive.is_open()) {
-        if (std::filesystem::exists(directory)) {
+        // cell files are numbered from 1: a logger that has not created any
+        // cell file yet (`current_file_number==0`) must start a new one even
+        // if the directory already exists
+        if (std::filesystem::exists(directory) && current_file_number > 0) {
             auto filename = get_cell_archive_path(directory, current_file_number);
 
             cell_archive.open(filename, std::fstream::binary | std::fstream::app);

@@ -2,8 +2,8 @@
  * @file binary_logger.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a binary simulation logger
- * @version 1.5
- * @date 2026-08-25
+ * @version 1.6
+ * @date 2026-11-17
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -34,6 +34,7 @@
 #include <fstream>
 #include <filesystem>
 #include <list>
+#include <memory>
 
 #include "logger.hpp"
 
@@ -121,19 +122,35 @@ public:
         uint64_t number_of_cells;           //!< total number of cells in the directory
 
         uint16_t cell_archive_id;           //!< number of the currently open cell archive
-        Archive::Binary::In cell_archive;   //!< stream of the currently open cell archive
+        std::unique_ptr<Archive::Binary::In> cell_archive;   //!< the currently open cell archive
 
         /**
-         * @brief Get the position of a cell in the log archive
+         * @brief Get the number of the cell file containing a cell
+         *
+         * Cell files are numbered from 1 and the cells are stored in
+         * identifier order starting from `Cell::first_tumour_cell_id()`.
          *
          * @param cell_id is the identifier of a cell
-         * @return the position in the log archive of the cell having
-         *      `cell_id` as identifier
+         * @return the number of the cell file containing the cell
+         */
+        inline uint16_t get_cell_file_number(const CellId& cell_id) const
+        {
+            return static_cast<uint16_t>((cell_id-Cell::first_tumour_cell_id())
+                                            / cells_per_archive + 1);
+        }
+
+        /**
+         * @brief Get the position of a cell in its cell file
+         *
+         * @param cell_id is the identifier of a cell
+         * @return the position of the cell having `cell_id` as identifier
+         *      in its cell file
          */
         inline std::streampos get_cell_pos(const CellId& cell_id) const
         {
-            return ((cell_id-Cell::first_tumour_cell_id()) % cells_per_archive)
-                        *bytes_per_cell;
+            return static_cast<std::streamoff>((cell_id-Cell::first_tumour_cell_id())
+                                                    % cells_per_archive)
+                        *static_cast<std::streamoff>(bytes_per_cell);
         }
 
     public:
@@ -242,6 +259,23 @@ public:
         if (cell_archive.is_open()) {
             cell_archive.flush();
         }
+    }
+
+    /**
+     * @brief Set the directory of the log
+     *
+     * Differently from `rename_directory()`, this method neither
+     * moves nor creates any directory. It is meant to locate the log
+     * of a loaded simulation, whose directory may have been moved or
+     * specified by a path relative to a different working directory.
+     *
+     * @param log_directory is the directory of the log
+     */
+    inline void set_directory(const std::filesystem::path& log_directory)
+    {
+        close();
+
+        directory = log_directory;
     }
 
     /**

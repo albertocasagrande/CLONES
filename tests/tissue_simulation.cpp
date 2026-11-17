@@ -2,7 +2,7 @@
  * @file tissue_simulation.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Some archive tests
- * @version 1.1
+ * @version 1.2
  * @date 2026-11-17
  *
  * @copyright Copyright (c) 2023-2026
@@ -39,6 +39,9 @@
 
 #include "tissue_simulation.hpp"
 #include "ending_conditions.hpp"
+#include "descendant_forest.hpp"
+#include "binary_logger.hpp"
+#include "utils.hpp"
 
 #include "test_common.hpp"
 
@@ -260,4 +263,70 @@ BOOST_AUTO_TEST_CASE(sample_names_survive_moves)
     BOOST_CHECK_EQUAL(assigned.get_tissue_samples().size(), 1);
 
     std::filesystem::remove_all(assigned.get_logger().get_directory());
+}
+
+BOOST_AUTO_TEST_CASE(descendants_of_a_moved_simulation)
+{
+    using namespace CLONES;
+    using namespace CLONES::Mutants;
+    using namespace CLONES::Mutants::Evolutions;
+    namespace fs = std::filesystem;
+
+    const TemporaryDirectory tmp_dir;
+
+    const auto original_dir = tmp_dir.path() / "original";
+    const auto moved_dir = tmp_dir.path() / "moved";
+
+    size_t num_of_sampled_cells{0};
+    {
+        TissueSimulation simulation(original_dir, 0);
+
+        simulation.set_tissue("Liver", {100, 100})
+                  .add_mutant("A");
+
+        auto& species = simulation.tissue().get_species("A");
+        species.set_rate(CellEventType::DEATH, 0.01)
+               .set_rate(CellEventType::DUPLICATION, 0.2);
+
+        simulation.place_cell(species, {50, 50});
+        simulation.death_activation_level = 100;
+
+        TimeTest done(30);
+        simulation.run(done);
+
+        const SampleSpecification spec("S", RectangleSet({45, 45}, {55, 55}));
+        num_of_sampled_cells = simulation.sample_tissue(spec).get_cell_ids().size();
+    }
+
+    BOOST_REQUIRE_GT(num_of_sampled_cells, 1);
+
+    // move the simulation directory: the log directory stored in the
+    // snapshot does not exist anymore
+    fs::rename(original_dir, moved_dir);
+
+    const auto snapshot_path = BinaryLogger::find_last_snapshot_in(moved_dir);
+
+    Archive::Binary::In archive(snapshot_path);
+    TissueSimulation simulation;
+    archive & simulation;
+
+    // the log directory is the one containing the snapshot
+    const auto& log_directory = simulation.get_logger().get_directory();
+    BOOST_CHECK(fs::exists(log_directory) && fs::equivalent(log_directory, moved_dir));
+
+    DescendantForest forest;
+    BOOST_REQUIRE_NO_THROW(forest = DescendantForest(simulation));
+    BOOST_CHECK_EQUAL(forest.num_of_leaves(), num_of_sampled_cells);
+
+    // every logged cell, the last one included, can be read
+    BinaryLogger::CellReader reader(moved_dir);
+    const auto last_id = Cell::first_tumour_cell_id() + reader.get_number_of_cells() - 1;
+
+    BOOST_CHECK_EQUAL(reader[last_id].get_id(), last_id);
+    BOOST_CHECK_EQUAL(reader[Cell::first_tumour_cell_id()].get_id(),
+                      Cell::first_tumour_cell_id());
+    BOOST_CHECK_THROW(reader[last_id+1], Error<std::out_of_range>);
+
+    // a missing simulation directory is reported
+    BOOST_CHECK_THROW(BinaryLogger::CellReader{original_dir}, Error<std::runtime_error>);
 }

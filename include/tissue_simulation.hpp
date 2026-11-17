@@ -2,8 +2,8 @@
  * @file tissue_simulation.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a tumour evolution simulation
- * @version 1.17
- * @date 2026-08-25
+ * @version 1.18
+ * @date 2026-11-17
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -1664,6 +1664,19 @@ public:
         for (auto sample_it=simulation.samples.begin();
                 sample_it != simulation.samples.end(); ++sample_it) {
             simulation.name2sample[sample_it->get_name()] = sample_it;
+        }
+
+        // snapshots are saved in the log directory. The stored directory
+        // may be relative to the working directory of the process that
+        // produced the snapshot or the directory may have been moved. So,
+        // the snapshot directory is used as log directory.
+        if (!archive.filepath.empty()) {
+            auto log_directory = archive.filepath.parent_path();
+            if (log_directory.empty()) {
+                log_directory = ".";
+            }
+
+            simulation.logger.set_directory(log_directory);
         }
 
         simulation.init_valid_directions();
