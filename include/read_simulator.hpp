@@ -2,8 +2,8 @@
  * @file read_simulator.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines classes to simulate sequencing
- * @version 1.36
- * @date 2026-11-12
+ * @version 1.37
+ * @date 2026-11-17
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -2091,24 +2091,6 @@ private:
     {
         namespace fs = std::filesystem;
 
-        if (fs::exists(this->output_directory)) {
-            if (mode==Mode::CREATE) {
-                throw Error<std::domain_error>("\"" + to_string(output_directory)
-                                                + "\" already exists.");
-            }
-
-            if (!fs::is_directory(this->output_directory)) {
-                throw Error<std::domain_error>("\"" + to_string(output_directory)
-                                                + "\" is not a directory.");
-            }
-
-            if (mode==Mode::OVERWRITE) {
-                fs::remove_all(this->output_directory);
-            }
-        }
-
-        fs::create_directory(this->output_directory);
-
         if (!fs::exists(this->ref_genome_filename)) {
             throw Error<std::domain_error>("\"" + to_string(ref_genome_filename)
                                             + "\" does not exist.");
@@ -2139,6 +2121,26 @@ private:
                                                                "distribution: ")
                                                    + e.what());
         }
+
+        // create, or overwrite, the output directory only once all the
+        // other parameters have been validated
+        if (fs::exists(this->output_directory)) {
+            if (mode==Mode::CREATE) {
+                throw Error<std::domain_error>("\"" + to_string(output_directory)
+                                                + "\" already exists.");
+            }
+
+            if (!fs::is_directory(this->output_directory)) {
+                throw Error<std::domain_error>("\"" + to_string(output_directory)
+                                                + "\" is not a directory.");
+            }
+
+            if (mode==Mode::OVERWRITE) {
+                fs::remove_all(this->output_directory);
+            }
+        }
+
+        fs::create_directory(this->output_directory);
     }
 
     /**
