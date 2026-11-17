@@ -1,9 +1,9 @@
 /**
- * @file mutants_sim.cpp
+ * @file species_sim.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
- * @brief Main file for the mutants simulator
- * @version 1.5
- * @date 2026-07-23
+ * @brief Main file for the species simulator
+ * @version 1.6
+ * @date 2026-11-17
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -30,10 +30,15 @@
 
 #include <iostream>
 #include <vector>
+#include <list>
+#include <set>
+#include <string>
+#include <memory>
 #include <chrono>
 #include <csignal>
+#include <cstdlib>
 #include <fstream>
-#include <regex>
+#include <filesystem>
 
 #include <boost/program_options.hpp>
 #include <nlohmann/json.hpp>
@@ -50,20 +55,20 @@
 
 
 CLONES::Mutants::Evolutions::TissueSimulation simulation;
-CLONES::UI::ProgressBar *bar;
+std::unique_ptr<CLONES::UI::ProgressBar> bar;
 
 void termination_handling(int signal_num)
 {
-    simulation.make_snapshot(bar);
+    simulation.make_snapshot(bar.get());
 
     if (bar != nullptr) {
         bar->set_message("Aborted");
 
-        delete bar;
+        // the progress bar destructor restores the console cursor
+        bar.reset();
     }
 
-    CLONES::UI::ProgressBar::show_console_cursor();
-    exit(signal_num);
+    std::exit(signal_num);
 }
 
 class DriverSimulator : public BasicExecutable
@@ -73,8 +78,9 @@ class DriverSimulator : public BasicExecutable
     std::string snapshot_path;
     double time_horizon;
 #ifdef WITH_SDL2
-    uint8_t frames_per_second;
+    unsigned int frames_per_second;
 #endif
+    int seed;
     bool plot;
     bool quiet;
     bool disable_storage;
@@ -107,11 +113,11 @@ class DriverSimulator : public BasicExecutable
             name = epistate_json["name"].template get<std::string>();
 
             if (epistate_json.contains("death rate")) {
-                death_rate = epistate_json["death rate"].template get<double>();
+                death_rate = get_rate(epistate_json["death rate"]);
             }
 
             if (epistate_json.contains("duplication rate")) {
-                duplication_rate = epistate_json["duplication rate"].template get<double>();
+                duplication_rate = get_rate(epistate_json["duplication rate"]);
             }
         }
     };
@@ -128,29 +134,6 @@ class DriverSimulator : public BasicExecutable
         }
 
         return rate;
-    }
-
-    static double get_epigenetic_rate(const nlohmann::json& rate_json,
-                                      const std::vector<std::string>& field_aliases)
-    {
-        for (const auto& field_name : field_aliases) {
-            if (rate_json.contains(field_name)) {
-                return get_rate(rate_json[field_name]);
-            }
-        }
-
-        std::ostringstream oss;
-        auto alias_it = std::begin(field_aliases);
-
-        oss << "Every \"epigenetic rates\" element must contain a \""
-            << *alias_it;
-        while (++alias_it != std::end(field_aliases)) {
-            oss << "/" << *alias_it;
-        }
-        oss << "\" field.";
-
-        using namespace CLONES;
-        throw Error<std::runtime_error>(oss.str());
     }
 
     static std::list<Epistate> get_epistate_names(const nlohmann::json& epistates_json)
@@ -170,7 +153,8 @@ class DriverSimulator : public BasicExecutable
         return epistates;
     }
 
-    static void set_switch_rate(CLONES::Mutants::Evolutions::Species& species,
+    static void set_switch_rate(const std::string& mutant_name,
+                                const std::set<std::string>& epistate_names,
                                 const nlohmann::json& switch_json)
     {
         using namespace CLONES;
@@ -178,52 +162,53 @@ class DriverSimulator : public BasicExecutable
 
         if (!switch_json.is_object()) {
             throw Error<std::runtime_error>(("Any epigenetic switch specification must be an object. "
-                                             "This is not always the case for species \"")
-                                            + species.get_name() + "\".");
+                                             "This is not always the case for mutant \"")
+                                            + mutant_name + "\".");
         }
 
-        if (!switch_json.contains("source")) {
-            throw Error<std::runtime_error>(("Any epigenetic switch specification must contain a "
-                                            "\"source\" field. This is not always the case "
-                                            "for species \"") + species.get_name() + "\".");
-        }
+        auto get_epistate = [&](const std::string& field) {
+            if (!switch_json.contains(field)) {
+                throw Error<std::runtime_error>("Any epigenetic switch specification must contain a \""
+                                                + field + "\" field. This is not always the case "
+                                                "for mutant \"" + mutant_name + "\".");
+            }
 
-        const std::string src_epistate_name = switch_json["source"].template get<std::string>();
+            const std::string epistate_name = switch_json[field].template get<std::string>();
 
-        if (!switch_json.contains("destination")) {
-            throw Error<std::runtime_error>(("Any epigenetic switch specification must contain a "
-                                            "\"destination\" field. This is not always the case "
-                                            "for species \"") + species.get_name() + "\".");
-        }
+            if (epistate_names.count(epistate_name)==0) {
+                throw Error<std::runtime_error>("The epigenetic switch " + field + " \""
+                                                + epistate_name + "\" is not an epigenetic "
+                                                "state of mutant \"" + mutant_name + "\".");
+            }
 
-        const std::string dst_epistate_name = switch_json["destination"].template get<std::string>();
+            return epistate_name;
+        };
+
+        const auto src_epistate_name = get_epistate("source");
+        const auto dst_epistate_name = get_epistate("destination");
 
         if (!switch_json.contains("rate")) {
             throw Error<std::runtime_error>(("Any epigenetic switch specification must contain a "
                                             "\"rate\" field. This is not always the case for "
-                                            "species \"") + species.get_name() + "\".");
+                                            "mutant \"") + mutant_name + "\".");
         }
 
-        const double rate = switch_json["rate"].template get<double>();
+        const double rate = get_rate(switch_json["rate"]);
 
-        SpeciesName dst_name{species.get_mutant_name(), dst_epistate_name};
+        auto& tissue = simulation.tissue();
 
-        auto& dst_species = simulation.tissue().get_species(dst_name);
+        auto& src_species = tissue.get_species(SpeciesName{mutant_name, src_epistate_name});
+        const auto& dst_species = tissue.get_species(SpeciesName{mutant_name, dst_epistate_name});
 
-        species.set_rate(CellEventType::DUP_AND_EPI_SWITCH, dst_species, rate);
+        src_species.set_rate(CellEventType::DUP_AND_EPI_SWITCH, dst_species, rate);
     }
 
-    static void set_species_rates(const std::string& mutant_name, const nlohmann::json& species_json)
+    static void set_species_rates(const std::string& mutant_name, const nlohmann::json& mutant_json)
     {
         using namespace CLONES;
+        using namespace CLONES::Mutants;
 
-        if (!species_json.contains("epigenetic states")) {
-            throw Error<std::runtime_error>(("Any mutant specification must contain a "
-                                            "\"epigenetic states\" field. This is not the case "
-                                            "for mutant \"") + mutant_name +"\".");
-        }
-
-        std::list<Epistate> epistates = get_epistate_names(species_json["epigenetic states"]);
+        std::list<Epistate> epistates = get_epistate_names(mutant_json["epigenetic states"]);
         std::set<std::string> epistate_names;
 
         auto& tissue = simulation.tissue();
@@ -240,26 +225,23 @@ class DriverSimulator : public BasicExecutable
                 tissue.add_epigenetic_state(epistate.name);
             }
 
-            const CLONES::Mutants::SpeciesName species_name(mutant_name, epistate.name);
+            auto& species = tissue.get_species(SpeciesName{mutant_name, epistate.name});
 
-            auto& species = tissue.get_species(species_name);
-
-            using namespace CLONES::Mutants;
             species.set_rate(CellEventType::DEATH, epistate.death_rate)
                    .set_rate(CellEventType::DUPLICATION, epistate.duplication_rate);
+        }
 
-            if (species_json.contains("epigenetic switches")) {
-                if (!species_json["epigenetic switches"].is_array()) {
-                    throw Error<std::runtime_error>(("Any \"epigenetic switches\" field must be an "
-                                                     "array of epigenetic switches. This is not the "
-                                                     "case for mutant \"") + mutant_name + "\".");
-                }
-
-                for (const auto& switch_json : species_json["epigenetic switches"]) {
-                    set_switch_rate(species, switch_json);
-                }
+        // switches are set once all the epigenetic states of the mutant exist
+        if (mutant_json.contains("epigenetic switches")) {
+            if (!mutant_json["epigenetic switches"].is_array()) {
+                throw Error<std::runtime_error>(("Any \"epigenetic switches\" field must be an "
+                                                 "array of epigenetic switches. This is not the "
+                                                 "case for mutant \"") + mutant_name + "\".");
             }
 
+            for (const auto& switch_json : mutant_json["epigenetic switches"]) {
+                set_switch_rate(mutant_name, epistate_names, switch_json);
+            }
         }
     }
 
@@ -281,20 +263,23 @@ class DriverSimulator : public BasicExecutable
         simulation.add_mutant(mutant_name);
 
         if (mutant_json.contains("epigenetic states")) {
-            set_species_rates(mutant_name, mutant_json["epigenetic states"]);
+            set_species_rates(mutant_name, mutant_json);
         } else {
+            if (mutant_json.contains("epigenetic switches")) {
+                throw Error<std::runtime_error>("The mutant \"" + mutant_name + "\" has "
+                                                "\"epigenetic switches\" but no "
+                                                "\"epigenetic states\".");
+            }
+
             auto& species = simulation.tissue().get_species(mutant_name);
 
             if (mutant_json.contains("death rate")) {
-                const double rate = mutant_json["death rate"].template get<double>();
-
-                species.set_rate(CellEventType::DEATH, rate);
+                species.set_rate(CellEventType::DEATH, get_rate(mutant_json["death rate"]));
             }
 
             if (mutant_json.contains("duplication rate")) {
-                const double rate = mutant_json["duplication rate"].template get<double>();
-
-                species.set_rate(CellEventType::DUPLICATION, rate);
+                species.set_rate(CellEventType::DUPLICATION,
+                                 get_rate(mutant_json["duplication rate"]));
             }
         }
     }
@@ -416,43 +401,18 @@ class DriverSimulator : public BasicExecutable
         }
     }
 
-    static std::set<std::string> collect_epistate_names(const nlohmann::json& simulation_cfg)
-    {
-        std::set<std::string> epistate_names;
-        if (!simulation_cfg.contains("epigenetic states")) {
-            return epistate_names;
-        }
-
-        if (!simulation_cfg["epigenetic states"].is_array()) {
-            using namespace CLONES;
-
-            throw Error<std::runtime_error>("The \"epigenetic states\" field must be an "
-                                            "array of epigenetic state names.");
-        }
-
-        for (const auto& epi_json: simulation_cfg["epigenetic states"]) {
-            std::string name = epi_json.template get<std::string>();
-
-            if (epistate_names.count(name)>0) {
-                std::cerr << "The epigenetic state \"" << name
-                          << "\" has been added multiple times." << std::endl;
-            } else {
-                epistate_names.insert(name);
-            }
-        }
-
-        return epistate_names;
-    }
-
-    static void configure_simulation(const std::string& simulation_filename)
+    static void configure_simulation(const std::filesystem::path& simulation_filename)
     {
         using namespace CLONES;
         using namespace CLONES::Mutants;
 
         std::ifstream f(simulation_filename);
-        nlohmann::json simulation_cfg = nlohmann::json::parse(f);
+        if (!f) {
+            throw Error<std::runtime_error>("Cannot open \"" + to_string(simulation_filename)
+                                            + "\" for reading.");
+        }
 
-        std::map<std::string, MutantProperties> mutants;
+        nlohmann::json simulation_cfg = nlohmann::json::parse(f);
 
         if (!simulation_cfg.contains("tissue")) {
             throw Error<std::runtime_error>("The simulation configuration file "
@@ -475,7 +435,7 @@ class DriverSimulator : public BasicExecutable
 
         if (!simulation_cfg.contains("initial cells")) {
             throw Error<std::runtime_error>("The simulation configuration file must "
-                                           "contain a \"initial cells\" field.");
+                                           "contain an \"initial cells\" field.");
         }
         configure_initial_cells(simulation_cfg["initial cells"]);
 
@@ -496,34 +456,55 @@ class DriverSimulator : public BasicExecutable
     {
         using namespace CLONES;
 
+        if (!logging_dir.empty()) {
+            simulation.rename_log_directory(logging_dir);
+        }
+
+        simulation.random_generator_seed(seed);
+
         configure_simulation(simulation_filename);
 
         simulation.duplicate_internal_cells = duplicate_internal_cells;
     }
 
+    void recover_simulation()
+    {
+        simulation = load_species_simulation(snapshot_path, quiet);
+
+        // the random generator state is not stored in the snapshots
+        simulation.random_generator_seed(seed);
+    }
+
 public:
 
     DriverSimulator(int argc, char* argv[]):
-        BasicExecutable(argv[0], {{"options", "Options"}})
+        BasicExecutable(argv[0], {{"options", "Options"}}),
+        time_horizon(0),
+#ifdef WITH_SDL2
+        frames_per_second(1),
+#endif
+        seed(0), plot(false), quiet(false), disable_storage(false),
+        duplicate_internal_cells(false)
     {
         namespace po = boost::program_options;
+        namespace fs = std::filesystem;
 
         visible_options.at("options").add_options()
             ("recover-simulation,r",
              po::value<std::string>(&snapshot_path)->default_value(""),
              "recover a simulation")
             ("uniform-grow-model,u", "admit duplications of any cell in the tissue")
-            ("log directory,o", po::value<std::filesystem::path>(&logging_dir),
+            ("log-directory,o", po::value<std::filesystem::path>(&logging_dir),
              "the directory in which all the simulation data are saved")
             ("disable-storage,d", "disable result storage")
-            ("seed,s", po::value<int>()->default_value(0), "random generator seed")
+            ("seed,s", po::value<int>(&seed)->default_value(0), "random generator seed")
     #if WITH_INDICATORS
             ("quiet,q", "disable progress bar")
     #endif // WITH_INDICATORS
     #ifdef WITH_SDL2
             ("plot,p",
              "plot a graphical representation of the simulation")
-            ("frames-per-second,f", po::value<uint8_t>(&frames_per_second)->default_value(1),
+            ("frames-per-second,f", po::value<unsigned int>(&frames_per_second)->default_value(1),
              "the number of frames per second")
     #endif
             ("help,h", "get the help");
@@ -548,7 +529,7 @@ public:
             po::command_line_parser parser{argc, argv};
             po::store(parser.options(program_options).positional(positional_options).run(), vm);
             po::notify(vm);
-        } catch (boost::wrapexcept<boost::program_options::unknown_option> &except) {
+        } catch (const po::error& except) {
             print_help_and_exit(except.what(), 1);
         }
 
@@ -556,22 +537,53 @@ public:
             print_help_and_exit(0);
         }
 
+        const bool recovering = (snapshot_path != "");
+
         if (!vm.count("simulation file")) {
-            print_help_and_exit("The simulation file is mandatory", 1);
+            print_help_and_exit("The simulation file is mandatory.", 1);
+        }
+
+        if (!recovering && !fs::is_regular_file(simulation_filename)) {
+            print_help_and_exit("\"" + to_string(simulation_filename)
+                                + "\" is not an existing regular file.", 1);
         }
 
         if (!vm.count("time horizon")) {
-            print_help_and_exit("The simulation time horizon is mandatory", 1);
+            print_help_and_exit("The simulation time horizon is mandatory.", 1);
         }
 
-        if (vm.count("log directory")) {
-            simulation.rename_log_directory(logging_dir);
+        if (!(time_horizon > 0)) {
+            print_help_and_exit("The simulation time horizon must be positive.", 1);
         }
+
+        // the log directory and the grow model of a recovered simulation
+        // are those stored in its snapshot
+        if (recovering && vm.count("log-directory")) {
+            print_help_and_exit("\"--log-directory\" cannot be used together "
+                                "with \"--recover-simulation\".", 1);
+        }
+
+        if (recovering && vm.count("uniform-grow-model")) {
+            print_help_and_exit("\"--uniform-grow-model\" cannot be used together "
+                                "with \"--recover-simulation\".", 1);
+        }
+
+#ifdef WITH_SDL2
+        if (frames_per_second == 0 || frames_per_second > 1000) {
+            print_help_and_exit("The number of frames per second must be in [1, 1000].", 1);
+        }
+#endif
 
         quiet = vm.count("quiet")>0;
         plot = vm.count("plot")>0;
         disable_storage = vm.count("disable-storage")>0;
-        duplicate_internal_cells = (vm.count("border-duplications-only")==0);
+        duplicate_internal_cells = vm.count("uniform-grow-model")>0;
+
+        // find the snapshot to be recovered before showing any progress
+        // bar: on failure, `get_last_snapshot_path()` exits immediately
+        if (recovering) {
+            snapshot_path = get_last_snapshot_path(snapshot_path, "recover-simulation");
+        }
     }
 
     void run()
@@ -579,59 +591,59 @@ public:
         using namespace CLONES;
         using namespace CLONES::Mutants::Evolutions;
 
-        if (!quiet) {
-            UI::ProgressBar::hide_console_cursor();
+        try {
+            if (!quiet) {
+                // the progress bar hides the console cursor and restores
+                // it on destruction
+                bar = std::make_unique<UI::ProgressBar>(std::cout);
+                bar->set_message("Creating tissue");
+            }
 
-            bar = new UI::ProgressBar(std::cout);
-            bar->set_message("Creating tissue");
-        }
+            if (snapshot_path != "") {
+                recover_simulation();
+            } else {
+                init_simulation();
+            }
 
-        if (snapshot_path != "") {
-            snapshot_path = get_last_snapshot_path(snapshot_path, "simulation");
+            simulation.storage_enabled = !disable_storage;
 
-            simulation = load_species_simulation(snapshot_path, quiet);
-        } else {
-            init_simulation();
-        }
-
-        simulation.storage_enabled = !disable_storage;
-
-        TimeTest time_test(time_horizon);
+            TimeTest time_test(time_horizon);
 
 #ifdef WITH_SDL2
-        if (plot) {
+            if (plot) {
 
-            UI::TissuePlotter<UI::SDLWindow> plotter(simulation.tissue());
+                UI::TissuePlotter<UI::SDLWindow> plotter(simulation.tissue());
 
-            plotter.set_frames_per_second(frames_per_second);
+                plotter.set_frames_per_second(frames_per_second);
 
-            if (bar != nullptr) {
-                simulation.run(time_test, plotter, *bar);
+                if (bar != nullptr) {
+                    simulation.run(time_test, plotter, *bar);
+                } else {
+                    simulation.run(time_test, plotter);
+                }
+
+                while (plotter.waiting_end()) {
+                    plotter.plot(simulation.get_statistics());
+                }
             } else {
-                simulation.run(time_test, plotter);
-            }
-
-            while (plotter.waiting_end()) {
-                plotter.plot(simulation.get_statistics());
-            }
-        } else {
 #endif // WITH_SDL2
 
-            if (bar != nullptr) {
-                simulation.run(time_test, *bar);
-            } else {
-                simulation.run(time_test);
-            }
+                if (bar != nullptr) {
+                    simulation.run(time_test, *bar);
+                } else {
+                    simulation.run(time_test);
+                }
 
 #ifdef WITH_SDL2
-        }
+            }
 #endif // WITH_SDL2
+        } catch (const std::exception& except) {
+            bar.reset();
 
-        UI::ProgressBar::show_console_cursor();
-
-        if (bar != nullptr) {
-            delete bar;
+            print_help_and_exit(except.what(), 1);
         }
+
+        bar.reset();
     }
 
 };

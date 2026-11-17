@@ -2,8 +2,8 @@
  * @file json_config.cpp
  * @author Alberto Casagrande (alberto.casagrande@units.it)
  * @brief Implements classes and function for reading JSON configurations
- * @version 1.5
- * @date 2026-11-13
+ * @version 1.6
+ * @date 2026-11-17
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -438,8 +438,8 @@ get_mutant_properties(const CLONES::Mutants::Evolutions::TissueSimulation& simul
     }
 
     Mutants::SpeciesName orig_name{mutant_name};
-    if (orig_name.get_epistate_name() == "") {
-        throw Error<std::runtime_error>("Mutations can exclusively occur between mutant. \""
+    if (orig_name.get_epistate_name() != "") {
+        throw Error<std::runtime_error>("Mutations can exclusively occur between mutants. \""
                                         + mutant_name + "\" is a species name.");
     }
 

@@ -87,10 +87,7 @@
     },
     "initial cells": [
         {
-            "mutant": {
-                "name": "A",
-                "epistate": "E1"
-            },
+            "species": "A[E1]",
             "position": [500, 500]
         }
     ],
