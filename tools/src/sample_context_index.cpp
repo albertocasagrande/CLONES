@@ -2,7 +2,7 @@
  * @file sample_context_index.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief The main source file for context index sampler
- * @version 1.4
+ * @version 1.5
  * @date 2026-11-17
  *
  * @copyright Copyright (c) 2023-2026
@@ -185,7 +185,7 @@ public:
             "the genome context index filename")
             ("output filename", po::value<std::filesystem::path>(&output_filename),
             "the resulting genome context index filename")
-            ("sampling ratio", po::value<int64_t>(&sampling_ratio),
+            ("sampling ratio", po::value<uint64_t>(&sampling_ratio),
             "the sampling ratio, i.e., one position every <sampling ratio> is kept")
         ;
 
