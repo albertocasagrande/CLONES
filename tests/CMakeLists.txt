@@ -38,7 +38,8 @@ if(${Boost_unit_test_framework_FOUND})
     set(TEST_LIBRARIES ${Boost_LIBRARIES} ${BUILD_LIB_TARGET} Threads::Threads)
 
     set(CLONES_TESTS archive fasta_reader context_index genome_mutations bucket
-                     index tissue_simulation union_map_proxy distributions rs_index)
+                     index tissue_simulation union_map_proxy distributions rs_index
+                     read_simulator)
 
     foreach(TEST ${CLONES_TESTS})
         add_executable( test_${TEST} ${TEST}.cpp test_common.cpp)

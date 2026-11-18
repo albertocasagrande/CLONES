@@ -3,7 +3,7 @@
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements classes to simulate sequencing
  * @version 1.14
- * @date 2026-09-24
+ * @date 2026-11-18
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -385,6 +385,9 @@ void update_data(CLONES::map<SID, SIDData>& a, const CLONES::map<SID, SIDData>& 
                 // then it is in the same SID
 
                 a_it->second.update(b_it->second);
+            } else {
+                // b_it->first is not in a: insert it before a_it
+                a_it = a.insert(a_it, *b_it);
             }
             ++b_it;
         } else {
@@ -837,34 +840,39 @@ void SampleSetStatistics::save_VAF_CSV(const std::filesystem::path& filename,
     auto total_SID_data = get_total_SID_data(*stats_map);
 
     for (const auto& [mutation, total_mutation_data]: total_SID_data) {
-        os << GenomicPosition::chrtos(chr_id) << separator << mutation.position
-           << separator << mutation.position
-           << separator << mutation.ref  << separator << mutation.alt
-           << separator << (mutation.is_SBS()?"SNV":"indel") << separator;
+        // the statistics contain the SIDs of all the chromosomes
+        if (mutation.chr_id == chr_id) {
+            os << GenomicPosition::chrtos(mutation.chr_id) 
+               << separator << mutation.position
+               << separator << mutation.position
+               << separator << mutation.ref  << separator << mutation.alt
+               << separator << (mutation.is_SBS()?"SNV":"indel")
+               << separator;
 
-        print_join(os, total_mutation_data.causes, ';');
+            print_join(os, total_mutation_data.causes, ';');
 
-        os << separator;
+            os << separator;
 
-        auto descriptions = get_descriptions(total_mutation_data.nature_set);
+            auto descriptions = get_descriptions(total_mutation_data.nature_set);
 
-        print_join(os, descriptions, ';');
+            print_join(os, descriptions, ';');
 
-        size_t total_mutation_coverage{0};
-        for (const auto& [sample_name, sample_stats]: *stats_map) {
-            const auto& mutation_coverage = sample_stats.get_coverage(mutation);
-            auto mutation_data = sample_stats.get_data(mutation);
+            size_t total_mutation_coverage{0};
+            for (const auto& [sample_name, sample_stats]: *stats_map) {
+                const auto& mutation_coverage = sample_stats.get_coverage(mutation);
+                auto mutation_data = sample_stats.get_data(mutation);
 
-            print_SID_data(os, mutation_coverage, mutation_data, separator);
+                print_SID_data(os, mutation_coverage, mutation_data, separator);
 
-            total_mutation_coverage += mutation_coverage;
+                total_mutation_coverage += mutation_coverage;
+            }
+
+            if (stats_map->size()>1) {
+                print_SID_data(os, total_mutation_coverage, total_mutation_data, separator);
+            }
+
+            os << std::endl;
         }
-
-        if (stats_map->size()>1) {
-            print_SID_data(os, total_mutation_coverage, total_mutation_data, separator);
-        }
-
-        os << std::endl;
     }
 }
 
