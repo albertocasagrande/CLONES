@@ -2,7 +2,7 @@
  * @file rs_index.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements a class to compute the repeated substring index
- * @version 1.10
+ * @version 1.11
  * @date 2026-11-18
  *
  * @copyright Copyright (c) 2023-2026
@@ -29,6 +29,7 @@
  */
 
 #include <cstdint>
+#include <cctype>
 #include <algorithm>
 #include <map>
 #include <vector>
@@ -708,6 +709,12 @@ RSIndex RSIndex::build_index(const std::filesystem::path& genome_fasta,
             progress_bar->set_progress(static_cast<uint8_t>(100*chr_reader.get_position()/streamsize),
                                         "Processing chr. " + GenomicPosition::chrtos(chr.chr_id));
         }
+        // soft-masked (lower-case) bases must not interrupt repetitions,
+        // nor appear in the indels: repetitions are collected in upper case
+        for (auto& nucleotide : chr.nucleotides) {
+            nucleotide = static_cast<char>(std::toupper(static_cast<unsigned char>(nucleotide)));
+        }
+
         rs_index.collect_data_from(chr.chr_id, chr.nucleotides, progress_bar);
     }
 

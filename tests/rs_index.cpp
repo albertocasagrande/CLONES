@@ -2,7 +2,7 @@
  * @file rs_index.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Testing CLONES::Mutations::RSIndex class
- * @version 1.1
+ * @version 1.2
  * @date 2026-11-18
  *
  * @copyright Copyright (c) 2023-2026
@@ -45,6 +45,10 @@
 #include "rs_index.hpp"
 #include "id_signature.hpp"
 #include "fasta_chr_reader.hpp"
+#include "utils.hpp"
+
+#include <fstream>
+#include <filesystem>
 
 #include "error.hpp"
 
@@ -214,4 +218,47 @@ BOOST_AUTO_TEST_CASE(regions_to_avoid)
     // exactly the repetitions not affecting the regions to avoid are stored
     const auto spans = collect_spans(index);
     BOOST_CHECK(spans == expected);
+}
+
+BOOST_AUTO_TEST_CASE(soft_masked_sequences)
+{
+    using namespace CLONES::Mutations;
+    namespace fs = std::filesystem;
+
+    // the same chromosome without and with soft-masked (lower-case) bases:
+    // the masks cross a homopolymer, a dinucleotide repeat, and a micro-homology
+    const std::string header = ">1 dna:chromosome chromosome:GRCh38:1:1:60:1 REF\n";
+    const std::string upper = "GCAGCGACGTTTTTTTTGCACGGCACACACACAGCGACTGCATGCCGATGCCGTACGGAC";
+    const std::string masked = "GCAGCGACGTTTTttttGCACGGcacaCACAcAGCGACTGCATgccgATGCCGTACGGAC";
+    BOOST_REQUIRE_EQUAL(upper.size(), masked.size());
+
+    const auto upper_path = get_a_temporary_path();
+    std::ofstream(upper_path) << header << upper << "\n";
+    const auto masked_path = get_a_temporary_path();
+    std::ofstream(masked_path) << header << masked << "\n";
+
+    auto upper_index = RSIndex::build_index(upper_path, 50, 1000000, 0);
+    auto masked_index = RSIndex::build_index(masked_path, 50, 1000000, 0);
+
+    // soft-masked bases are stored in upper case: extract all the
+    // repetitions from a further index to check them
+    auto check_index = RSIndex::build_index(masked_path, 50, 1000000, 0);
+    for (const auto& name : get_COSMIC_ID_type_names()) {
+        const IDType type(name);
+
+        while (check_index.count_available_for(type) > 0) {
+            const auto repetition = check_index.select(type, true);
+
+            BOOST_TEST_CONTEXT("type " << name << " at " << repetition.g_position) {
+                BOOST_CHECK(repetition.unit.find_first_of("acgtn") == std::string::npos);
+                BOOST_CHECK(!std::islower(static_cast<unsigned char>(repetition.prev_base)));
+            }
+        }
+    }
+
+    // soft-masked bases do not interrupt repetitions
+    BOOST_CHECK(collect_spans(masked_index) == collect_spans(upper_index));
+
+    fs::remove(upper_path);
+    fs::remove(masked_path);
 }
