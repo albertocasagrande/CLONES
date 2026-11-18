@@ -2,8 +2,8 @@
  * @file mutation_engine.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a class to place mutations on a descendant forest
- * @version 1.43
- * @date 2026-11-17
+ * @version 1.44
+ * @date 2026-11-18
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -1569,6 +1569,12 @@ public:
         warning{warning}, infinite_sites_model{true}, avoid_homozygous_losses{true}
     {
         MutationEngine::check_genomes_consistency(context_index, germline_mutations);
+
+        // register the drivers of the mutants in `mutational_properties`
+        // as `add_mutant()` does
+        for (const auto& [mutant_name, drivers] : this->mutational_properties.get_driver_mutations()) {
+            register_drivers(drivers.SIDs, drivers.CNAs);
+        }
     }
 
     /**
@@ -1625,16 +1631,81 @@ public:
         mutational_properties.add_mutant(name, passenger_rates, driver_SIDs,
                                          driver_CNAs, application_order);
 
+        register_drivers(driver_SIDs, driver_CNAs);
+
+        return *this;
+    }
+
+    /**
+     * @brief Register driver mutations
+     *
+     * This method removes the passenger CNAs that are too close to the
+     * driver mutations and places the driver SIDs in the driver mutation
+     * genome, so that passenger and pre-neoplastic mutations avoid their
+     * contexts.
+     *
+     * @param[in] driver_SIDs is a list of driver SIDs
+     * @param[in] driver_CNAs is a list of driver CNAs
+     * @throw Error<std::domain_error> if a germline mutation lays in the
+     *      context of a driver SID, which consequently cannot be placed
+     */
+    void register_drivers(const std::list<MutationSpec<SID>>& driver_SIDs,
+                          const std::list<CNA>& driver_CNAs)
+    {
         filter_passenger_CNAs(get_region_list(driver_SIDs, driver_CNA_min_distance));
         filter_passenger_CNAs(get_region_list(driver_CNAs, driver_CNA_min_distance));
 
         for (auto sid: driver_SIDs) {
             sid.allele_id = RANDOM_ALLELE;
             sid.nature = Mutation::DRIVER;
+
+            if (!germline_mutations->has_context_free(sid)) {
+                throw germline_driver_conflict(sid);
+            }
+
             place_SID(sid, dm_genome);
         }
+    }
 
-        return *this;
+    /**
+     * @brief Build the error reporting the germline mutations preventing a driver
+     *
+     * A germline SID prevents the placement of a driver SID in position `d`,
+     * whose reference has length `L`, when either it begins in the interval
+     * `[d-1, d+L+1]` or it begins before and reaches position `d-1` (see
+     * `AlleleFragment::has_context_free()`).
+     *
+     * @param[in] driver is a driver SID whose context is not free in the germline
+     * @return the error reporting the germline SIDs in the context of `driver`
+     */
+    Error<std::domain_error> germline_driver_conflict(const MutationSpec<SID>& driver) const
+    {
+        const auto ref_size = static_cast<ChrPosition>(driver.ref == "-" ? 0 : driver.ref.size());
+        const ChrPosition context_begin = (driver.position > 1 ? driver.position-1 : 1);
+        const ChrPosition context_end = driver.position + ref_size + 1;
+
+        std::ostringstream oss;
+        oss << "The driver mutation " << driver;
+        if (driver.cause != "") {
+            oss << " of mutant \"" << driver.cause << "\"";
+        }
+        oss << " cannot be placed because the germline mutations";
+
+        const auto& chr_mutations = germline_mutations->get_chromosome(driver.chr_id);
+        for (const auto& [allele_id, allele] : chr_mutations.get_alleles()) {
+            for (const auto& [g_position, germline_sid] : allele.get_mutations()) {
+                const auto& position = g_position.position;
+                const ChrPosition last = position + static_cast<ChrPosition>(germline_sid->ref.size());
+
+                if ((position >= context_begin && position <= context_end)
+                        || (position < context_begin && last >= driver.position)) {
+                    oss << " " << *germline_sid << " (allele " << allele_id << ")";
+                }
+            }
+        }
+        oss << " lay in its context.";
+
+        return Error<std::domain_error>(oss.str());
     }
 
     /**
