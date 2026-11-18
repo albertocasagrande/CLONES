@@ -37,7 +37,8 @@ if(${Boost_unit_test_framework_FOUND})
 
     set(TEST_LIBRARIES ${Boost_LIBRARIES} ${BUILD_LIB_TARGET} Threads::Threads)
 
-    set(CLONES_TESTS archive fasta_reader context_index genome_mutations bucket index tissue_simulation union_map_proxy distributions)
+    set(CLONES_TESTS archive fasta_reader context_index genome_mutations bucket
+                     index tissue_simulation union_map_proxy distributions rs_index)
 
     foreach(TEST ${CLONES_TESTS})
         add_executable( test_${TEST} ${TEST}.cpp test_common.cpp)
@@ -51,6 +52,7 @@ if(${Boost_unit_test_framework_FOUND})
     							                        FASTA_INDEX_ERR="${ASSET_DIR}/fasta_test_index_err.fasta")
     target_compile_definitions(test_context_index PUBLIC FASTA_FILE="${ASSET_DIR}/context_index_test.fasta")
     target_compile_definitions(test_genome_mutations PUBLIC FASTA_FILE="${ASSET_DIR}/context_index_test.fasta")
+    target_compile_definitions(test_rs_index PUBLIC FASTA_FILE="${ASSET_DIR}/context_index_test.fasta")
 
     download_asset_and_add_test(sbs_signature "${ASSET_DIR}/v3.3_SBS3_PROFILE.txt"
                                 "https://cancer.sanger.ac.uk/signatures/documents/1944/v3.3_SBS3_PROFILE.txt"

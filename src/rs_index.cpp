@@ -2,8 +2,8 @@
  * @file rs_index.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements a class to compute the repeated substring index
- * @version 1.8
- * @date 2026-11-13
+ * @version 1.9
+ * @date 2026-11-18
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -186,7 +186,11 @@ void RSIndex::add_repetition(const char* s, const ChromosomeId& chr_id,
                              std::vector<bool>& covered)
 {
     const auto rep_begin = r_begin+begin;
-    if (rep_begin>1) {
+
+    // indels are anchored on the base preceding the repetition: it must
+    // belong to the current fragment, which contains no unknown base (N).
+    // Otherwise, the anchor would be either an N or outside the chromosome.
+    if (r_begin>0) {
         auto num_of_repetitions = 1+(r_end-r_begin)/unit_size;
         add_polymer(chr_id, rep_begin, static_cast<RepetitionType>(num_of_repetitions),
                     s+r_begin, unit_size, *(s+r_begin-1));
@@ -625,8 +629,12 @@ RSIndex RSIndex::build_index(const std::filesystem::path& genome_fasta,
 
     const auto streamsize = chr_reader.get_stream_size();
 
+    // `progress_bar` may be `nullptr`: in such a case, use a hidden one
+    UI::ProgressBar hidden_bar(std::cout, true);
+    UI::ProgressBar& reader_bar = (progress_bar != nullptr ? *progress_bar : hidden_bar);
+
     ChromosomeData<Sequence> chr;
-    while (chr_reader.read(chr, *progress_bar)) {
+    while (chr_reader.read(chr, reader_bar)) {
         if (progress_bar != nullptr) {
             progress_bar->set_progress(static_cast<uint8_t>(100*chr_reader.get_position()/streamsize),
                                         "Processing chr. " + GenomicPosition::chrtos(chr.chr_id));
