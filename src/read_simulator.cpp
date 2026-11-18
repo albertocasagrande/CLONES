@@ -2,7 +2,7 @@
  * @file read_simulator.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements classes to simulate sequencing
- * @version 1.14
+ * @version 1.15
  * @date 2026-11-18
  *
  * @copyright Copyright (c) 2023-2026
@@ -101,7 +101,8 @@ ChrCoverage::ChrCoverage(const ChromosomeId& chromosome_id, const GenomicRegion:
 
 void ChrCoverage::increase_coverage(const ChrPosition& begin_pos, const size_t& read_size)
 {
-    if (begin_pos+read_size-2 > coverage.size()) {
+    // positions are 1-based: the last covered position is begin_pos+read_size-1
+    if (begin_pos == 0 || begin_pos+read_size-1 > coverage.size()) {
         using namespace CLONES::Mutants;
 
         throw Error<std::runtime_error>("The chromosome " + GenomicPosition::chrtos(chr_id)

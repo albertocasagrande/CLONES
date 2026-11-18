@@ -2,7 +2,7 @@
  * @file read_simulator.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Testing read simulator statistics
- * @version 1.0
+ * @version 1.1
  * @date 2026-11-18
  *
  * @copyright Copyright (c) 2023-2026
@@ -32,10 +32,13 @@
 #define BOOST_TEST_MODULE read_simulator
 
 #include <vector>
+#include <string>
+#include <memory>
 
 #include <boost/test/unit_test.hpp>
 
 #include "read_simulator.hpp"
+#include "genome_fragment.hpp"
 
 #include "error.hpp"
 
@@ -83,4 +86,29 @@ BOOST_AUTO_TEST_CASE(chr_statistics_merge)
     // the occurrences of the common SID are summed
     BOOST_CHECK_EQUAL(data.at(build_SNV(100)).num_of_occurrences, 2);
     BOOST_CHECK_EQUAL(data.at(build_SNV(50)).num_of_occurrences, 1);
+}
+
+BOOST_AUTO_TEST_CASE(genome_fragment_at_chromosome_end)
+{
+    using namespace CLONES;
+    using namespace CLONES::Mutations;
+
+    // positions:                1234567890
+    const std::string reference("ACGTACGTAC");
+
+    // a deletion of the positions 6-8 anchored on position 5
+    CLONES::map<GenomicPosition, std::shared_ptr<SID>> germline, somatic;
+    somatic.emplace(GenomicPosition(1, 5),
+                    std::make_shared<SID>(1, 5, "ACGT", "A", Mutation::PASSENGER));
+
+    // a 6-base fragment beginning in position 3 would require the
+    // reference base in position 11, which does not exist
+    const GenomeFragment fragment(reference, germline, somatic, GenomicPosition(1, 3), 6);
+
+    // the fragment is truncated at the reference end
+    BOOST_CHECK_EQUAL(fragment.get_sequence(), "GTAAC");
+
+    const auto covered = fragment.get_covered_reference_region();
+    BOOST_CHECK_EQUAL(covered.begin(), 3);
+    BOOST_CHECK_EQUAL(covered.end(), 10);
 }

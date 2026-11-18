@@ -2,8 +2,8 @@
  * @file genome_fragment.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements genome DNA fragments
- * @version 1.5
- * @date 2026-09-24
+ * @version 1.6
+ * @date 2026-11-18
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -161,8 +161,10 @@ void GenomeFragment::copy_reference(const std::string& reference,
                                      const size_t up_to_index,
                                      size_t& mutated_pos, size_t& reference_pos)
 {
-    for (; reference_pos <= up_to_index && mutated_pos < nucleotides.size();
-            ++reference_pos,++mutated_pos) {
+    // stop at the reference end: deletions may make a fragment require
+    // reference bases beyond the end of the chromosome
+    for (; reference_pos <= up_to_index && reference_pos <= reference.size()
+            && mutated_pos < nucleotides.size(); ++reference_pos,++mutated_pos) {
         nucleotides[mutated_pos] = reference[reference_pos-1];
         alignment_index.push_back(alignment.size());
         if (nucleotides[mutated_pos]=='N') {
@@ -180,7 +182,7 @@ size_t get_common_prefix_size(const std::string& a, const std::string& b)
     auto a_it = a.begin();
     auto b_it = b.begin();
 
-    for (size_t i=0; i < max_size; ++i) {
+    for (size_t i=0; i < max_size; ++i, ++a_it, ++b_it) {
         if (*a_it != *b_it) {
             return i;
         }
