@@ -2,8 +2,8 @@
  * @file rs_index.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a class to compute the repeated substring index
- * @version 1.8
- * @date 2026-09-24
+ * @version 1.9
+ * @date 2026-11-18
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -313,6 +313,39 @@ struct RSIndex
 
     size_t max_unit_size;           //!< The maximum considered size of the repetition unit
     size_t max_stored_repetitions;  //!< The maximum number of stored repetitions
+
+    /**
+     * @brief The regions to avoid during the index construction
+     *
+     * For each chromosome, this map associates the first position of
+     * each region to avoid to its last position. The regions are
+     * merged, so they do not overlap. This map is not saved.
+     */
+    std::map<ChromosomeId, std::map<ChrPosition, ChrPosition>> regions_to_avoid;
+
+    /**
+     * @brief Set the regions to avoid during the index construction
+     *
+     * @param[in] regions is a set of genomic regions
+     */
+    void set_regions_to_avoid(const CLONES::set<GenomicRegion>& regions);
+
+    /**
+     * @brief Check whether the indels of a repetition may affect a region to avoid
+     *
+     * The indels of a repetition affect the positions from the base preceding
+     * the repetition, which anchors the indels, to the repetition end.
+     *
+     * @param[in] chr_id is the chromosome of the repetition
+     * @param[in] begin is the first position of the repetition
+     * @param[in] num_of_repetitions is the number of repetitions of the unit
+     * @param[in] unit_size is the size of the repetition unit
+     * @return `true` if and only if the anchor or the repetition overlap
+     *      a region to avoid
+     */
+    bool affects_regions_to_avoid(const ChromosomeId& chr_id, const ChrPosition& begin,
+                                  const size_t num_of_repetitions,
+                                  const size_t unit_size) const;
 
     /**
      * @brief Initialize the suffix array vector

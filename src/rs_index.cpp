@@ -2,7 +2,7 @@
  * @file rs_index.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements a class to compute the repeated substring index
- * @version 1.9
+ * @version 1.10
  * @date 2026-11-18
  *
  * @copyright Copyright (c) 2023-2026
@@ -29,6 +29,10 @@
  */
 
 #include <cstdint>
+#include <algorithm>
+#include <map>
+#include <vector>
+#include <utility>
 
 #include "rs_index.hpp"
 
@@ -144,6 +148,63 @@ void RSIndex::update_suffix_array(const size_t h,
     std::swap(h_classes, new_classes);
 }
 
+void RSIndex::set_regions_to_avoid(const CLONES::set<GenomicRegion>& regions)
+{
+    regions_to_avoid.clear();
+
+    // sort the regions of each chromosome by initial position...
+    std::map<ChromosomeId, std::vector<std::pair<ChrPosition, ChrPosition>>> intervals;
+    for (const auto& region : regions) {
+        intervals[region.get_chromosome_id()].emplace_back(region.begin(), region.end());
+    }
+
+    // ...and merge the overlapping or adjacent ones
+    for (auto& [chr_id, chr_intervals] : intervals) {
+        std::sort(chr_intervals.begin(), chr_intervals.end());
+
+        auto& chr_regions = regions_to_avoid[chr_id];
+        for (const auto& [begin, end] : chr_intervals) {
+            if (!chr_regions.empty()) {
+                auto& last_end = chr_regions.rbegin()->second;
+
+                if (begin <= last_end+1) {
+                    last_end = std::max(last_end, end);
+
+                    continue;
+                }
+            }
+
+            chr_regions.emplace(begin, end);
+        }
+    }
+}
+
+bool RSIndex::affects_regions_to_avoid(const ChromosomeId& chr_id, const ChrPosition& begin,
+                                       const size_t num_of_repetitions,
+                                       const size_t unit_size) const
+{
+    const auto chr_it = regions_to_avoid.find(chr_id);
+    if (chr_it == regions_to_avoid.end()) {
+        return false;
+    }
+
+    // from the anchor to the repetition end; null repetitions affect the
+    // anchor and the following position
+    const ChrPosition first = (begin>1 ? begin-1 : begin);
+    const ChrPosition last = begin + static_cast<ChrPosition>(std::max(num_of_repetitions*unit_size,
+                                                                       static_cast<size_t>(1))) - 1;
+
+    // the last region beginning not after `last` is the only candidate
+    const auto& chr_regions = chr_it->second;
+    auto region_it = chr_regions.upper_bound(last);
+    if (region_it == chr_regions.begin()) {
+        return false;
+    }
+    --region_it;
+
+    return region_it->second >= first;
+}
+
 bool RSIndex::add(RepetitionMap& r_map, const ChromosomeId& chr_id,
                   const ChrPosition& begin,
                   const uint8_t index,
@@ -151,6 +212,10 @@ bool RSIndex::add(RepetitionMap& r_map, const ChromosomeId& chr_id,
                   const char*& unit, const uint8_t& unit_size,
                   const char& previous_base)
 {
+    if (affects_regions_to_avoid(chr_id, begin, num_of_repetitions, unit_size)) {
+        return false;
+    }
+
     auto r_it = r_map.find(index);
 
     if (r_it == r_map.end()) {
@@ -231,6 +296,11 @@ void RSIndex::add_null_heteropolymer(const char* s, const ChromosomeId& chr_id,
                                      const ChrPosition& r_begin)
 {
     const auto rep_begin = r_begin+begin+1;
+
+    if (affects_regions_to_avoid(chr_id, rep_begin, 0, unit_size)) {
+        return;
+    }
+
     auto& r_storage = (*hetero_map)[unit_size][0];
 
     if (r_storage.total_number < max_stored_repetitions) {
@@ -617,13 +687,12 @@ RSIndex RSIndex::build_index(const std::filesystem::path& genome_fasta,
                              const size_t max_stored_repetitions,
                              const int seed, UI::ProgressBar* progress_bar)
 {
-    if (regions_to_avoid.size()>0) {
-        throw Error<std::domain_error>("The `region_to_avoid` parameter is not supported yet.");
-    }
-
     using namespace IO::FASTA;
 
     RSIndex rs_index(max_unit_size, max_stored_repetitions, seed);
+
+    // no stored repetition, nor its anchor, overlaps these regions
+    rs_index.set_regions_to_avoid(regions_to_avoid);
 
     Reader<ChromosomeData<Sequence>> chr_reader(genome_fasta);
 

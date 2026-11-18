@@ -2,7 +2,7 @@
  * @file rs_index.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Testing CLONES::Mutations::RSIndex class
- * @version 1.0
+ * @version 1.1
  * @date 2026-11-18
  *
  * @copyright Copyright (c) 2023-2026
@@ -35,6 +35,10 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <set>
+#include <tuple>
+#include <algorithm>
+#include <iterator>
 
 #include <boost/test/unit_test.hpp>
 
@@ -122,4 +126,92 @@ BOOST_AUTO_TEST_CASE(indel_anchors_match_the_reference)
     }
 
     BOOST_CHECK_GT(num_of_repetitions, 0);
+}
+
+// an indel-affected span: the type name, the chromosome, and the
+// first and the last positions from the anchor to the repetition end
+struct RepetitionSpan
+{
+    std::string type;
+    CLONES::Mutations::ChromosomeId chr_id;
+    CLONES::Mutations::ChrPosition first;
+    CLONES::Mutations::ChrPosition last;
+
+    bool operator<(const RepetitionSpan& other) const
+    {
+        return std::tie(type, chr_id, first, last)
+                < std::tie(other.type, other.chr_id, other.first, other.last);
+    }
+
+    bool operator==(const RepetitionSpan& other) const
+    {
+        return std::tie(type, chr_id, first, last)
+                == std::tie(other.type, other.chr_id, other.first, other.last);
+    }
+};
+
+std::set<RepetitionSpan> collect_spans(CLONES::Mutations::RSIndex& index)
+{
+    using namespace CLONES::Mutations;
+
+    std::set<RepetitionSpan> spans;
+    for (const auto& name : get_COSMIC_ID_type_names()) {
+        const IDType type(name);
+
+        while (index.count_available_for(type) > 0) {
+            const auto repetition = index.select(type, true);
+            const auto& begin = repetition.g_position.position;
+            const size_t length = std::max(static_cast<size_t>(repetition.num_of_repetitions)
+                                                *repetition.unit.size(),
+                                           static_cast<size_t>(1));
+
+            spans.insert({name, repetition.g_position.chr_id, begin-1,
+                          static_cast<ChrPosition>(begin+length-1)});
+        }
+    }
+
+    return spans;
+}
+
+BOOST_AUTO_TEST_CASE(regions_to_avoid)
+{
+    using namespace CLONES::Mutations;
+
+    auto all_index = RSIndex::build_index(FASTA_FILE, 50, 1000000, 0);
+    const auto all_spans = collect_spans(all_index);
+    BOOST_REQUIRE_GT(all_spans.size(), 10);
+
+    // avoid three single bases and a longer region taken from repetitions
+    CLONES::set<GenomicRegion> regions;
+    auto span_it = all_spans.begin();
+    for (size_t i=0; i<3; ++i, std::advance(span_it, all_spans.size()/4)) {
+        regions.emplace(GenomicPosition(span_it->chr_id, span_it->last), 1);
+    }
+    regions.emplace(GenomicPosition(span_it->chr_id, span_it->first), 10);
+
+    auto overlaps = [&regions](const RepetitionSpan& span) {
+        for (const auto& region : regions) {
+            if (region.get_chromosome_id() == span.chr_id
+                    && region.begin() <= span.last && span.first <= region.end()) {
+                return true;
+            }
+        }
+
+        return false;
+    };
+
+    std::set<RepetitionSpan> expected;
+    for (const auto& span : all_spans) {
+        if (!overlaps(span)) {
+            expected.insert(span);
+        }
+    }
+    BOOST_REQUIRE_LT(expected.size(), all_spans.size());
+
+    RSIndex index;
+    BOOST_REQUIRE_NO_THROW(index = RSIndex::build_index(FASTA_FILE, regions, 50, 1000000, 0));
+
+    // exactly the repetitions not affecting the regions to avoid are stored
+    const auto spans = collect_spans(index);
+    BOOST_CHECK(spans == expected);
 }
