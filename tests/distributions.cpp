@@ -2,8 +2,8 @@
  * @file distributions.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Testing distribution functions and classes
- * @version 1.0
- * @date 2026-11-16
+ * @version 1.1
+ * @date 2026-11-19
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -157,6 +157,71 @@ BOOST_AUTO_TEST_CASE(left_truncated_normal_sampling)
             BOOST_CHECK_CLOSE(sample_stddev, stddev, 1.0);
         }
     }
+}
+
+BOOST_AUTO_TEST_CASE(left_truncated_normal_mean)
+{
+    using namespace CLONES;
+
+    for (const auto& [mean, stddev] : feasible_cases) {
+        const auto fitted = fit_left_truncated_normal(mean, stddev, cut);
+        const left_truncated_normal_distribution<double> dist(fitted, cut);
+
+        BOOST_TEST_CONTEXT("aimed " << mean << "±" << stddev) {
+            BOOST_CHECK_CLOSE(dist.mean(), mean, 0.1);
+        }
+    }
+
+    // standardized cuts around the switch to the asymptotic expansion
+    for (const double alpha : {-5.0, 0.0, 5.0, 29.0, 31.0, 50.0}) {
+        const left_truncated_normal_distribution<double> dist(0, 1, alpha);
+        const double expected = (alpha > 30 ? alpha + 1/alpha
+                                 : truncated_moments(0, 1, alpha).mean);
+
+        BOOST_TEST_CONTEXT("alpha " << alpha) {
+            BOOST_CHECK_CLOSE(dist.mean(), expected, 1e-3);
+            BOOST_CHECK_GT(dist.mean(), alpha);
+        }
+    }
+
+    // degenerate distributions always return mu
+    BOOST_CHECK_EQUAL(left_truncated_normal_distribution<double>(300, 0, cut).mean(), 300);
+}
+
+BOOST_AUTO_TEST_CASE(left_truncated_normal_stddev)
+{
+    using namespace CLONES;
+
+    for (const auto& [mean, stddev] : feasible_cases) {
+        const auto fitted = fit_left_truncated_normal(mean, stddev, cut);
+        const left_truncated_normal_distribution<double> dist(fitted, cut);
+
+        BOOST_TEST_CONTEXT("aimed " << mean << "±" << stddev) {
+            BOOST_CHECK_CLOSE(dist.stddev(), stddev, 0.1);
+        }
+    }
+
+    // standardized cuts around the switch to the asymptotic expansion: for
+    // large alpha, the truncated distribution resembles Exp(alpha)
+    for (const double alpha : {-5.0, 0.0, 5.0, 29.0, 31.0, 50.0}) {
+        const left_truncated_normal_distribution<double> dist(0, 1, alpha);
+        const double expected = (alpha > 30 ? 1/alpha
+                                 : truncated_moments(0, 1, alpha).stddev);
+
+        BOOST_TEST_CONTEXT("alpha " << alpha) {
+            BOOST_CHECK_CLOSE(dist.stddev(), expected, (alpha > 30 ? 1.0 : 1e-3));
+            BOOST_CHECK_GT(dist.stddev(), 0);
+            BOOST_CHECK_LT(dist.stddev(), 1);
+        }
+    }
+
+    // the expansions agree with the exact formulas at the switch
+    const left_truncated_normal_distribution<double> below(0, 1, 30), above(0, 1, 30.0001);
+    BOOST_CHECK_CLOSE(below.stddev(), above.stddev(), 1e-2);
+    BOOST_CHECK_CLOSE(below.mean(), above.mean(), 1e-3);
+
+    // degenerate distributions always return mu
+    BOOST_CHECK_EQUAL(left_truncated_normal_distribution<double>(300, 0, cut).stddev(), 0);
 }
 
 BOOST_AUTO_TEST_CASE(left_truncated_normal_degenerate_sampling)

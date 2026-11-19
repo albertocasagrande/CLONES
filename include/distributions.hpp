@@ -2,8 +2,8 @@
  * @file distributions.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines functions about probability distributions
- * @version 1.1
- * @date 2026-11-16
+ * @version 1.2
+ * @date 2026-11-19
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -319,9 +319,10 @@ public:
     /**
      * @brief Get the mean of the non-truncated normal distribution
      *
-     * @return the mean of the non-truncated normal distribution
+     * @return a constant reference to the mean of the non-truncated
+     *    normal distribution
      */
-    inline T get_mu() const
+    inline const T& get_mu() const
     {
         return mu;
     }
@@ -329,9 +330,10 @@ public:
     /**
      * @brief Get the standard deviation of the non-truncated normal distribution
      *
-     * @return the standard deviation of the non-truncated normal distribution
+     * @return a constant reference to the standard deviation of the non-truncated
+     *    normal distribution
      */
-    inline T get_sigma() const
+    inline const T& get_sigma() const
     {
         return sigma;
     }
@@ -339,11 +341,83 @@ public:
     /**
      * @brief Get the truncation value
      *
-     * @return the truncation value
+     * @return a constant reference to the truncation value
      */
-    inline T get_cut() const
+    inline const T& get_cut() const
     {
         return cut;
+    }
+
+    /**
+     * @brief Get the mean of the left-truncated distribution
+     *
+     * The mean is \f$ \mu + \sigma\lambda(\alpha) \f$, where
+     * \f$ \lambda(\alpha) = \varphi(\alpha) / (1 - \Phi(\alpha)) \f$ is the
+     * inverse Mills ratio of the standardized cut \f$ \alpha \f$.
+     *
+     * @return the mean of the values sampled by the distribution
+     */
+    T mean() const
+    {
+        if (sigma == 0) {
+            return mu;
+        }
+
+        return mu + sigma * inverse_mills_ratio();
+    }
+
+    /**
+     * @brief Get the standard deviation of the left-truncated distribution
+     *
+     * The standard deviation is
+     * \f$ \sigma\sqrt{1 - \lambda(\alpha)(\lambda(\alpha) - \alpha)} \f$, where
+     * \f$ \lambda(\alpha) = \varphi(\alpha) / (1 - \Phi(\alpha)) \f$ is the
+     * inverse Mills ratio of the standardized cut \f$ \alpha \f$.
+     *
+     * @return the standard deviation of the values sampled by the distribution
+     */
+    T stddev() const
+    {
+        if (sigma == 0) {
+            return 0;
+        }
+
+        // for large alpha, 1 - lambda * (lambda - alpha) suffers from
+        // cancellation: use its asymptotic expansion
+        // 1/alpha^2 - 6/alpha^4 + 50/alpha^6
+        if (alpha > asymptotic_alpha) {
+            const T u2 = 1 / (alpha * alpha);
+
+            return sigma * std::sqrt(u2 * (1 - u2 * (6 - 50 * u2)));
+        }
+
+        const T lambda_a = inverse_mills_ratio();
+
+        // the variance ratio lies in (0, 1): max() guards against rounding errors
+        return sigma * std::sqrt(std::max(T(0), 1 - lambda_a * (lambda_a - alpha)));
+    }
+
+private:
+    //! The standardized cut above which asymptotic expansions are used
+    static constexpr T asymptotic_alpha = 30;
+
+    /**
+     * @brief Compute the inverse Mills ratio of the standardized cut
+     *
+     * @return \f$ \lambda(\alpha) = \varphi(\alpha) / (1 - \Phi(\alpha)) \f$
+     */
+    T inverse_mills_ratio() const
+    {
+        // for large alpha, phi(alpha) and 1 - Phi(alpha) underflow: use the
+        // asymptotic expansion alpha + 1/alpha - 2/alpha^3
+        if (alpha > asymptotic_alpha) {
+            return alpha + 1 / alpha - 2 / (alpha * alpha * alpha);
+        }
+
+        // erfc avoids the cancellation of 1 - norm_cdf(alpha) for large alpha
+        const T tail = std::erfc(alpha / std::sqrt(T(2))) / 2;
+
+        return norm_pdf(alpha) / tail;
     }
 };
 
