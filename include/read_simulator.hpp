@@ -2,7 +2,7 @@
  * @file read_simulator.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines classes to simulate sequencing
- * @version 1.38
+ * @version 1.39
  * @date 2026-11-19
  *
  * @copyright Copyright (c) 2023-2026
@@ -2126,9 +2126,11 @@ private:
 
         try {
             const auto cut = static_cast<double>(read_size);
-            const auto fitted = fit_left_truncated_normal(insert_size_distribution.mean(),
-                                                          insert_size_distribution.stddev(),
-                                                          cut);
+            using dist_type = left_truncated_normal_distribution<double>;
+
+            const auto fitted = dist_type::fit_untruncated(insert_size_distribution.mean(),
+                                                           insert_size_distribution.stddev(),
+                                                           cut);
 
             insert_size_dist = left_truncated_normal_distribution<double>(fitted, cut);
         } catch (std::invalid_argument& e) {

@@ -2,8 +2,8 @@
  * @file mutations_sim.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Main file for the CLONES mutations simulator
- * @version 1.14
- * @date 2026-11-17
+ * @version 1.15
+ * @date 2026-11-19
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -764,8 +764,10 @@ class MutationsSimulator : public BasicExecutable
             // check the insert size distribution feasibility before the
             // (possibly long) mutation placement
             try {
-                CLONES::fit_left_truncated_normal(insert_size_mean, insert_size_stddev,
-                                                  static_cast<double>(read_size));
+                using dist_type = CLONES::left_truncated_normal_distribution<double>;
+    
+                dist_type::fit_untruncated(insert_size_mean, insert_size_stddev,
+                                           static_cast<double>(read_size));
             } catch (const std::exception& e) {
                 print_help_and_exit("Invalid insert size distribution for read size "
                                     + std::to_string(read_size) + ": " + e.what(), 1);

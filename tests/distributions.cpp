@@ -2,7 +2,7 @@
  * @file distributions.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Testing distribution functions and classes
- * @version 1.1
+ * @version 1.2
  * @date 2026-11-19
  *
  * @copyright Copyright (c) 2023-2026
@@ -74,8 +74,10 @@ BOOST_AUTO_TEST_CASE(fit_left_truncated_normal_moments)
 {
     using namespace CLONES;
 
+    using dist_type = left_truncated_normal_distribution<decltype(MeanStddev::mean)>;
+
     for (const auto& [mean, stddev] : feasible_cases) {
-        const auto normal = fit_left_truncated_normal(mean, stddev, cut);
+        const auto normal = dist_type::fit_untruncated(mean, stddev, cut);
         const auto moments = truncated_moments(normal.mean(), normal.stddev(), cut);
 
         BOOST_TEST_CONTEXT("aimed " << mean << "±" << stddev) {
@@ -85,12 +87,38 @@ BOOST_AUTO_TEST_CASE(fit_left_truncated_normal_moments)
     }
 }
 
+BOOST_AUTO_TEST_CASE(fit_left_truncated_normal_close_to_limit)
+{
+    using namespace CLONES;
+
+    // stddev close to mean - cut: the standardized cut of the fitted
+    // distribution is large
+    const std::vector<MeanStddev> cases{{200, 49.9}, {200, 49.999}, {300, 149.9},
+                                        {3000, 2849}, {1150, 1000 * (1 - 1e-8)},
+                                        {1150, 1000 * (1 - 1e-12)}};
+
+    for (const auto& [mean, stddev] : cases) {
+        using dist_type = left_truncated_normal_distribution<decltype(MeanStddev::mean)>;
+
+        const auto fitted = dist_type::fit_untruncated(mean, stddev, cut);
+        const left_truncated_normal_distribution<double> dist(fitted, cut);
+
+        BOOST_TEST_CONTEXT("aimed " << mean << "±" << stddev) {
+            BOOST_CHECK_GT(fitted.stddev(), 0);
+            BOOST_CHECK_CLOSE(dist.mean(), mean, 1e-8);
+            BOOST_CHECK_CLOSE(dist.stddev(), stddev, 1e-8);
+        }
+    }
+}
+
 BOOST_AUTO_TEST_CASE(fit_left_truncated_normal_degenerate)
 {
     using namespace CLONES;
 
     for (const double mean : {150.0, 300.0}) {
-        const auto normal = fit_left_truncated_normal(mean, 0.0, cut);
+        using dist_type = left_truncated_normal_distribution<double>;
+        
+        const auto normal = dist_type::fit_untruncated(mean, 0.0, cut);
 
         BOOST_CHECK_EQUAL(normal.mean(), mean);
         BOOST_CHECK_EQUAL(normal.stddev(), 0);
@@ -101,16 +129,24 @@ BOOST_AUTO_TEST_CASE(fit_left_truncated_normal_infeasible)
 {
     using namespace CLONES;
 
+    using dist_type = left_truncated_normal_distribution<double>;
+
     // stddev not smaller than mean - cut
-    BOOST_CHECK_THROW(fit_left_truncated_normal(200.0, 50.0, cut), std::invalid_argument);
-    BOOST_CHECK_THROW(fit_left_truncated_normal(200.0, 60.0, cut), std::invalid_argument);
+    BOOST_CHECK_THROW(dist_type::fit_untruncated(200.0, 50.0, cut), std::invalid_argument);
+    BOOST_CHECK_THROW(dist_type::fit_untruncated(200.0, 60.0, cut), std::invalid_argument);
+
+    // stddev too close to mean - cut to be fitted
+    BOOST_CHECK_THROW(dist_type::fit_untruncated(200.0, std::nextafter(50.0, 0.0), cut),
+                      std::invalid_argument);
+    BOOST_CHECK_THROW(dist_type::fit_untruncated(1150.0, 1000 * (1 - 1e-15), cut),
+                      std::invalid_argument);
 
     // mean smaller than the cut, or equal to it with non-null stddev
-    BOOST_CHECK_THROW(fit_left_truncated_normal(100.0, 10.0, cut), std::invalid_argument);
-    BOOST_CHECK_THROW(fit_left_truncated_normal(150.0, 10.0, cut), std::invalid_argument);
+    BOOST_CHECK_THROW(dist_type::fit_untruncated(100.0, 10.0, cut), std::invalid_argument);
+    BOOST_CHECK_THROW(dist_type::fit_untruncated(150.0, 10.0, cut), std::invalid_argument);
 
     // negative stddev
-    BOOST_CHECK_THROW(fit_left_truncated_normal(300.0, -10.0, cut), std::invalid_argument);
+    BOOST_CHECK_THROW(dist_type::fit_untruncated(300.0, -10.0, cut), std::invalid_argument);
 }
 
 BOOST_AUTO_TEST_CASE(left_truncated_normal_creation)
@@ -135,7 +171,9 @@ BOOST_AUTO_TEST_CASE(left_truncated_normal_sampling)
     std::mt19937_64 generator(0);
 
     for (const auto& [mean, stddev] : feasible_cases) {
-        const auto fitted = fit_left_truncated_normal(mean, stddev, cut);
+        using dist_type = left_truncated_normal_distribution<double>;
+
+        const auto fitted = dist_type::fit_untruncated(mean, stddev, cut);
         const left_truncated_normal_distribution<double> dist(fitted, cut);
 
         double sum{0}, sum_sq{0}, min_value{std::numeric_limits<double>::max()};
@@ -164,7 +202,9 @@ BOOST_AUTO_TEST_CASE(left_truncated_normal_mean)
     using namespace CLONES;
 
     for (const auto& [mean, stddev] : feasible_cases) {
-        const auto fitted = fit_left_truncated_normal(mean, stddev, cut);
+        using dist_type = left_truncated_normal_distribution<double>;
+
+        const auto fitted = dist_type::fit_untruncated(mean, stddev, cut);
         const left_truncated_normal_distribution<double> dist(fitted, cut);
 
         BOOST_TEST_CONTEXT("aimed " << mean << "±" << stddev) {
@@ -172,10 +212,11 @@ BOOST_AUTO_TEST_CASE(left_truncated_normal_mean)
         }
     }
 
-    // standardized cuts around the switch to the asymptotic expansion
-    for (const double alpha : {-5.0, 0.0, 5.0, 29.0, 31.0, 50.0}) {
+    // standardized cuts around the switch to the continued fraction (3) and
+    // beyond the underflow of the exact formula (about 37)
+    for (const double alpha : {-5.0, 0.0, 2.9, 3.1, 5.0, 29.0, 31.0, 50.0, 1e4}) {
         const left_truncated_normal_distribution<double> dist(0, 1, alpha);
-        const double expected = (alpha > 30 ? alpha + 1/alpha
+        const double expected = (alpha > 31 ? alpha + 1/alpha - 2/(alpha*alpha*alpha)
                                  : truncated_moments(0, 1, alpha).mean);
 
         BOOST_TEST_CONTEXT("alpha " << alpha) {
@@ -193,7 +234,9 @@ BOOST_AUTO_TEST_CASE(left_truncated_normal_stddev)
     using namespace CLONES;
 
     for (const auto& [mean, stddev] : feasible_cases) {
-        const auto fitted = fit_left_truncated_normal(mean, stddev, cut);
+        using dist_type = left_truncated_normal_distribution<double>;
+
+        const auto fitted = dist_type::fit_untruncated(mean, stddev, cut);
         const left_truncated_normal_distribution<double> dist(fitted, cut);
 
         BOOST_TEST_CONTEXT("aimed " << mean << "±" << stddev) {
@@ -201,24 +244,27 @@ BOOST_AUTO_TEST_CASE(left_truncated_normal_stddev)
         }
     }
 
-    // standardized cuts around the switch to the asymptotic expansion: for
-    // large alpha, the truncated distribution resembles Exp(alpha)
-    for (const double alpha : {-5.0, 0.0, 5.0, 29.0, 31.0, 50.0}) {
+    // standardized cuts around the switch to the continued fraction (3) and
+    // beyond the underflow of the exact formula (about 37): for large alpha,
+    // the standard deviation is about (1 - 3/alpha^2)/alpha
+    for (const double alpha : {-5.0, 0.0, 2.9, 3.1, 5.0, 29.0, 31.0, 50.0, 1e4}) {
         const left_truncated_normal_distribution<double> dist(0, 1, alpha);
-        const double expected = (alpha > 30 ? 1/alpha
+        const double expected = (alpha > 31 ? (1 - 3/(alpha*alpha))/alpha
                                  : truncated_moments(0, 1, alpha).stddev);
 
         BOOST_TEST_CONTEXT("alpha " << alpha) {
-            BOOST_CHECK_CLOSE(dist.stddev(), expected, (alpha > 30 ? 1.0 : 1e-3));
+            BOOST_CHECK_CLOSE(dist.stddev(), expected, 1e-3);
             BOOST_CHECK_GT(dist.stddev(), 0);
             BOOST_CHECK_LT(dist.stddev(), 1);
         }
     }
 
-    // the expansions agree with the exact formulas at the switch
-    const left_truncated_normal_distribution<double> below(0, 1, 30), above(0, 1, 30.0001);
-    BOOST_CHECK_CLOSE(below.stddev(), above.stddev(), 1e-2);
-    BOOST_CHECK_CLOSE(below.mean(), above.mean(), 1e-3);
+    // the continued fraction agrees with the exact formula at the switch
+    const double switch_alpha = 3;
+    const left_truncated_normal_distribution<double> below(0, 1, std::nextafter(switch_alpha, 0.0)),
+                                                     above(0, 1, switch_alpha);
+    BOOST_CHECK_CLOSE(below.stddev(), above.stddev(), 1e-10);
+    BOOST_CHECK_CLOSE(below.mean(), above.mean(), 1e-10);
 
     // degenerate distributions always return mu
     BOOST_CHECK_EQUAL(left_truncated_normal_distribution<double>(300, 0, cut).stddev(), 0);

@@ -2,7 +2,7 @@
  * @file distributions.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines functions about probability distributions
- * @version 1.2
+ * @version 1.3
  * @date 2026-11-19
  *
  * @copyright Copyright (c) 2023-2026
@@ -31,6 +31,9 @@
 #ifndef __CLONES_DISTRIBUTIONS__
 #define __CLONES_DISTRIBUTIONS__
 
+#include <algorithm>
+#include <array>
+#include <cstddef>
 #include <cmath>
 #include <stdexcept>
 #include <random>
@@ -75,139 +78,6 @@ T norm_cdf(const T z)
 }
 
 /**
- * @brief Finds the normal distribution that, left-truncated at @p cut, has
- *        the given mean and standard deviation.
- *
- * Looks for the parameters \f$ \mu \f$ and \f$ \sigma \f$ of a normal
- * distribution such that the distribution obtained by left-truncating it at
- * @p cut has mean @p mean and standard deviation @p stddev.
- *
- * Letting \f$ \alpha = (cut - \mu)/\sigma \f$ and
- * \f$ \lambda(\alpha) = \varphi(\alpha) / (1 - \Phi(\alpha)) \f$
- * (the inverse Mills ratio), the function numerically solves for
- * \f$ \alpha \f$ the equation
- * \f[ \frac{\sqrt{1 - \lambda(\alpha)(\lambda(\alpha) - \alpha)}}
- *        {\lambda(\alpha) - \alpha} = \frac{aimed\_stddev}{aimed\_mean - cut} \f]
- * in the interval [-10, 8], and then derives
- * \f$ \sigma = (aimed\_mean - cut)/(\lambda(\alpha) - \alpha) \f$ and
- * \f$ \mu = cut - \alpha\sigma \f$.
- *
- * @tparam T floating-point type.
- * @param mean is desired mean of the truncated distribution.
- * @param stddev is desired standard deviation of the truncated distribution.
- * @param cut is left truncation value.
- * @return the (non-truncated) normal distribution with parameters
- *         \f$ \mu \f$ and \f$ \sigma \f$.
- * @throw std::invalid_argument if @p mean is not greater than @p cut.
- * @throw std::runtime_error if the root search fails.
- */
-template<typename T>
-std::normal_distribution<T>
-fit_left_truncated_normal(const T mean, const T stddev, const T cut)
-{
-    if (stddev < 0) {
-        throw CLONES::Error<std::invalid_argument>("The standard deviation "
-                                                   "must be non-negative.");
-    }
-
-    // A distribution left-truncated at cut only takes values greater than
-    // cut, so its mean must be greater than cut too
-    if (mean < cut || (mean == cut && stddev > 0)) {
-        throw CLONES::Error<std::invalid_argument>("The aimed mean must be "
-                                                   "greater than the cut or, "
-                                                   "when the standard deviation "
-                                                   "is null, equal it.");
-    }
-
-    // If the standard deviation is 0 and mean >= cut, then
-    // the aimed distribution is N(mean, 0)
-    if (stddev == 0) {
-        return std::normal_distribution<T>(mean, stddev);
-    }
-
-    // For X ~ N(mu, sigma^2) truncated to X > cut, with
-    // alpha = (cut - mu) / sigma and lambda = pdf(alpha) / (1 - cdf(alpha)):
-    //
-    //   E[X]   = mu + sigma * lambda      =>  E[X] - cut = sigma * (lambda - alpha)
-    //   Var[X] = sigma^2 * (1 - lambda * (lambda - alpha))
-    //
-    // Hence, the ratio stddev / (mean - cut) depends on alpha alone:
-    //
-    //   ratio(alpha) = sqrt(1 - lambda * (lambda - alpha)) / (lambda - alpha)
-    //
-    // ratio(alpha) increases from 0 (alpha -> -inf, almost no truncation) to
-    // 1 (alpha -> +inf, the tail looks exponential). So, alpha can be found
-    // as the only root of ratio(alpha) - target_ratio, provided that
-    // 0 < target_ratio < 1.
-    const T target_ratio = stddev / (mean - cut);
-
-    // ratio(alpha) < 1 for every alpha, so no root exists
-    if (target_ratio >= 1) {
-        throw CLONES::Error<std::invalid_argument>("The aimed standard deviation must be "
-                                                   "smaller than the difference between "
-                                                   "the aimed mean and the cut.");
-    }
-
-    // eq(alpha) = ratio(alpha) - target_ratio. The guards below deal with
-    // the loss of precision of 1 - norm_cdf(alpha) for large alpha.
-    auto eq = [target_ratio](const T& alpha) {
-        // outside of the search interval: never evaluated by the root finder
-        if (alpha > 8) {
-            return -target_ratio;
-        }
-
-        // the tail probability is negligible: return a positive value, since
-        // ratio(alpha) is close to 1 > target_ratio there
-        const auto denom_cdf = 1 - norm_cdf(alpha);
-        if (denom_cdf <= 1e-15) {
-            return static_cast<T>(1);
-        }
-
-        // lambda is the inverse Mills ratio; diff = (E[X] - cut) / sigma,
-        // which is positive in exact arithmetic
-        const auto lambda_a = norm_pdf(alpha) / denom_cdf;
-        const auto diff = lambda_a - alpha;
-
-        // avoid dividing by (almost) zero
-        if (std::abs(diff) < 1e-12) {
-            return static_cast<T>(1e12);
-        }
-
-        // term = Var[X] / sigma^2, which lies in (0, 1) in exact arithmetic;
-        // it can be negative only because of rounding errors
-        const auto term = 1 - lambda_a * diff;
-        if (term < 0) {
-            return -target_ratio;
-        }
-
-        return (std::sqrt(term) / diff) - target_ratio;
-    };
-
-    constexpr T alpha_min = -10;
-
-    // eq is increasing: if it is non-negative at alpha_min, the root lies below
-    // alpha_min, i.e., the cut is more than 10 sigma below mu and truncation is
-    // numerically irrelevant
-    if (eq(alpha_min)>=0) {
-        return std::normal_distribution<T>(mean, stddev);
-    }
-
-    // Numerically search for alpha in the safe interval [-10.0, 8.0]
-    const auto alpha = brent_root(eq, alpha_min, 8.0);
-
-    // Compute the final parameters: sigma from E[X] - cut = sigma * (lambda - alpha)
-    // and mu from the definition of alpha
-    const auto cdf = norm_cdf(alpha);
-    const auto pdf = norm_pdf(alpha);
-    const auto lambda_a = pdf / (1 - cdf);
-
-    const auto sigma = (mean - cut) / (lambda_a - alpha);
-    const auto mu = cut - alpha * sigma;
-
-    return std::normal_distribution(mu, sigma);
-}
-
-/**
  * @brief A left-truncated normal distribution
  *
  * This class samples \f$ X \sim N(\mu, \sigma^2) \f$ conditioned on
@@ -232,6 +102,96 @@ class left_truncated_normal_distribution
 
     T alpha;    //!< The standardized cut, i.e., \f$ (cut - \mu)/\sigma \f$
     T lambda;   //!< The optimal rate of the exponential proposal when \f$ \alpha \geq 0 \f$
+
+    //! The standardized cut from which the continued fractions are used
+    static constexpr T continued_fraction_alpha = 3;
+    
+    /**
+     * @brief Evaluates the continued fraction of the left-truncated standard
+     *        normal distribution.
+     *
+     * Computes the first three terms of the sequence
+     * \f$ T_n = \alpha + (n+1)/T_{n+1} \f$, whose limit satisfies
+     * \f$ \lambda(\alpha) - \alpha = 1/T_1 \f$, where \f$ \lambda(\alpha) \f$
+     * is the inverse Mills ratio. The continued fraction is truncated after
+     * 64 terms, which are enough to reach the double precision for
+     * \f$ \alpha \geq 3 \f$.
+     *
+     * @param alpha is the standardized cut. It must be positive.
+     * @return the array \f$ [T_1, T_2, T_3] \f$.
+     */
+    static std::array<T, 3> left_truncated_std_normal_cf(const T alpha)
+    {
+        constexpr size_t num_of_terms = 64;
+    
+        std::array<T, 3> terms;
+        T t = alpha;
+        for (size_t n = num_of_terms; n > 0; --n) {
+            t = alpha + static_cast<T>(n + 1) / t;
+            if (n <= terms.size()) {
+                terms[n - 1] = t;
+            }
+        }
+    
+        return terms;
+    }
+    
+    /**
+     * @brief Mean excess of the standard normal distribution left-truncated at
+     *        @p alpha.
+     *
+     * Computes \f$ E[Z - \alpha \mid Z \geq \alpha] = \lambda(\alpha) - \alpha \f$,
+     * where \f$ Z \sim N(0,1) \f$ and
+     * \f$ \lambda(\alpha) = \varphi(\alpha) / (1 - \Phi(\alpha)) \f$ is the
+     * inverse Mills ratio. For \f$ \alpha \geq 3 \f$, where computing
+     * \f$ \lambda(\alpha) - \alpha \f$ suffers from cancellation and
+     * \f$ \varphi(\alpha) \f$ eventually underflows, the continued fraction
+     * \f$ 1/(\alpha + 2/(\alpha + 3/(\alpha + \ldots))) \f$ is used.
+     *
+     * @param alpha is the standardized cut.
+     * @return the mean excess \f$ \lambda(\alpha) - \alpha \f$, which is positive.
+     */
+    static T left_truncated_std_normal_excess(const T alpha)
+    {
+        if (alpha >= continued_fraction_alpha) {
+            return 1 / left_truncated_std_normal_cf(alpha)[0];
+        }
+    
+        // erfc avoids the cancellation of 1 - norm_cdf(alpha)
+        const T tail = std::erfc(alpha / std::sqrt(T(2))) / 2;
+    
+        return norm_pdf(alpha) / tail - alpha;
+    }
+    
+    /**
+     * @brief Variance of the standard normal distribution left-truncated at
+     *        @p alpha.
+     *
+     * Computes \f$ Var[Z \mid Z \geq \alpha] =
+     * 1 - \lambda(\alpha)(\lambda(\alpha) - \alpha) \f$, where
+     * \f$ Z \sim N(0,1) \f$ and \f$ \lambda(\alpha) \f$ is the inverse Mills
+     * ratio. For \f$ \alpha \geq 3 \f$, where this expression suffers from
+     * cancellation, the variance is computed as
+     * \f$ (\alpha + 4/T_2 - 3/T_3)/(T_2 T_1^2) \f$, where
+     * \f$ T_n = \alpha + (n+1)/T_{n+1} \f$ are the terms of the continued
+     * fraction of \f$ \lambda(\alpha) - \alpha = 1/T_1 \f$.
+     *
+     * @param alpha is the standardized cut.
+     * @return the variance, which lies in \f$ (0, 1) \f$.
+     */
+    static T left_truncated_std_normal_variance(const T alpha)
+    {
+        if (alpha >= continued_fraction_alpha) {
+            const auto [t1, t2, t3] = left_truncated_std_normal_cf(alpha);
+    
+            return (alpha + 4 / t2 - 3 / t3) / (t2 * t1 * t1);
+        }
+    
+        const T excess = left_truncated_std_normal_excess(alpha);
+    
+        // max() guards against rounding errors
+        return std::max(T(0), 1 - (alpha + excess) * excess);
+    }
 
 public:
     using result_type = T;
@@ -363,7 +323,7 @@ public:
             return mu;
         }
 
-        return mu + sigma * inverse_mills_ratio();
+        return cut + sigma * left_truncated_std_normal_excess(alpha);
     }
 
     /**
@@ -382,42 +342,123 @@ public:
             return 0;
         }
 
-        // for large alpha, 1 - lambda * (lambda - alpha) suffers from
-        // cancellation: use its asymptotic expansion
-        // 1/alpha^2 - 6/alpha^4 + 50/alpha^6
-        if (alpha > asymptotic_alpha) {
-            const T u2 = 1 / (alpha * alpha);
-
-            return sigma * std::sqrt(u2 * (1 - u2 * (6 - 50 * u2)));
-        }
-
-        const T lambda_a = inverse_mills_ratio();
-
-        // the variance ratio lies in (0, 1): max() guards against rounding errors
-        return sigma * std::sqrt(std::max(T(0), 1 - lambda_a * (lambda_a - alpha)));
+        return sigma * std::sqrt(left_truncated_std_normal_variance(alpha));
     }
 
-private:
-    //! The standardized cut above which asymptotic expansions are used
-    static constexpr T asymptotic_alpha = 30;
-
     /**
-     * @brief Compute the inverse Mills ratio of the standardized cut
+     * @brief Finds the normal distribution that, left-truncated at @p cut, has
+     *        the given mean and standard deviation.
      *
-     * @return \f$ \lambda(\alpha) = \varphi(\alpha) / (1 - \Phi(\alpha)) \f$
+     * Looks for the parameters \f$ \mu \f$ and \f$ \sigma \f$ of a normal
+     * distribution such that the distribution obtained by left-truncating it at
+     * @p cut has mean @p mean and standard deviation @p stddev.
+     *
+     * Letting \f$ \alpha = (cut - \mu)/\sigma \f$, \f$ \delta(\alpha) \f$ be
+     * the mean excess (see left_truncated_std_normal_excess()) and
+     * \f$ v(\alpha) \f$ be the variance (see left_truncated_std_normal_variance())
+     * of the standard normal distribution left-truncated at \f$ \alpha \f$, the
+     * function numerically solves for \f$ \alpha \f$ the equation
+     * \f[ \frac{\sqrt{v(\alpha)}}{\delta(\alpha)} = \frac{stddev}{mean - cut} \f]
+     * and then derives \f$ \sigma = (mean - cut)/\delta(\alpha) \f$ and
+     * \f$ \mu = cut - \alpha\sigma \f$. When the solution is smaller than
+     * \f$ -10 \f$, the truncation is numerically irrelevant and
+     * \f$ N(mean, stddev^2) \f$ is returned.
+     *
+     * @param mean is desired mean of the truncated distribution.
+     * @param stddev is desired standard deviation of the truncated distribution.
+     * @param cut is left truncation value.
+     * @return the (non-truncated) normal distribution with parameters
+     *         \f$ \mu \f$ and \f$ \sigma \f$.
+     * @throw std::invalid_argument if @p stddev is negative, if @p mean is
+     *        smaller than @p cut, or equal to it while @p stddev is positive,
+     *        or if @p stddev is not smaller than @p mean - @p cut, or so
+     *        close to it that the distribution cannot be fitted.
+     * @throw std::runtime_error if the root search fails.
      */
-    T inverse_mills_ratio() const
+    static std::normal_distribution<T>
+    fit_untruncated(const T mean, const T stddev, const T cut)
     {
-        // for large alpha, phi(alpha) and 1 - Phi(alpha) underflow: use the
-        // asymptotic expansion alpha + 1/alpha - 2/alpha^3
-        if (alpha > asymptotic_alpha) {
-            return alpha + 1 / alpha - 2 / (alpha * alpha * alpha);
+        if (stddev < 0) {
+            throw CLONES::Error<std::invalid_argument>("The standard deviation "
+                                                       "must be non-negative.");
         }
-
-        // erfc avoids the cancellation of 1 - norm_cdf(alpha) for large alpha
-        const T tail = std::erfc(alpha / std::sqrt(T(2))) / 2;
-
-        return norm_pdf(alpha) / tail;
+    
+        // A distribution left-truncated at cut only takes values greater than
+        // cut, so its mean must be greater than cut too
+        if (mean < cut || (mean == cut && stddev > 0)) {
+            throw CLONES::Error<std::invalid_argument>("The aimed mean must be "
+                                                       "greater than the cut or, "
+                                                       "when the standard deviation "
+                                                       "is null, equal it.");
+        }
+    
+        // If the standard deviation is 0 and mean >= cut, then
+        // the aimed distribution is N(mean, 0)
+        if (stddev == 0) {
+            return std::normal_distribution<T>(mean, stddev);
+        }
+    
+        // For X ~ N(mu, sigma^2) truncated to X > cut, with
+        // alpha = (cut - mu) / sigma:
+        //
+        //   E[X] - cut = sigma * excess(alpha)
+        //   Var[X]     = sigma^2 * variance(alpha)
+        //
+        // Hence, the ratio stddev / (mean - cut) depends on alpha alone:
+        //
+        //   ratio(alpha) = sqrt(variance(alpha)) / excess(alpha)
+        //
+        // ratio(alpha) increases from 0 (alpha -> -inf, almost no truncation) to
+        // 1 (alpha -> +inf, the tail looks exponential), and
+        // 1 - ratio(alpha) ~ 1/alpha^2 for large alpha. So, alpha can be found
+        // as the only root of ratio(alpha) - target_ratio, provided that
+        // 0 < target_ratio < 1.
+        const T target_ratio = stddev / (mean - cut);
+    
+        // ratio(alpha) < 1 for every alpha, so no root exists
+        if (target_ratio >= 1) {
+            throw CLONES::Error<std::invalid_argument>("The aimed standard deviation must be "
+                                                       "smaller than the difference between "
+                                                       "the aimed mean and the cut.");
+        }
+    
+        auto eq = [target_ratio](const T& alpha) {
+            return std::sqrt(left_truncated_std_normal_variance(alpha))
+                    / left_truncated_std_normal_excess(alpha) - target_ratio;
+        };
+    
+        constexpr T alpha_min = -10;
+    
+        // eq is increasing: if it is non-negative at alpha_min, the root lies below
+        // alpha_min, i.e., the cut is more than 10 sigma below mu and truncation is
+        // numerically irrelevant
+        if (eq(alpha_min)>=0) {
+            return std::normal_distribution<T>(mean, stddev);
+        }
+    
+        // look for an upper bound of the root: since 1 - ratio(alpha) ~ 1/alpha^2,
+        // the root is about 1/sqrt(1 - target_ratio)
+        constexpr T alpha_limit = 1e7;
+        T alpha_max = 8;
+        while (eq(alpha_max) < 0) {
+            alpha_max *= 2;
+    
+            // ratio(alpha) cannot be distinguished from 1 any more
+            if (alpha_max > alpha_limit) {
+                throw CLONES::Error<std::invalid_argument>("The aimed standard deviation is "
+                                                           "too close to the difference "
+                                                           "between the aimed mean and the cut.");
+            }
+        }
+    
+        const auto alpha = brent_root(eq, alpha_min, alpha_max);
+    
+        // Compute the final parameters: sigma from E[X] - cut = sigma * excess(alpha)
+        // and mu from the definition of alpha
+        const auto sigma = (mean - cut) / left_truncated_std_normal_excess(alpha);
+        const auto mu = cut - alpha * sigma;
+    
+        return std::normal_distribution(mu, sigma);
     }
 };
 
