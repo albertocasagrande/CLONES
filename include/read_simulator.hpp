@@ -2,8 +2,8 @@
  * @file read_simulator.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines classes to simulate sequencing
- * @version 1.37
- * @date 2026-11-17
+ * @version 1.38
+ * @date 2026-11-19
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -1473,6 +1473,23 @@ private:
     }
 
     /**
+     * @brief Get the fragment size threshold
+     * 
+     * @return the minimum size of a fragment to produce an insert. For
+     *   single-read sequencing, the function return the read size. The
+     *   maximum among the read size and the insert size mean is, instead,
+     *   returned in the case of paired-read sequencing.
+     */
+    size_t get_fragment_size_threshold() const
+    {
+        if (read_type==ReadType::SINGLE_READ || read_size>=insert_size_mean) {
+            return read_size;
+        }
+        
+        return static_cast<size_t>(insert_size_mean);
+    }
+
+    /**
      * @brief Generate the reads in an allelic fragment
      *
      * @tparam SEQUENCER is the sequencer model type
@@ -1503,14 +1520,8 @@ private:
                                  const size_t& total_steps, size_t& steps,
                                  CLONES::UI::ProgressBar& progress_bar, std::ostream* SAM_stream)
     {
-        size_t threshold_insert_size;
-        if (read_type==ReadType::SINGLE_READ || read_size>=insert_size_mean) {
-            threshold_insert_size = read_size;
-        } else {
-            threshold_insert_size = static_cast<size_t>(insert_size_mean);
-        }
-
-        if (fragment.size() >= threshold_insert_size && sample_simulation_data.missing_templates > 0) {
+        if (fragment.size() >= get_fragment_size_threshold()
+                && sample_simulation_data.missing_templates > 0) {
             const double hit_probability = static_cast<double>(fragment.size())/
                                         sample_simulation_data.non_covered_allelic_size;
             std::binomial_distribution<size_t> b_dist(sample_simulation_data.missing_templates,
@@ -1538,6 +1549,10 @@ private:
                 // insert_size_dist only samples values not smaller than read_size.
                 size_t insert_size;
                 if (read_type==ReadType::PAIRED_READ) {
+
+                    // insert_size_dist is a left truncated normal distribution.
+                    // The size lower than the read size are automatically discharged
+                    // by the object
                     insert_size = static_cast<size_t>(std::round(insert_size_dist(random_generator)));
                 } else {
                     insert_size = read_size;
