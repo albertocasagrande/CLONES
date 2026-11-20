@@ -2,8 +2,8 @@
  * @file genomic_region.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements genomic region
- * @version 1.2
- * @date 2026-06-11
+ * @version 1.3
+ * @date 2026-11-20
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -29,6 +29,7 @@
  */
 
 #include <iostream>
+#include <algorithm>
 
 #include "genomic_region.hpp"
 
@@ -60,6 +61,15 @@ GenomicRegion::GenomicRegion(const GenomicPosition initial_pos, const Length len
     initial_pos(initial_pos), length(length)
 {
     if (length == 0) {
+        throw Error<std::domain_error>("The genomic region length must greater than 0.");
+    }
+}
+
+GenomicRegion::GenomicRegion(const ChromosomeId chromosome_id, const ChrPosition begin,
+                             const ChrPosition end):
+    GenomicRegion(GenomicPosition(chromosome_id, begin), end-begin+1)
+{
+    if (end < begin) {
         throw Error<std::domain_error>("The genomic region length must greater than 0.");
     }
 }
@@ -133,6 +143,23 @@ bool GenomicRegion::strictly_contains(const SID& mutation) const
     const auto mutation_region = mutation.get_region();
 
     return strictly_contains(mutation_region);
+}
+
+GenomicRegion intersect(const GenomicRegion& A, const GenomicRegion& B)
+{
+    if (A.get_chromosome_id() != B.get_chromosome_id()
+        || A.size() == 0 || B.size() == 0) {
+        return GenomicRegion();
+    }
+
+    const auto region_begin = std::max(A.begin(), B.begin());
+    const auto region_end = std::min(A.end(), B.end());
+
+    if (region_begin>region_end) {
+        return GenomicRegion();
+    }
+
+    return {A.get_chromosome_id(), region_begin, region_end};
 }
 
 }   // Mutations

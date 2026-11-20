@@ -2,8 +2,8 @@
  * @file genomic_region.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines genomic regions
- * @version 1.6
- * @date 2026-09-24
+ * @version 1.7
+ * @date 2026-11-20
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -77,6 +77,16 @@ public:
     /**
      * @brief A constructor
      *
+     * @param chromosome_id is the identifier of the chromosome on which the region lays
+     * @param begin is the position of the genomic region's first nucleotide
+     * @param end is the position of the genomic region's last nucleotide
+     */
+    GenomicRegion(const ChromosomeId chromosome_id, const ChrPosition begin,
+                  const ChrPosition end);
+
+    /**
+     * @brief A constructor
+     *
      * @param initial_pos is the genomic region initial position
      * @param length is the genomic region length
      * @throw std::domain_error `length` is 0
@@ -97,7 +107,8 @@ public:
     /**
      * @brief Get the genomic region initial position
      *
-     * @return a constant reference to the genomic region initial position
+     * @return a constant reference to the genomic region initial position.
+     *    The result is valid if and only if `size() != 0`.
      */
     inline const GenomicPosition& get_initial_position() const
     {
@@ -107,7 +118,8 @@ public:
     /**
      * @brief Get the genomic region final position
      *
-     * @return the genomic region final position
+     * @return the genomic region final position. The result is valid
+     *    if and only if `size() != 0`.
      */
     inline GenomicPosition get_final_position() const
     {
@@ -117,7 +129,8 @@ public:
     /**
      * @brief Get the genomic region initial position in the chromosome
      *
-     * @return the genomic region initial position in the chromosome
+     * @return the genomic region initial position in the chromosome.
+     *    The result is valid if and only if `size() != 0`.
      */
     inline const ChrPosition& begin() const
     {
@@ -127,7 +140,8 @@ public:
     /**
      * @brief Get the genomic region final position in the chromosome
      *
-     * @return the genomic region final position in the chromosome
+     * @return the genomic region final position in the chromosome.
+     *    The result is valid if and only if `size() != 0`. 
      */
     inline ChrPosition end() const
     {
@@ -156,7 +170,8 @@ public:
      */
     inline bool follows(const GenomicRegion& genomic_region) const
     {
-        return ((initial_pos.chr_id == genomic_region.initial_pos.chr_id)
+        return ((size() != 0) && (genomic_region.size() != 0)
+                && (initial_pos.chr_id == genomic_region.initial_pos.chr_id)
                 && (genomic_region.initial_pos.position + genomic_region.length == initial_pos.position));
     }
 
@@ -291,7 +306,7 @@ public:
      */
     inline bool contains(const GenomicPosition& genomic_position) const
     {
-        return ((genomic_position.chr_id==initial_pos.chr_id)
+        return (size() != 0 && (genomic_position.chr_id==initial_pos.chr_id)
                 && (initial_pos.position <= genomic_position.position)
                 && (genomic_position.position+1 <= initial_pos.position+length));
     }
@@ -326,7 +341,8 @@ public:
      */
     inline bool contains(const GenomicRegion& genomic_region) const
     {
-        return ((genomic_region.get_chromosome_id()==initial_pos.chr_id)
+        return ((size() != 0) && (genomic_region.size() !=0)
+                && (genomic_region.get_chromosome_id()==initial_pos.chr_id)
                 && (begin() <= genomic_region.begin())
                 && (genomic_region.end() <= end()));
     }
@@ -340,7 +356,7 @@ public:
      */
     inline bool strictly_contains(const GenomicPosition& genomic_position) const
     {
-        return ((genomic_position.chr_id==initial_pos.chr_id)
+        return ((size() != 0) && (genomic_position.chr_id==initial_pos.chr_id)
                 && (initial_pos.position < genomic_position.position)
                 && (genomic_position.position+1 < initial_pos.position+length));
     }
@@ -366,7 +382,8 @@ public:
      */
     inline bool strictly_contains(const GenomicRegion& genomic_region) const
     {
-        return ((genomic_region.get_chromosome_id()==initial_pos.chr_id)
+        return ((size() != 0) && (genomic_region.size() !=0)
+                && (genomic_region.get_chromosome_id()==initial_pos.chr_id)
                 && (begin()+1 <= genomic_region.begin())
                 && (genomic_region.end()+1 <= end()));
     }
@@ -389,7 +406,7 @@ public:
      */
     inline bool ends_before(const GenomicPosition& genomic_position) const
     {
-        return ((genomic_position.chr_id==initial_pos.chr_id)
+        return ((size() != 0) && (genomic_position.chr_id==initial_pos.chr_id)
                 && (initial_pos.position+length < genomic_position.position+1));
     }
 
@@ -414,7 +431,7 @@ public:
      */
     inline bool begins_after(const GenomicPosition& genomic_position) const
     {
-        return ((genomic_position.chr_id==initial_pos.chr_id)
+        return ((size() != 0) && (genomic_position.chr_id==initial_pos.chr_id)
                 && (initial_pos.position > genomic_position.position));
     }
 
@@ -516,6 +533,14 @@ public:
     }
 };
 
+/**
+ * @brief Compute the intersection of two regions
+ * 
+ * @param A is a genomic region
+ * @param B is a genomic region
+ * @return The genomic region contained in both `A` and `B`
+ */
+GenomicRegion intersect(const GenomicRegion& A, const GenomicRegion& B);
 
 /**
  * @brief Test whether two `GenomicRegion` objects are the same

@@ -2,8 +2,8 @@
  * @file allele.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implements allele representation
- * @version 1.11
- * @date 2026-09-24
+ * @version 1.12
+ * @date 2026-11-20
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -47,7 +47,7 @@ AlleleFragment::AlleleFragment():
 
 AlleleFragment::AlleleFragment(const ChromosomeId& chromosome_id,
                                const ChrPosition& begin, const ChrPosition& end):
-    GenomicRegion({chromosome_id, begin}, end-begin+1),
+    GenomicRegion(chromosome_id, begin, end),
     _data(std::make_shared<AlleleFragment::Data>())
 {}
 
