@@ -2,8 +2,8 @@
  * @file read_simulator.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines classes to simulate sequencing
- * @version 1.39
- * @date 2026-11-19
+ * @version 1.40
+ * @date 2026-11-23
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -1201,6 +1201,8 @@ template<typename RANDOM_GENERATOR>
 class ReadSimulator
 {
 public:
+    using insert_dist_type = CLONES::truncated_normal_distribution<double>;
+
     /**
      * @brief The type of simulated reads
      */
@@ -1218,15 +1220,16 @@ public:
         UPDATE      // Add new files
     };
 
+private:
+
     ReadType read_type;     //!< The type of the produced reads
 
     size_t read_size;       //!< The produced-read size
     double insert_size_mean;    //!< The aimed insert size mean
-    CLONES::left_truncated_normal_distribution<double> insert_size_dist;   //!< The insert size distribution
+    insert_dist_type insert_size_dist;   //!< The insert size distribution
 
     bool write_SAM;         //!< A Boolean flag to write SAM files
 
-private:
     bool save_coverage;     //!< A flag to enable/disable storage of coverage data
 
     RANDOM_GENERATOR random_generator;  //!< The random generator
@@ -1550,7 +1553,7 @@ private:
                 size_t insert_size;
                 if (read_type==ReadType::PAIRED_READ) {
 
-                    // insert_size_dist is a left truncated normal distribution.
+                    // insert_size_dist is a truncated normal distribution.
                     // The size lower than the read size are automatically discharged
                     // by the object
                     insert_size = static_cast<size_t>(std::round(insert_size_dist(random_generator)));
@@ -2086,6 +2089,7 @@ private:
      * @param[in] read_type is the type of the produced-read, i.e., single or paired-read
      * @param[in] read_size is the size of the output reads
      * @param[in] insert_size_distribution is the insert size distribution
+     * @param[in] max_insert_size is the maximum size of the insert
      * @param[in] mode is the SAM generator output mode
      * @param[in] save_coverage is a flag to enable/disable storage of coverage data
      * @param[in] template_name_prefix is the template name prefix
@@ -2095,6 +2099,7 @@ private:
                   const std::filesystem::path& ref_genome_filename,
                   const ReadType read_type, const size_t& read_size,
                   const std::normal_distribution<double>& insert_size_distribution,
+                  const size_t& max_insert_size,
                   const Mode mode, const bool save_coverage,
                   const std::string& template_name_prefix, const int& seed):
         read_type(read_type), read_size{read_size},
@@ -2125,14 +2130,14 @@ private:
         }
 
         try {
-            const auto cut = static_cast<double>(read_size);
-            using dist_type = left_truncated_normal_distribution<double>;
+            const auto lower_cut = static_cast<double>(read_size);
+            const auto upper_cut = static_cast<double>(max_insert_size);
 
-            const auto fitted = dist_type::fit_untruncated(insert_size_distribution.mean(),
-                                                           insert_size_distribution.stddev(),
-                                                           cut);
+            const auto fitted = insert_dist_type::fit_untruncated(insert_size_distribution.mean(),
+                                                                  insert_size_distribution.stddev(),
+                                                                  lower_cut, upper_cut);
 
-            insert_size_dist = left_truncated_normal_distribution<double>(fitted, cut);
+            insert_size_dist = insert_dist_type(fitted, lower_cut, upper_cut);
         } catch (std::invalid_argument& e) {
             throw CLONES::Error<std::domain_error>(std::string("Invalid insert size "
                                                                "distribution: ")
@@ -2223,8 +2228,8 @@ public:
                   const bool& save_coverage=false,
                   const std::string& template_name_prefix="r", const int& seed=0):
         ReadSimulator(output_directory, ref_genome_filename, ReadType::SINGLE_READ, read_size,
-                      std::normal_distribution<double>(read_size, 0), mode, save_coverage,
-                      template_name_prefix, seed)
+                      std::normal_distribution<double>(read_size, 0), read_size, mode,
+                      save_coverage, template_name_prefix, seed)
     {}
 
     /**
@@ -2234,6 +2239,7 @@ public:
      * @param[in] ref_genome_filename is reference genome filename
      * @param[in] read_size is the size of the output reads
      * @param[in] insert_size_distribution is the insert size distribution
+     * @param[in] max_insert_size is the maximum insert size
      * @param[in] mode is the SAM generator output mode
      * @param[in] save_coverage is a flag to enable/disable storage of coverage data
      * @param[in] template_name_prefix is the template name prefix
@@ -2243,11 +2249,12 @@ public:
                   const std::filesystem::path& ref_genome_filename,
                   const size_t& read_size,
                   const std::normal_distribution<double>& insert_size_distribution,
+                  const size_t& max_insert_size,
                   const Mode mode=Mode::CREATE, const bool& save_coverage=false,
                   const std::string& template_name_prefix="r", const int& seed=0):
         ReadSimulator{output_directory, ref_genome_filename, ReadType::PAIRED_READ,
-                      read_size, insert_size_distribution, mode, save_coverage,
-                      template_name_prefix, seed}
+                      read_size, insert_size_distribution, max_insert_size,
+                      mode, save_coverage, template_name_prefix, seed}
     {}
 
     /**

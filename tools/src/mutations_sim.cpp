@@ -2,8 +2,8 @@
  * @file mutations_sim.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Main file for the CLONES mutations simulator
- * @version 1.15
- * @date 2026-11-19
+ * @version 1.16
+ * @date 2026-11-23
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -83,6 +83,7 @@ class MutationsSimulator : public BasicExecutable
     size_t read_size;
     double insert_size_mean;
     double insert_size_stddev;
+    size_t max_insert_size;
     double sequencer_error_rate;
     std::string SIDs_csv_filename;
     std::string CNAs_csv_filename;
@@ -558,8 +559,8 @@ class MutationsSimulator : public BasicExecutable
             std::normal_distribution<double> insert_size_dist(insert_size_mean,
                                                               insert_size_stddev);
             return ReadSimulator<>(seq_output_directory, ref_genome_filename, read_size,
-                                   insert_size_dist, read_simulator_output_mode, true,
-                                   "r", seed);
+                                   insert_size_dist, max_insert_size,
+                                   read_simulator_output_mode, true, "r", seed);
         }
 
         return ReadSimulator<>(seq_output_directory, ref_genome_filename, read_size,
@@ -764,10 +765,11 @@ class MutationsSimulator : public BasicExecutable
             // check the insert size distribution feasibility before the
             // (possibly long) mutation placement
             try {
-                using dist_type = CLONES::left_truncated_normal_distribution<double>;
+                using insert_dist_type = CLONES::truncated_normal_distribution<double>;
     
-                dist_type::fit_untruncated(insert_size_mean, insert_size_stddev,
-                                           static_cast<double>(read_size));
+                insert_dist_type::fit_untruncated(insert_size_mean, insert_size_stddev,
+                                                  static_cast<double>(read_size),
+                                                  static_cast<double>(max_insert_size));
             } catch (const std::exception& e) {
                 print_help_and_exit("Invalid insert size distribution for read size "
                                     + std::to_string(read_size) + ": " + e.what(), 1);
@@ -829,7 +831,7 @@ public:
                                   {"mutants", "Mutants evolution related options"},
                                   {"generic", "Generic options"}}),
         paired_read(false),
-        insert_size_mean(0), insert_size_stddev(0),
+        insert_size_mean(0), insert_size_stddev(0), max_insert_size(0),
         sequencer_error_rate(0), SIDs_csv_filename(""),
         CNAs_csv_filename(""), epigenetic_FACS(false)
     {
@@ -868,6 +870,8 @@ public:
              "insert size mean (enable paired-read)")
             ("insert-size-stddev,t", po::value<double>(&insert_size_stddev),
              "insert size standard deviation")
+            ("max-insert-size,m", po::value<size_t>(&max_insert_size)->default_value(std::numeric_limits<size_t>::max()),
+             "maximum insert size")
             ("sequencer-error-rate,e", po::value<double>(&sequencer_error_rate),
              "sequencer error rate per base")
             ("write-SAM,w", "write the simulated read SAM files")
