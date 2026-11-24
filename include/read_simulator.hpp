@@ -1629,11 +1629,9 @@ private:
                               std::ostream* SAM_stream)
     {
         Allele const* germline_allele{nullptr};
-        
-        AlleleFragment* g_frag_in_target{nullptr};
-        if (germline_chr_mut != nullptr) {
-            g_frag_in_target = new AlleleFragment();
-        }
+
+        // the germline fragment in the target region, if germline is available
+        AlleleFragment g_frag_in_target;
 
         for (const auto& [allele_id, allele] : chr_mutations.get_alleles()) {
             if (germline_chr_mut != nullptr) {
@@ -1654,7 +1652,11 @@ private:
                 while (target_it != chr_target_regions.end()
                         && target_it->overlaps(fragment)) {
 
-                    // if germline is available, 
+                    // the target region may extend beyond the fragment: only
+                    // their intersection must be sequenced
+                    const auto region = intersect(*target_it, fragment);
+
+                    AlleleFragment const* g_frag_ptr{nullptr};
                     if (germline_allele != nullptr) {
                         // searching for the germline fragment AFTER `fragment`
                         auto germline_it = germline_allele->get_fragments().upper_bound(position);
@@ -1663,15 +1665,16 @@ private:
                         // BEFORE or in the SAME POSITION of `fragment`
                         --germline_it;
 
-                        *g_frag_in_target = germline_it->second.copy(*target_it);
+                        // since `cell_mutations` derives from `germline_mutations`,
+                        // `germline_allele` fully contains `allele`, and, thus, `region`
+                        g_frag_in_target = germline_it->second.copy(region);
+                        g_frag_ptr = &g_frag_in_target;
                     }
 
-                    const auto frag_in_target = fragment.copy(*target_it);
+                    const auto frag_in_target = fragment.copy(region);
 
-                    // since `cell_mutations` derives from `germline_mutations`,
-                    // `germline_allele` fully contains `allele`
                     generate_fragment_reads(sequencer, sample_simulation_data, chr_statistics,
-                                            chr_data, sample_name, cell_id, g_frag_in_target,
+                                            chr_data, sample_name, cell_id, g_frag_ptr,
                                             frag_in_target, total_steps, steps, progress_bar,
                                             SAM_stream);
 
@@ -1684,10 +1687,6 @@ private:
             }
 
             progress_bar.set_progress(100*steps/total_steps);
-        }
-
-        if (germline_chr_mut != nullptr) {
-            delete g_frag_in_target;
         }
     }
 
@@ -2067,13 +2066,13 @@ private:
 
                 const auto chr_size = r_chr_it->second.size();
 
+                const auto target_begin = target_region.begin();
                 const auto target_end = std::min(target_region.end(), chr_size);
-                const auto target_begin = std::max(target_region.begin(), chr_size);
 
+                // the target region begins beyond the chromosome end
                 if (target_end >= target_begin) {
-                    const GenomicRegion::Length target_size =
-                            static_cast<GenomicRegion::Length>(target_end-target_begin);
-                    output.emplace_back(target_region.get_chromosome_id(), target_size);
+                    output.emplace_back(target_region.get_chromosome_id(),
+                                        target_begin, target_end);
                 }
             }
         }
@@ -2418,10 +2417,13 @@ private:
      */
     static std::vector<GenomicRegion> get_default_target_regions(const PhylogeneticForest& forest)
     {
-        const CellGenomeMutations& wild_type_mutations = forest.get_wild_type_genomes().begin()->second;
+        // the germline mutations have the same chromosomes as the wild-type
+        // genomes. Moreover, `get_wild_type_genomes()` returns a temporary
+        // map, so a reference to one of its genomes would dangle.
+        const auto& germline_mutations = forest.get_germline_mutations();
 
         std::vector<GenomicRegion> target_regions;
-        for (const auto& [chr_id, chr_mutations]: wild_type_mutations.get_chromosomes()) {
+        for (const auto& [chr_id, chr_mutations]: germline_mutations.get_chromosomes()) {
             target_regions.emplace_back(chr_id, chr_mutations.size());
         }
 
