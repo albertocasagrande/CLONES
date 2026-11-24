@@ -64,7 +64,6 @@ set(CLONES_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/allele.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/read_simulator.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/rs_index.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/sample_specification.cpp
-                ${CMAKE_CURRENT_SOURCE_DIR}/src/sampling.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/sbs_context.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/sbs_signature.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/sequencer.cpp
@@ -76,6 +75,7 @@ set(CLONES_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/allele.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/timed_event.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/tissue.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/tissue_sample.cpp
+                ${CMAKE_CURRENT_SOURCE_DIR}/src/tissue_sampling.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/tissue_simulation.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/utils.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/warning.cpp
@@ -135,7 +135,6 @@ set(CLONES_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/include/allele.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/read_simulator.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/rs_index.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/sample_specification.hpp
-                ${CMAKE_CURRENT_SOURCE_DIR}/include/sampling.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/sbs_context.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/sbs_signature.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/sequencer.hpp
@@ -150,6 +149,7 @@ set(CLONES_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/include/allele.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/tissue.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/tissue_plotter.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/tissue_sample.hpp
+                ${CMAKE_CURRENT_SOURCE_DIR}/include/tissue_sampling.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/tissue_simulation.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/variables.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/union_map_proxy.hpp

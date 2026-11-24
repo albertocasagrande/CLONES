@@ -2,8 +2,8 @@
  * @file event_wrapper.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Implement a simulation event wrapper
- * @version 1.4
- * @date 2026-11-13
+ * @version 1.5
+ * @date 2026-11-24
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -53,9 +53,9 @@ TissueSimulationEventWrapper::TissueSimulationEventWrapper(const RateUpdate& rat
     event(std::make_shared<RateUpdate>(rate_update))
 {}
 
-TissueSimulationEventWrapper::TissueSimulationEventWrapper(const Sampling& sampling):
+TissueSimulationEventWrapper::TissueSimulationEventWrapper(const TissueSampling& sampling):
     type(TissueSimulationEvent::Type::SAMPLING),
-    event(std::make_shared<Sampling>(sampling))
+    event(std::make_shared<TissueSampling>(sampling))
 {}
 
 }   // Evolutions

@@ -1,9 +1,9 @@
 /**
- * @file sampling.cpp
+ * @file tissue_sampling.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
- * @brief Implements samplings
- * @version 1.1
- * @date 2026-02-06
+ * @brief Implements tissue samplings
+ * @version 1.0
+ * @date 2026-11-24
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -28,7 +28,7 @@
  * SOFTWARE.
  */
 
-#include "sampling.hpp"
+#include "tissue_sampling.hpp"
 
 namespace CLONES
 {
@@ -39,25 +39,27 @@ namespace Mutants
 namespace Evolutions
 {
 
-Sampling::Sampling(const SampleSpecification& orig):
+TissueSampling::TissueSampling(const SampleSpecification& orig):
     SampleSpecification(orig)
 {}
 
-Sampling::Sampling(const RectangleSet& bounding_box):
+TissueSampling::TissueSampling(const RectangleSet& bounding_box):
     SampleSpecification(bounding_box)
 {}
 
-Sampling::Sampling(const RectangleSet& bounding_box,
-                   const size_t& num_of_cells):
+TissueSampling::TissueSampling(const RectangleSet& bounding_box,
+                               const size_t& num_of_cells):
     SampleSpecification(bounding_box, num_of_cells)
 {}
 
-Sampling::Sampling(const std::string& name, const RectangleSet& bounding_box):
+TissueSampling::TissueSampling(const std::string& name,
+                               const RectangleSet& bounding_box):
     SampleSpecification(name, bounding_box)
 {}
 
-Sampling::Sampling(const std::string& name, const RectangleSet& bounding_box,
-                   const size_t& num_of_cells):
+TissueSampling::TissueSampling(const std::string& name,
+                               const RectangleSet& bounding_box,
+                               const size_t& num_of_cells):
     SampleSpecification(name, bounding_box, num_of_cells)
 {}
 

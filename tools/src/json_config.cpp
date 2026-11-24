@@ -2,8 +2,8 @@
  * @file json_config.cpp
  * @author Alberto Casagrande (alberto.casagrande@units.it)
  * @brief Implements classes and function for reading JSON configurations
- * @version 1.7
- * @date 2026-11-17
+ * @version 1.8
+ * @date 2026-11-24
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -566,8 +566,8 @@ get_timed_sampling(const nlohmann::json& timed_sampling_json)
 
     auto sample_specification = ConfigReader::get_sample_specification(timed_sampling_json["sample"]);
 
-    Sampling sampling(sample_specification);
-    return {time, TissueSimulationEventWrapper(sampling)};
+    TissueSampling tissue_sampling(sample_specification);
+    return {time, TissueSimulationEventWrapper(tissue_sampling)};
 }
 
 CLONES::Mutants::Evolutions::TimedEvent

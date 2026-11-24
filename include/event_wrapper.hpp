@@ -2,8 +2,8 @@
  * @file event_wrapper.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines a simulation event wrapper
- * @version 1.3
- * @date 2026-06-11
+ * @version 1.4
+ * @date 2026-11-24
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -36,7 +36,7 @@
 #include "archive.hpp"
 #include "mutant_mutation.hpp"
 #include "rate_update.hpp"
-#include "sampling.hpp"
+#include "tissue_sampling.hpp"
 
 #include "error.hpp"
 
@@ -78,7 +78,7 @@ struct TissueSimulationEventWrapper
      *
      * @param sampling is the event to wrap
      */
-    TissueSimulationEventWrapper(const Sampling& sampling);
+    TissueSimulationEventWrapper(const TissueSampling& sampling);
 
     /**
      * @brief Get the wrapped event
@@ -123,7 +123,7 @@ struct TissueSimulationEventWrapper
                 archive & get_event<RateUpdate>();
                 break;
             case Type::SAMPLING:
-                archive & get_event<Sampling>();
+                archive & get_event<TissueSampling>();
                 break;
             default:
                 throw Error<std::runtime_error>("Unsupported event type \""
@@ -161,7 +161,7 @@ struct TissueSimulationEventWrapper
                 }
             case Type::SAMPLING:
                 {
-                    auto sampling = Sampling(SampleSpecification::load(archive));
+                    auto sampling = TissueSampling(SampleSpecification::load(archive));
 
                     return TissueSimulationEventWrapper(sampling);
                 }

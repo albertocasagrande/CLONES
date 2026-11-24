@@ -1,9 +1,9 @@
 /**
- * @file sampling.hpp
+ * @file tissue_sampling.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines tissue samplings
- * @version 1.1
- * @date 2026-02-06
+ * @version 1.0
+ * @date 2026-11-24
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 
-#ifndef __CLONES_SAMPLING__
-#define __CLONES_SAMPLING__
+#ifndef __CLONES_TISSUE_SAMPLING__
+#define __CLONES_TISSUE_SAMPLING__
 
 #include "position_set.hpp"
 #include "simulation_event.hpp"
@@ -47,7 +47,7 @@ namespace Evolutions
 /**
  * @brief A structure to represent tissue sampling event
  */
-struct Sampling : public SampleSpecification, public TissueSimulationEvent
+struct TissueSampling : public SampleSpecification, public TissueSimulationEvent
 {
     using Type = TissueSimulationEvent::Type;
 
@@ -56,7 +56,7 @@ struct Sampling : public SampleSpecification, public TissueSimulationEvent
      *
      * @param orig is a template sample specification for the new sampling event
      */
-    explicit Sampling(const SampleSpecification& orig);
+    explicit TissueSampling(const SampleSpecification& orig);
 
     /**
      * @brief A constructor
@@ -64,14 +64,14 @@ struct Sampling : public SampleSpecification, public TissueSimulationEvent
      * @param bounding_box is the sample bounding box
      * @param num_of_cells is the maximum number of cells to sample
      */
-    Sampling(const RectangleSet& bounding_box, const size_t& num_of_cells);
+    TissueSampling(const RectangleSet& bounding_box, const size_t& num_of_cells);
 
     /**
      * @brief A constructor
      *
      * @param bounding_box is the sample bounding box
      */
-    explicit Sampling(const RectangleSet& bounding_box);
+    explicit TissueSampling(const RectangleSet& bounding_box);
 
     /**
      * @brief A constructor
@@ -80,8 +80,8 @@ struct Sampling : public SampleSpecification, public TissueSimulationEvent
      * @param bounding_box is the sample bounding box
      * @param num_of_cells is the maximum number of cells to sample
      */
-    Sampling(const std::string& name, const RectangleSet& bounding_box,
-             const size_t& num_of_cells);
+    TissueSampling(const std::string& name, const RectangleSet& bounding_box,
+                   const size_t& num_of_cells);
 
     /**
      * @brief A constructor
@@ -89,7 +89,7 @@ struct Sampling : public SampleSpecification, public TissueSimulationEvent
      * @param name is the specification name
      * @param bounding_box is the sample bounding box
      */
-    Sampling(const std::string& name, const RectangleSet& bounding_box);
+    TissueSampling(const std::string& name, const RectangleSet& bounding_box);
 
     inline Type type() const {
         return Type::SAMPLING;
@@ -102,4 +102,4 @@ struct Sampling : public SampleSpecification, public TissueSimulationEvent
 
 }   // CLONES
 
-#endif // __CLONES_RATE_UPDATE__
+#endif // __CLONES_TISSUE_SAMPLING__

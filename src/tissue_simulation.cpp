@@ -2,8 +2,8 @@
  * @file simulation.cpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Define a tumour evolution simulation
- * @version 1.23
- * @date 2026-11-17
+ * @version 1.24
+ * @date 2026-11-24
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -532,7 +532,7 @@ void TissueSimulation::handle_timed_rate_update(const TimedEvent& timed_rate_upd
 
 void TissueSimulation::handle_timed_sampling(const TimedEvent& timed_sampling, CellEvent& candidate_event)
 {
-    const auto& sampling = timed_sampling.get_event<Sampling>();
+    const auto& sampling = timed_sampling.get_event<TissueSampling>();
 
     const Time previous_time = time;
 
