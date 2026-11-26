@@ -2,8 +2,8 @@
  * @file read_simulator.hpp
  * @author Alberto Casagrande (alberto.casagrande@uniud.it)
  * @brief Defines classes to simulate sequencing
- * @version 1.41
- * @date 2026-11-24
+ * @version 1.42
+ * @date 2026-11-26
  *
  * @copyright Copyright (c) 2023-2026
  *
@@ -1493,7 +1493,116 @@ private:
     }
 
     /**
+     * @brief Sample the gap to the next insert
+     *
+     * The DNA of @p fragment is assumed to be fragmented into consecutive
+     * chunks whose sizes are distributed as the insert sizes, and only
+     * some of these chunks are sequenced. The gap between @p pos and the
+     * next sequenced piece is the total size of the pieces skipped in
+     * between.
+     *
+     * The method estimates the number of chunks from @p pos to the end of
+     * @p fragment as \f$m = (\textrm{end} - \textrm{pos} + 1)/\mu_I\f$,
+     * where \f$\mu_I\f$ is the insert size mean, and sets the probability
+     * of sequencing a piece to \f$q = k/m\f$, where \f$k\f$ is
+     * @p missing_inserts. The number \f$N\f$ of skipped chunks is sampled
+     * from the geometric distribution \f$P(N=j) = (1-q)^j q\f$, and the
+     * gap length, which is the sum of \f$N\f$ independent insert sizes,
+     * is approximated by sampling the normal distribution having mean
+     * \f$N\mu\f$ and standard deviation \f$\sqrt{N}\sigma\f$, where
+     * \f$\mu\f$ and \f$\sigma\f$ are the parameters of the insert size
+     * distribution (central limit theorem). The sampled value is rounded
+     * and clamped at 0.
+     *
+     * The gap is 0 when no chunk is left after @p pos, when
+     * \f$q \geq 1\f$, i.e., every remaining piece must be sequenced, or when
+     * no chunk is skipped.
+     *
+     * Since \f$q\f$ is recomputed from the remaining inserts and chunks
+     * at each call, successive calls along a fragment approximate the
+     * selection of exactly \f$k\f$ chunks among the remaining ones (see
+     * selection sampling, Algorithm S in D. E. Knuth, "The Art of
+     * Computer Programming, Volume 2", Section 3.4.2).
+     *
+     * @param fragment is the fragment from which the inserts are extracted
+     * @param pos is the position from which the gap starts
+     * @param missing_inserts is the number of inserts still to be
+     *      extracted between @p pos and the end of @p fragment
+     * @return the length of the gap between @p pos and the next insert
+     *      to be simulated from @p fragment
+     */
+    size_t sample_gap_to_next_insert(const AlleleFragment& fragment,
+                                     const ChrPosition& pos,
+                                     const size_t missing_inserts)
+    {
+        const auto num_of_exp_chunks = (fragment.end() + 1 -pos)/insert_size_mean;
+
+        if (num_of_exp_chunks <= 0) {
+            return 0;
+        }
+
+        const double prob_of_sim_insert = static_cast<double>(missing_inserts)/num_of_exp_chunks;
+
+        if (prob_of_sim_insert >= 1) {
+            return 0;
+        }
+
+        std::geometric_distribution<size_t> chunks_in_gap_dist(prob_of_sim_insert);
+        const size_t chunks_in_gap = chunks_in_gap_dist(random_generator);
+
+        if (chunks_in_gap == 0) {
+            return 0;
+        }
+
+        std::normal_distribution<double> gap_length_dist(chunks_in_gap*insert_size_dist.get_mu(),
+                                                         std::sqrt(chunks_in_gap)*insert_size_dist.get_sigma());
+
+        // sample gap_length_dist, but avoid negative gaps
+        return static_cast<size_t>(std::max(0.0,
+                                            std::round(gap_length_dist(random_generator))));
+    }
+
+    /**
      * @brief Generate the reads in an allelic fragment
+     *
+     * The DNA of @p fragment is assumed to be fragmented into consecutive
+     * chunks whose sizes are distributed as the insert sizes, and only
+     * some of these chunks are sequenced. Hence, the simulated inserts
+     * never overlap.
+     *
+     * If @p fragment is shorter than the fragment size threshold (see
+     * `get_fragment_size_threshold()`), or no template is missing in the
+     * sample, no read is generated. Otherwise, the method proceeds as
+     * follows.
+     * 1. The number of inserts in @p fragment is sampled from the
+     *    binomial distribution \f$B(t, F/U)\f$, where \f$t\f$ is the
+     *    number of missing templates of the sample, \f$F\f$ is the size of
+     *    @p fragment, and \f$U\f$ is the allelic size of the sample that
+     *    has not been considered yet. This number is bounded by \f$t\f$
+     *    and by \f$\lfloor F/\mu_I \rfloor\f$, i.e., the number of pieces
+     *    of average size \f$\mu_I\f$, the insert size mean, that fit
+     *    @p fragment.
+     * 2. Starting from the beginning of @p fragment, the method walks
+     *    along it. At each step, it samples the length of the gap to the
+     *    next insert by using `sample_gap_to_next_insert()` and the size
+     *    of the insert, which is the read size for single reads and is
+     *    sampled from the insert size distribution for paired reads. If
+     *    the insert ends within @p fragment, its reads are generated by
+     *    `process_template()` and the walk resumes from the base
+     *    following the insert. Otherwise, the insert is discarded and a
+     *    new gap and a new size are sampled from the same position.
+     * 3. The walk stops when all the inserts have been considered or when
+     *    the end of @p fragment has been passed. Hence, fewer inserts
+     *    than sampled may be produced, and those not produced remain
+     *    among the missing templates of the sample, which can be placed
+     *    in the following fragments.
+     *
+     * Each produced insert decreases the number of missing templates of
+     * the sample by 1 and increases the number of simulated reads by 1
+     * (single reads) or 2 (paired reads). In any case, the allelic size
+     * of the sample that has not been considered yet is decreased by
+     * the size of @p fragment, and @p steps is increased by the same
+     * amount.
      *
      * @tparam SEQUENCER is the sequencer model type
      * @param[in,out] sequencer is the sequencer
@@ -1522,69 +1631,60 @@ private:
                                  const AlleleFragment& fragment,
                                  const size_t& total_steps, size_t& steps,
                                  CLONES::UI::ProgressBar& progress_bar, std::ostream* SAM_stream)
-    {
+    {    
         if (fragment.size() >= get_fragment_size_threshold()
                 && sample_simulation_data.missing_templates > 0) {
             const double hit_probability = static_cast<double>(fragment.size())/
                                         sample_simulation_data.non_covered_allelic_size;
             std::binomial_distribution<size_t> b_dist(sample_simulation_data.missing_templates,
-                                                        hit_probability);
+                                                      hit_probability);
 
-            const size_t num_of_frag_templates = std::min(b_dist(random_generator),
-                                                          sample_simulation_data.missing_templates);
+            // the fragment is split in fragment.size()/insert_size_mean chunks at most
+            const size_t max_num_of_chunks = std::floor(fragment.size()/insert_size_mean);
 
-            const double fragment_progress_ratio = (100*static_cast<double>(fragment.size())/num_of_frag_templates)/total_steps;
+            const size_t num_of_inserts = std::min(max_num_of_chunks,
+                                                   std::min(b_dist(random_generator),
+                                                            sample_simulation_data.missing_templates));
+
+            const double fragment_progress_ratio = (100*static_cast<double>(fragment.size())/num_of_inserts)/total_steps;
 
             const double current_progress = 100*static_cast<double>(steps)/total_steps;
 
             const auto& somatic_mutations = fragment.get_mutations();
 
-            const ChrPosition first_possible_begin = fragment.begin();
+            size_t pos{fragment.begin()};
+            for (size_t i=0; i<num_of_inserts && pos <= fragment.end(); ++i) {
+                pos += sample_gap_to_next_insert(fragment, pos, num_of_inserts-i);
 
-            size_t simulated_templates = 0;
-            while (simulated_templates < num_of_frag_templates) {
-                // The insert size is sampled first and resampled when it does
-                // not fit the fragment. Then, the insert begin is uniformly
-                // sampled among the positions at which the insert fits the
-                // fragment. Sampling the begin first, and then discarding the
-                // inserts exceeding the fragment end, would penalize long
-                // inserts and bias the insert size distribution downward.
-                // insert_size_dist only samples values not smaller than read_size.
-                size_t insert_size;
-                if (read_type==ReadType::PAIRED_READ) {
-
+                size_t insert_size{read_size};
+                if (read_type == ReadType::PAIRED_READ) {
                     // insert_size_dist is a truncated normal distribution.
                     // The size lower than the read size are automatically discharged
                     // by the object
                     insert_size = static_cast<size_t>(std::round(insert_size_dist(random_generator)));
-                } else {
-                    insert_size = read_size;
                 }
-
-                if (insert_size<=fragment.size()) {
-                    const ChrPosition last_possible_begin = fragment.end()-insert_size+1;
-
-                    std::uniform_int_distribution<ChrPosition> begin_dist(first_possible_begin,
-                                                                          last_possible_begin);
-                    const auto begin_pos = begin_dist(random_generator);
+                
+                if (insert_size + pos <= fragment.end()+1) {
 
                     if (germline_fragment != nullptr) {
                         process_template(sequencer, chr_statistics, chr_data, cell_id,
                                          germline_fragment->get_mutations(), somatic_mutations,
-                                         begin_pos, insert_size, SAM_stream, sample_name);
+                                         pos, insert_size, SAM_stream, sample_name);
                     } else {
                         CLONES::map<GenomicPosition, std::shared_ptr<SID>> germline_mutations;
 
                         process_template(sequencer, chr_statistics, chr_data, cell_id,
                                          germline_mutations, somatic_mutations,
-                                         begin_pos, insert_size, SAM_stream, sample_name);
+                                         pos, insert_size, SAM_stream, sample_name);
                     }
 
+                    pos += insert_size;
+
                     num_of_reads += ((read_type == ReadType::PAIRED_READ)?2:1);
-                    ++simulated_templates;
                     --sample_simulation_data.missing_templates;
                 }
-                progress_bar.set_progress(current_progress+simulated_templates*fragment_progress_ratio);
+
+                progress_bar.set_progress(current_progress+(i+1)*fragment_progress_ratio);
             }
         }
 
@@ -2463,13 +2563,51 @@ public:
 
     /**
      * @brief The empty constructor
+     *
+     * This constructor builds a valid simulator that is not bound to any
+     * reference genome or output directory. It neither checks nor creates
+     * any file, and it is meant to provide default-constructible objects,
+     * e.g., to be replaced by assignment later.
+     *
+     * The simulator produces single reads having size 150. Its insert
+     * size distribution has mean 650 and standard deviation 100, and it
+     * is truncated to the interval \f$[150, 950]\f$, i.e., from the read
+     * size to the mean plus three standard deviations; the parameters of
+     * the untruncated normal distribution are fitted by
+     * `truncated_normal_distribution::fit_untruncated()`.
+     *
+     * Moreover:
+     * - SAM files and coverage data are not saved;
+     * - the output directory and the reference genome filename are empty;
+     * - the random generator is default-constructed, i.e., it uses its
+     *   default seed;
+     * - the Hamming distance threshold for reads is 30;
+     * - the template name prefix is "r".
+     *
+     * @throw std::domain_error if the insert size distribution cannot be
+     *      fitted. This cannot happen with the above parameters
      */
     ReadSimulator():
-        read_type(ReadType::SINGLE_READ), read_size(0),
-        insert_size_mean(0), insert_size_dist{}, write_SAM(false),
+        read_type(ReadType::SINGLE_READ), read_size(150),
+        insert_size_mean(650), insert_size_dist{}, write_SAM(false),
         save_coverage(false), random_generator(), output_directory(""), ref_genome_filename(""),
         num_of_reads(0), hamming_distance_threshold(30), template_name_prefix("r")
-    {}
+    {
+        constexpr double insert_size_stddev = 100;
+        const double max_insert_size = insert_size_mean+3*insert_size_stddev;
+
+        try {
+
+            const auto fitted = insert_dist_type::fit_untruncated(insert_size_mean, insert_size_stddev,
+                                                                  read_size, max_insert_size);
+
+            insert_size_dist = insert_dist_type(fitted, read_size, max_insert_size);
+        } catch (std::invalid_argument& e) {
+            throw CLONES::Error<std::domain_error>(std::string("Invalid insert size "
+                                                               "distribution: ")
+                                                   + e.what());
+        }
+    }
 
     /**
      * @brief Create a simulator that produces single reads
